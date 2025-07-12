@@ -1,0 +1,89 @@
+# LaraStore Project Rules and Standards
+
+## Project Structure
+
+### Frontend Structure
+- React components are located in `resources/js/Components`
+- Pages are located in `resources/js/Pages`
+- TypeScript types are defined in `resources/js/types`
+- Assets (images, etc.) are stored in `resources/js/Assets`
+- Frontend entrypoint is `resources/js/app.js`
+
+### Backend Structure
+- Controllers are in `app/Http/Controllers`
+- Models are in `app/Models`
+- Resources are in `app/Http/Resources`
+- Form requests are in `app/Http/Requests`
+- Services are in `app/Services`
+
+### Filament Admin Panel
+- Filament resources are in `app/Filament/Resources`
+- Filament pages are in `app/Filament/Pages`
+- Filament widgets are in `app/Filament/Widgets`
+- Admin panel views are in `resources/views/admin`
+
+## Frontend Development
+
+### UI Framework
+- The website uses **Daisy UI** exclusively
+- Only Daisy UI classes and components should be used for consistency
+- Avoid using custom CSS classes unless absolutely necessary
+- Follow Daisy UI's theming system for color consistency
+- Tailwind configuration is in `tailwind.config.js`
+
+### React Components
+- Create reusable React components for commonly used UI elements
+- Keep components small and focused on a single responsibility
+- Use TypeScript for all React components
+- Implement proper prop validation
+- Do not add docblocks on classes and methods in React components
+- Use functional components with hooks instead of class components
+
+## Backend Development
+
+### Models
+- Follow Laravel's naming conventions for model names and relationships
+- Keep models clean and focused on representing database structure
+- Do not add docblocks on model classes and their methods
+- Define relationships and scopes within model classes
+
+### Laravel Resources
+- When returning data from Laravel to React through Inertia, **always create Resource classes**
+- Place resource classes in `app/Http/Resources` directory
+- Use resources to transform database models into a format suitable for the frontend
+- Keep resource transformations consistent across the application
+- Do not add docblocks on resource classes and their methods
+
+### Controllers
+- Use resource controllers where appropriate
+- Keep controllers thin by moving business logic to services
+- Use form requests for validation
+- Do not add docblocks on classes and methods in PHP/Laravel code
+- Follow RESTful conventions for route naming
+
+## Data Flow
+- Use Inertia.js for passing data from Laravel to React
+- Follow the pattern: Model → Resource → Controller → Inertia → React Component
+- Leverage Inertia's shared data for global state
+- Inertia configuration is in `app/Http/Middleware/HandleInertiaRequests.php`
+
+## Security Practices
+- Use Laravel's built-in CSRF protection
+- Validate all user inputs using form requests
+- Implement proper authorization using Laravel's policies
+- Follow best practices for handling user data and PII
+
+## Admin Panel
+- Use Filament for all admin panel functionality
+- Create custom resources for managing models in the admin panel
+- Use Filament's form components for data input
+- Implement proper authorization for admin panel access
+- Custom invoice templates are stored in `resources/views/admin/orders/`
+
+## Testing
+- Write unit tests for PHP services and resource transformations
+- Write feature tests for main application flows
+- Implement React component testing for critical UI elements
+- Tests are located in the `tests` directory
+
+This document will be updated as new standards are established for the project.
