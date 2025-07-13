@@ -43,7 +43,7 @@ function Navbar() {
     <>
       <div className="navbar bg-base-100">
         <div className="flex-1">
-          <Link href="/" className="btn btn-ghost text-xl">LaraStore</Link>
+          <Link href="/" className="btn btn-ghost text-xl">CumparaTot</Link>
         </div>
         <div className="flex-none gap-4">
           {searchFormComponent()}

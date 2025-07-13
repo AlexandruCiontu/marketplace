@@ -3,7 +3,7 @@ import React from 'react';
 function CurrencyFormatter(
   {
     amount,
-    currency = 'USD',
+    currency = 'EUR',
     locale
   }: {
     amount: number,

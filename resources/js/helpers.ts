@@ -27,7 +27,7 @@ export const hasAnyRole = (user: User, roles: string[]) => {
 export const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',  // This should ideally come from a config or context
+    currency: 'EUR',  // This should ideally come from a config or context
     minimumFractionDigits: 2
   }).format(price)
 }

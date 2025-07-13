@@ -19,16 +19,26 @@ class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
 
+    protected static function booted()
+    {
+        static::created(function ($product) {
+            $product->searchable();
+        });
+
+        static::updated(function ($product) {
+            $product->searchable();
+        });
+
+        static::deleted(function ($product) {
+            $product->unsearchable();
+        });
+    }
+
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')
-            ->width(100);
-
-        $this->addMediaConversion('small')
-            ->width(480);
-
-        $this->addMediaConversion('large')
-            ->width(1200);
+        $this->addMediaConversion('thumb')->width(100);
+        $this->addMediaConversion('small')->width(480);
+        $this->addMediaConversion('large')->width(1200);
     }
 
     public function scopeForVendor(Builder $query): Builder
@@ -80,12 +90,12 @@ class Product extends Model implements HasMedia
     public function options(): HasManyThrough
     {
         return $this->hasManyThrough(
-            VariationTypeOption::class, // Target model
-            VariationType::class, // Intermediate model
-            'product_id', // Foreign key on VariationType table
-            'variation_type_id', // Foreign key on Option table
-            'id', // Local key on Product table
-            'id'  // Local key on VariationType table
+            VariationTypeOption::class,
+            VariationType::class,
+            'product_id',
+            'variation_type_id',
+            'id',
+            'id'
         );
     }
 
@@ -94,7 +104,7 @@ class Product extends Model implements HasMedia
         return $this->hasMany(ProductVariation::class, 'product_id');
     }
 
-    public function getPriceForOptions($optionIds = [])
+    public function getPriceForOptions($optionIds = []): float
     {
         $optionIds = array_values($optionIds);
         sort($optionIds);
@@ -147,11 +157,7 @@ class Product extends Model implements HasMedia
     public function getPriceForFirstOptions(): float
     {
         $firstOptions = $this->getFirstOptionsMap();
-
-        if ($firstOptions) {
-            return $this->getPriceForOptions($firstOptions);
-        }
-        return $this->price;
+        return $firstOptions ? $this->getPriceForOptions($firstOptions) : $this->price;
     }
 
     public function getFirstImageUrl($collectionName = 'images', $conversion = 'small'): string
@@ -199,10 +205,6 @@ class Product extends Model implements HasMedia
             $quantity = $variation->quantity;
         }
 
-        if ($quantity === null) {
-            $quantity = $this->quantity;
-        }
-
         return $quantity === null ? PHP_INT_MAX : $quantity;
     }
 
@@ -214,7 +216,6 @@ class Product extends Model implements HasMedia
     public function toSearchableArray()
     {
         $this->load(['category', 'department', 'user']);
-        // Customize the array as needed
         return [
             'id' => (string)$this->id,
             'title' => $this->title,
