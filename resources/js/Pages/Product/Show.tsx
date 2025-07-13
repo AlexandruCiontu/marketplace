@@ -222,7 +222,10 @@ function Show({
             {renderAddToCartButton()}
 
             <b className="text-xl">About the Item</b>
-            <div className="wysiwyg-output" dangerouslySetInnerHTML={{__html: product.description}}/>
+            <div
+              className="wysiwyg-output overflow-x-hidden break-words"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
           </div>
         </div>
       </div>
