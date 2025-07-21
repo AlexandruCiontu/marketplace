@@ -51,6 +51,11 @@ class Product extends Model implements HasMedia
         return $query->where('products.status', ProductStatusEnum::Published);
     }
 
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('products.status', ProductStatusEnum::Pending);
+    }
+
     public function scopeSearchable(Builder $query): Builder
     {
         return $this->scopePublished($query);

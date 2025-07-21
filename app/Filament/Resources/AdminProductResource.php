@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Enums\ProductStatusEnum;
 use App\Enums\RolesEnum;
-use App\Enums\RolesEnum;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\Pages\EditProduct;
 use App\Filament\Resources\ProductResource\Pages\ProductImages;
@@ -29,7 +28,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
-class ProductResource extends Resource
+class AdminProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
@@ -39,12 +38,7 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        /** @var User $user */
-        $user = auth()->user();
-        if ($user->hasRole(RolesEnum::Admin)) {
-            return parent::getEloquentQuery();
-        }
-        return parent::getEloquentQuery()->forVendor();
+        return parent::getEloquentQuery();
     }
 
     public static function form(Form $form): Form
@@ -179,14 +173,6 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Action::make('submitForReview')
-                    ->label('Submit for review')
-                    ->action(function (Product $record) {
-                        $record->status = ProductStatusEnum::Pending;
-                        $record->save();
-                    })
-                    ->visible(fn(Product $record) => $record->status === ProductStatusEnum::Draft)
-                    ->requiresConfirmation(),
                 Action::make('approve')
                     ->label('Approve')
                     ->action(function (Product $record) {
@@ -199,7 +185,7 @@ class ProductResource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->visible(fn() => auth()->user()->hasRole(RolesEnum::Admin))
+                    ->visible(fn(Product $record) => $record->status === ProductStatusEnum::Pending)
                     ->requiresConfirmation(),
                 Action::make('unapprove')
                     ->label('Unapprove')
@@ -212,7 +198,7 @@ class ProductResource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->visible(fn() => auth()->user()->hasRole(RolesEnum::Admin))
+                    ->visible(fn(Product $record) => $record->status === ProductStatusEnum::Published)
                     ->requiresConfirmation()
             ])
             ->bulkActions([
@@ -255,6 +241,6 @@ class ProductResource extends Resource
     {
         $user = Filament::auth()->user();
 
-        return $user && $user->hasRole(RolesEnum::Vendor);
+        return $user && $user->hasRole(RolesEnum::Admin);
     }
 }
