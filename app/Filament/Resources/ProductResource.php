@@ -120,6 +120,30 @@ class ProductResource extends Resource
                         'default' => 2,
                         'lg' => 1
                     ]),
+                TextInput::make('weight')
+                    ->numeric()
+                    ->columnSpan([
+                        'default' => 2,
+                        'lg' => 1
+                    ]),
+                TextInput::make('length')
+                    ->numeric()
+                    ->columnSpan([
+                        'default' => 2,
+                        'lg' => 1
+                    ]),
+                TextInput::make('width')
+                    ->numeric()
+                    ->columnSpan([
+                        'default' => 2,
+                        'lg' => 1
+                    ]),
+                TextInput::make('height')
+                    ->numeric()
+                    ->columnSpan([
+                        'default' => 2,
+                        'lg' => 1
+                    ]),
                 Select::make('status')
                     ->options(ProductStatusEnum::labels())
                     ->default(ProductStatusEnum::Draft->value)

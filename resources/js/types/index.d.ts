@@ -43,6 +43,10 @@ export type Product = {
   slug: string;
   price: number;
   quantity: number;
+  weight: number;
+  length: number;
+  width: number;
+  height: number;
   image: string;
   images: Image[];
   short_description: string;

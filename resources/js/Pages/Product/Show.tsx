@@ -221,6 +221,13 @@ function Show({
             }
             {renderAddToCartButton()}
 
+            {product.weight &&
+              <div className="mb-2">Weight: {product.weight}</div>
+            }
+            {(product.length || product.width || product.height) &&
+              <div className="mb-4">Dimensions: {product.length} x {product.width} x {product.height}</div>
+            }
+
             <b className="text-xl">About the Item</b>
             <div
               className="wysiwyg-output overflow-x-hidden break-words"
