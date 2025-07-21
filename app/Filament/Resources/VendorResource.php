@@ -43,6 +43,15 @@ class VendorResource extends Resource
                         Forms\Components\Select::make('status')
                             ->options(VendorStatusEnum::labels())
                             ->required(),
+                        Forms\Components\Select::make('commission_rate')
+                            ->options([
+                                5 => '5%',
+                                10 => '10%',
+                                15 => '15%',
+                                20 => '20%',
+                                25 => '25%',
+                            ])
+                            ->required(),
                         Forms\Components\Textarea::make('store_address')
                             ->columnSpan(2),
                     ])
@@ -63,6 +72,9 @@ class VendorResource extends Resource
                     ->sortable(),
                 TextColumn::make('store_name')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('commission_rate')
+                    ->label('Commission %')
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
