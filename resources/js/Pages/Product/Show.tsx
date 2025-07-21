@@ -222,10 +222,10 @@ function Show({
             {renderAddToCartButton()}
 
             {product.weight &&
-              <div className="mb-2">Weight: {product.weight}</div>
+              <div className="mb-2">Weight: {product.weight} kg</div>
             }
             {(product.length || product.width || product.height) &&
-              <div className="mb-4">Dimensions: {product.length} x {product.width} x {product.height}</div>
+              <div className="mb-4">Dimensions: {product.length} x {product.width} x {product.height} cm</div>
             }
 
             <b className="text-xl">About the Item</b>

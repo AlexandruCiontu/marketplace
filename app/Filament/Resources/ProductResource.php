@@ -121,24 +121,28 @@ class ProductResource extends Resource
                         'lg' => 1
                     ]),
                 TextInput::make('weight')
+                    ->label('Weight (kg)')
                     ->numeric()
                     ->columnSpan([
                         'default' => 2,
                         'lg' => 1
                     ]),
                 TextInput::make('length')
+                    ->label('Length (cm)')
                     ->numeric()
                     ->columnSpan([
                         'default' => 2,
                         'lg' => 1
                     ]),
                 TextInput::make('width')
+                    ->label('Width (cm)')
                     ->numeric()
                     ->columnSpan([
                         'default' => 2,
                         'lg' => 1
                     ]),
                 TextInput::make('height')
+                    ->label('Height (cm)')
                     ->numeric()
                     ->columnSpan([
                         'default' => 2,
