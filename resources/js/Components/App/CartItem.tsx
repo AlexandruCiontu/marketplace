@@ -74,7 +74,7 @@ function CartItem({item}: { item: CartItemType }) {
             </button>
             <button className="btn btn-sm btn-ghost order-4 whitespace-nowrap">Save for Later</button>
             <div className="font-bold text-lg text-right order-2 sm:order-4 sm:ml-auto">
-              <CurrencyFormatter amount={item.price * quantity}/>
+              <CurrencyFormatter amount={item.gross_price * quantity}/>
             </div>
           </div>
         </div>

@@ -14,11 +14,15 @@ class ProductListResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $price = $this->getPriceForFirstOptions();
+        $vat = app(\App\Services\VatService::class)->calculate($price, $this->vat_rate_type);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'slug' => $this->slug,
-            'price' => $this->getPriceForFirstOptions(),
+            'price' => $price,
+            'gross_price' => $vat['gross'],
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
             'user_id' => $this->user->id,

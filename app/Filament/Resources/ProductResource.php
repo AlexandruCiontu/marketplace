@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\ProductStatusEnum;
+use App\Enums\VatRateTypeEnum;
 use App\Enums\RolesEnum;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\Pages\EditProduct;
@@ -110,6 +111,14 @@ class ProductResource extends Resource
                 TextInput::make('price')
                     ->required()
                     ->numeric()
+                    ->columnSpan([
+                        'default' => 2,
+                        'lg' => 1
+                    ]),
+                Select::make('vat_rate_type')
+                    ->options(VatRateTypeEnum::labels())
+                    ->required()
+                    ->default(VatRateTypeEnum::Standard->value)
                     ->columnSpan([
                         'default' => 2,
                         'lg' => 1
