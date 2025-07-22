@@ -80,11 +80,18 @@ class ProductResource extends JsonResource
                 ];
             }),
             'variations' => $this->variations->map(function ($variation) {
+                $calc = app(\App\Services\VatService::class)
+                    ->calculate(
+                        $variation->price !== null ? $variation->price : $this->price,
+                        $this->vat_rate_type
+                    );
+
                 return [
                     'id' => $variation->id,
                     'variation_type_option_ids' => $variation->variation_type_option_ids,
                     'quantity' => $variation->quantity,
                     'price' => $variation->price,
+                    'gross_price' => $calc['gross'],
                 ];
             }),
         ];

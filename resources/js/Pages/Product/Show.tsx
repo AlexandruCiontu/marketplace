@@ -45,13 +45,13 @@ function Show({
       const optionIds = variation.variation_type_option_ids.sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         return {
-          price: variation.price,
+          price: variation.gross_price ?? variation.price,
           quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
         }
       }
     }
     return {
-      price: product.price,
+      price: product.gross_price,
       quantity: product.quantity === null ? Number.MAX_VALUE : product.quantity,
     };
   }, [product, selectedOptions]);
