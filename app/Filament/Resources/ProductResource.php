@@ -111,6 +111,7 @@ class ProductResource extends Resource
                 TextInput::make('price')
                     ->required()
                     ->numeric()
+                    ->step('0.01')
                     ->columnSpan([
                         'default' => 2,
                         'lg' => 1

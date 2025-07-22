@@ -48,7 +48,8 @@ class ProductVariations extends EditRecord
                             ->numeric(),
                         TextInput::make('price')
                             ->label('Price')
-                            ->numeric(),
+                            ->numeric()
+                            ->step('0.01'),
                     ])
                     ->columns(2)
                     ->columnSpan(2)
