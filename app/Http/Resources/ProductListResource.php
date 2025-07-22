@@ -41,6 +41,7 @@ class ProductListResource extends JsonResource
             'net'                => $netFormatted,
             'vat'                => $vatFormatted,
             'gross'              => $grossFormatted,
+            'gross_price'       => $vatResult['gross'],
 
             'quantity'           => $this->quantity,
             'image'              => $this->getFirstImageUrl(),
