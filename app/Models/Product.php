@@ -230,12 +230,18 @@ class Product extends Model implements HasMedia
     public function toSearchableArray()
     {
         $this->load(['category', 'department', 'user']);
+        $price = (float)$this->getPriceForFirstOptions();
+        $gross = app(\App\Services\VatService::class)
+            ->calculate($price, $this->vat_rate_type)['gross'];
+
         return [
             'id' => (string)$this->id,
             'title' => $this->title,
             'description' => $this->description,
             'slug' => $this->slug,
-            'price' => (float)$this->getPriceForFirstOptions(),
+            'price' => $price,
+            'gross_price' => $gross,
+            'vat_rate_type' => $this->vat_rate_type,
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
             'user_id' => (string)$this->user->id,
