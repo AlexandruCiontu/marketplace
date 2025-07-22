@@ -4,11 +4,11 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\StripeController;
 use App\Http\Controllers\ShippingAddressController;
+use App\Http\Controllers\StripeController;
 use App\Http\Controllers\VendorController;
-use Illuminate\Support\Facades\Route;
 use App\Models\Order;
+use Illuminate\Support\Facades\Route;
 
 // Guest Routes
 Route::get('/', [ProductController::class, 'home'])->name('dashboard');
@@ -20,6 +20,13 @@ Route::get('/d/{department:slug}', [ProductController::class, 'byDepartment'])
 
 Route::get('/s/{vendor:store_name}', [VendorController::class, 'profile'])
     ->name('vendor.profile');
+
+Route::post('/country', function (\Illuminate\Http\Request $request) {
+    $request->validate(['country_code' => 'required|string']);
+    session(['country_code' => $request->input('country_code')]);
+
+    return back();
+})->name('country.select');
 
 Route::controller(CartController::class)->group(function () {
     Route::get('/cart', 'index')->name('cart.index');
@@ -56,7 +63,7 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/shipping-address/{address}', [ShippingAddressController::class, 'destroy'])
         ->name('shippingAddress.destroy');
-    
+
     // Orders routes for buyers
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
@@ -77,7 +84,7 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/stripe/connect', [StripeController::class, 'connect'])
             ->name('stripe.connect')
-            ->middleware(['role:' . \App\Enums\RolesEnum::Vendor->value]);
+            ->middleware(['role:'.\App\Enums\RolesEnum::Vendor->value]);
     });
 });
 
@@ -85,4 +92,4 @@ Route::middleware('auth')->group(function () {
 Route::get('/admin/orders/{order}/invoice', [\App\Http\Controllers\Admin\OrderController::class, 'invoice'])
     ->name('filament.admin.resources.orders.invoice');
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

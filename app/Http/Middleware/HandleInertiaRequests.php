@@ -37,6 +37,7 @@ class HandleInertiaRequests extends Middleware
         $cartService = app(CartService::class);
         $totalQuantity = $cartService->getTotalQuantity();
         $totalPrice = $cartService->getTotalPrice();
+        $totalGross = $cartService->getTotalGross();
 
         $cartItems = $cartService->getCartItems();
 
@@ -51,7 +52,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user() ? new AuthUserResource($request->user()) : null,
             ],
-            'ziggy' => fn() => [
+            'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
@@ -66,10 +67,11 @@ class HandleInertiaRequests extends Middleware
                 'time' => microtime(true),
             ],
             'totalPrice' => $totalPrice,
+            'totalGross' => $totalGross,
             'totalQuantity' => $totalQuantity,
             'miniCartItems' => $cartItems,
             'departments' => DepartmentResource::collection($departments)->collection->toArray(),
-            'keyword' => $request->query('keyword')
+            'keyword' => $request->query('keyword'),
         ];
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ProductResource extends JsonResource
 {
     public static $wrap = false;
+
     /**
      * Transform the resource into an array.
      *
@@ -22,6 +23,8 @@ class ProductResource extends JsonResource
             $images = $this->getImages();
         }
 
+        $calc = app(\App\Services\VatService::class)->calculate($this->price, $this->vat_rate_type);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -30,6 +33,7 @@ class ProductResource extends JsonResource
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'price' => $this->price,
+            'gross_price' => $calc['gross'],
             'quantity' => $this->quantity,
             'weight' => $this->weight,
             'length' => $this->length,
@@ -70,9 +74,9 @@ class ProductResource extends JsonResource
                                     'small' => $image->getUrl('small'),
                                     'large' => $image->getUrl('large'),
                                 ];
-                            })
+                            }),
                         ];
-                    })
+                    }),
                 ];
             }),
             'variations' => $this->variations->map(function ($variation) {
@@ -82,7 +86,7 @@ class ProductResource extends JsonResource
                     'quantity' => $variation->quantity,
                     'price' => $variation->price,
                 ];
-            })
+            }),
         ];
     }
 }

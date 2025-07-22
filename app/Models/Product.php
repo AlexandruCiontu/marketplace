@@ -19,6 +19,20 @@ class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
 
+    protected $fillable = [
+        'title',
+        'slug',
+        'description',
+        'department_id',
+        'category_id',
+        'price',
+        'status',
+        'quantity',
+        'created_by',
+        'updated_by',
+        'vat_rate_type',
+    ];
+
     protected static function booted()
     {
         static::created(function ($product) {
