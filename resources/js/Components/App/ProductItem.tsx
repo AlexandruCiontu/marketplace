@@ -22,6 +22,14 @@ export default function ProductItem({product}: { product: ProductListItem }) {
     })
   }
 
+  const displayPrice = Number(
+    product.gross_price ??
+    (product as any).gross ??
+    product.price ??
+    (product as any).gross_raw ??
+    0
+  );
+
   return (
     <div className="card bg-base-100 shadow">
       <Link href={route('product.show', product.slug)}>
@@ -46,7 +54,7 @@ export default function ProductItem({product}: { product: ProductListItem }) {
         <div className="card-actions items-center justify-between mt-3">
           <button onClick={addToCart} className="btn btn-primary">Add to Cart</button>
           <span className="text-2xl">
-            <CurrencyFormatter amount={product.gross_price}/>
+            <CurrencyFormatter amount={displayPrice}/>
           </span>
         </div>
       </div>
