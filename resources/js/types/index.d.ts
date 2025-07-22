@@ -4,6 +4,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  country_code: string;
+  phone: string;
   email_verified_at?: string;
   stripe_account_active: boolean;
   roles: string[];
@@ -12,6 +14,8 @@ export interface User {
     status_label: string;
     store_name: string;
     store_address: string;
+    country_code: string;
+    phone: string;
     cover_image: string;
   }
 }
@@ -192,6 +196,8 @@ export type Vendor = {
   id: number;
   store_name: string;
   store_address: string;
+  country_code: string;
+  phone: string;
 }
 
 export type Category = {

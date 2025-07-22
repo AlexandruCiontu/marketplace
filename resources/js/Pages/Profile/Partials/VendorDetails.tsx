@@ -6,6 +6,7 @@ import Modal from "@/Components/Core/Modal";
 import InputLabel from "@/Components/Core/InputLabel";
 import TextInput from "@/Components/Core/TextInput";
 import InputError from "@/Components/Core/InputError";
+import {countryCodes} from '@/data/countryCodes';
 
 export default function VendorDetails(
   {className = '',}: { className?: string; }
@@ -24,7 +25,9 @@ export default function VendorDetails(
     recentlySuccessful,
   } = useForm({
     store_name: user.vendor?.store_name || user.name.toLowerCase().replace(/\s+/g, '-'),
-    store_address: user.vendor?.store_address
+    store_address: user.vendor?.store_address,
+    country_code: user.vendor?.country_code || user.country_code,
+    phone: user.vendor?.phone || user.phone
   });
 
   const onStoreNameChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,6 +121,42 @@ export default function VendorDetails(
                   placeholder="Enter Your Store Address"></textarea>
 
                 <InputError className="mt-2" message={errors.store_address}/>
+              </div>
+
+              <div className="mb-4">
+                <InputLabel htmlFor="country_code" value="Country Code"/>
+
+                <select
+                  id="country_code"
+                  name="country_code"
+                  value={data.country_code}
+                  className="select select-bordered w-full mt-1"
+                  onChange={(e) => setData('country_code', e.target.value)}
+                  required>
+                  {countryCodes.map(c => (
+                    <option key={c.code} value={c.code}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </select>
+
+                <InputError className="mt-2" message={errors.country_code}/>
+              </div>
+
+              <div className="mb-4">
+                <InputLabel htmlFor="phone" value="Phone"/>
+
+                <TextInput
+                  id="phone"
+                  name="phone"
+                  value={data.phone}
+                  className="mt-1 block w-full"
+                  autoComplete="tel"
+                  onChange={(e) => setData('phone', e.target.value)}
+                  required
+                />
+
+                <InputError className="mt-2" message={errors.phone}/>
               </div>
               <div className="flex items-center gap-4">
                 <PrimaryButton disabled={processing}>Update</PrimaryButton>
