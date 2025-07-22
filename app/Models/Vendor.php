@@ -14,15 +14,6 @@ class Vendor extends Model
 
     protected $primaryKey = 'user_id';
 
-    protected $fillable = [
-        'user_id',
-        'status',
-        'store_name',
-        'store_address',
-        'cover_image',
-        'commission_rate',
-    ];
-
     public function scopeEligibleForPayout(Builder $query): Builder
     {
         return $query

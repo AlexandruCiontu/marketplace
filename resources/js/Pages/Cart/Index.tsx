@@ -14,7 +14,6 @@ function Index(
     cartItems,
     totalQuantity,
     totalPrice,
-    totalGross,
     shippingAddress,
     addresses
   }: PageProps<{
@@ -109,11 +108,11 @@ function Index(
               </div>
               <div className="flex justify-between">
                 <span>Tax</span>
-                <CurrencyFormatter amount={totalGross - totalPrice}/>
+                <span>N/A</span>
               </div>
               <div className="flex justify-between font-bold text-xl">
                 <span>Order Total</span>
-                <CurrencyFormatter amount={totalGross}/>
+                <CurrencyFormatter amount={totalPrice}/>
               </div>
               <form action={route('cart.checkout')} method="post">
                 <input type="hidden" name="_token" value={csrf_token}/>
