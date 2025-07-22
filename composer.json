@@ -6,7 +6,6 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "dannyvankooten/laravel-vat": "^1.0",
         "ibericode/vat": "^2.0",
         "filament/filament": "^3.2",
         "filament/spatie-laravel-media-library-plugin": "^3.3",
