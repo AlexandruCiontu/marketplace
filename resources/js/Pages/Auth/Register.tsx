@@ -12,7 +12,7 @@ export default function Register() {
   const {data, setData, post, processing, errors, reset} = useForm({
     name: '',
     email: '',
-    country_code: '+1',
+    country_code: '+40',
     phone: '',
     password: '',
     password_confirmation: '',
