@@ -21,11 +21,12 @@ class CartController extends Controller
      */
     public function index(CartService $cartService)
     {
-        list($user, $defaultAddress) = $this->userShippingAddress();
+        [$user, $defaultAddress] = $this->userShippingAddress();
+
         return Inertia::render('Cart/Index', [
             'cartItems' => $cartService->getCartItemsGrouped(),
             'addresses' => $user ? ShippingAddressResource::collection($user->shippingAddresses)->collection->toArray() : [],
-            'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null
+            'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null,
         ]);
     }
 
@@ -35,13 +36,13 @@ class CartController extends Controller
     public function store(Request $request, Product $product, CartService $cartService)
     {
         $request->mergeIfMissing([
-            'quantity' => 1
+            'quantity' => 1,
         ]);
 
         $data = $request->validate([
             'option_ids' => ['nullable', 'array'],
             'quantity' => [
-                'required', 'integer', 'min:1'
+                'required', 'integer', 'min:1',
             ],
         ]);
 
@@ -52,8 +53,9 @@ class CartController extends Controller
             $message = match ($productTotalQuantity - $cartQuantity) {
                 0 => 'The Product is out of stock',
                 1 => 'There is only 1 item left in stock',
-                default => 'There are only ' . ($productTotalQuantity - $cartQuantity) . ' items left in stock'
+                default => 'There are only '.($productTotalQuantity - $cartQuantity).' items left in stock'
             };
+
             return back()->with('errorToast', $message);
         }
 
@@ -112,7 +114,7 @@ class CartController extends Controller
 
         $allCartItems = $cartService->getCartItemsGrouped();
 
-        list($authUser, $defaultAddress) = $this->userShippingAddress();
+        [$authUser, $defaultAddress] = $this->userShippingAddress();
 
         DB::beginTransaction();
         try {
@@ -130,8 +132,8 @@ class CartController extends Controller
                     'stripe_session_id' => null,
                     'user_id' => $authUser->id,
                     'vendor_user_id' => $user['id'],
-                    'total_price' => $item['totalPrice'],
-                    'status' => OrderStatusEnum::Draft->value
+                    'total_price' => $item['totalGross'],
+                    'status' => OrderStatusEnum::Draft->value,
                 ]);
                 $tmpAddressData = $defaultAddress->toArray();
                 $tmpAddressData['addressable_id'] = $order->id;
@@ -160,7 +162,7 @@ class CartController extends Controller
                                 'name' => $cartItem['title'],
                                 'images' => [$cartItem['image']],
                             ],
-                            'unit_amount' => $cartItem['price'] * 100,
+                            'unit_amount' => $cartItem['gross_price'] * 100,
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
@@ -174,7 +176,7 @@ class CartController extends Controller
                 'customer_email' => $authUser->email,
                 'line_items' => $lineItems,
                 'mode' => 'payment',
-                'success_url' => route('stripe.success', []) . "?session_id={CHECKOUT_SESSION_ID}",
+                'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('stripe.failure', []),
             ]);
 
@@ -184,33 +186,35 @@ class CartController extends Controller
             }
 
             DB::commit();
+
             return redirect($session->url);
         } catch (\Exception $e) {
             Log::error($e);
             Db::rollBack();
+
             return back()->with('error', $e->getMessage() ?: 'Something went wrong');
         }
     }
 
     public function updateShippingAddress(Address $address)
     {
-        if (!$address->belongs(auth()->user())) {
-            abort(403, "Unauthorized");
+        if (! $address->belongs(auth()->user())) {
+            abort(403, 'Unauthorized');
         }
         // Update the shipping address in session
         session()->put('shipping_address_id', $address->id);
+
         return back();
     }
 
     /**
-     * @return array
      * @throws \Psr\Container\ContainerExceptionInterface
      * @throws \Psr\Container\NotFoundExceptionInterface
      */
     public function userShippingAddress(): array
     {
         $user = auth()->user();
-        if (!$user) {
+        if (! $user) {
             return [null, null];
         }
         // Get shipping address from session
@@ -220,6 +224,7 @@ class CartController extends Controller
         } else {
             $defaultAddress = $user->shippingAddress;
         }
-        return array($user, $defaultAddress);
+
+        return [$user, $defaultAddress];
     }
 }

@@ -46,7 +46,7 @@ export default function ProductItem({product}: { product: ProductListItem }) {
         <div className="card-actions items-center justify-between mt-3">
           <button onClick={addToCart} className="btn btn-primary">Add to Cart</button>
           <span className="text-2xl">
-            <CurrencyFormatter amount={product.price}/>
+            <CurrencyFormatter amount={product.gross_price}/>
           </span>
         </div>
       </div>
