@@ -24,8 +24,8 @@ export default function ProductItem({product}: { product: ProductListItem }) {
 
   const displayPrice = Number(
     product.gross_price ??
-    (product as any).gross ??
     product.price ??
+    (product as any).gross ??
     (product as any).gross_raw ??
     0
   );
