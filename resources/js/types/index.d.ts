@@ -158,6 +158,7 @@ export type PageProps<
   miniCartItems: CartItem[];
   departments: Department[];
   keyword: string;
+  countryCode: string;
 };
 
 
