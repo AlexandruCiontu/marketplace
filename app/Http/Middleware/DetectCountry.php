@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Stevebauman\Location\Facades\Location;
+use GeoIp2\Database\Reader;
 
 class DetectCountry
 {
@@ -12,8 +12,9 @@ class DetectCountry
     {
         if (! session()->has('country_code')) {
             try {
-                $position = Location::get($request->ip());
-                $code = $position?->countryCode ?: 'RO';
+                $reader = new Reader(storage_path('app/GeoLite2-Country.mmdb'));
+                $record = $reader->country($request->ip());
+                $code = $record->country->isoCode ?: 'RO';
             } catch (\Exception $e) {
                 $code = 'RO';
             }
