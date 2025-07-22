@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Dannyvankooten\LaravelVat\Facades\Rates;
+use DvK\Laravel\Vat\Facades\Rates;
 
 class VatService
 {
