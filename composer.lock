@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "29e2fb7e22c5f90b5c1e4c0e60cff91f",
+    "content-hash": "28ebb12450f30742ad66dcade2abaca8",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -2327,6 +2327,59 @@
                 }
             ],
             "time": "2023-12-03T19:50:20+00:00"
+        },
+        {
+            "name": "ibericode/vat",
+            "version": "2.0.10",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ibericode/vat.git",
+                "reference": "195359f7a50774cad829bd0e58b3feb84ec84f5a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ibericode/vat/zipball/195359f7a50774cad829bd0e58b3feb84ec84f5a",
+                "reference": "195359f7a50774cad829bd0e58b3feb84ec84f5a",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=8.2"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.54",
+                "phpunit/phpunit": "^11.1"
+            },
+            "suggest": {
+                "ext-soap": "Needed to support VIES VAT number validation",
+                "ibericode/vat-bundle": "Symfony bundle for integrating this package"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Ibericode\\Vat\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Danny van Kooten",
+                    "email": "hi@dvk.co"
+                }
+            ],
+            "description": "PHP library for dealing with EU VAT",
+            "keywords": [
+                "vat"
+            ],
+            "support": {
+                "issues": "https://github.com/ibericode/vat/issues",
+                "source": "https://github.com/ibericode/vat/tree/2.0.10"
+            },
+            "time": "2024-12-19T16:26:17+00:00"
         },
         {
             "name": "inertiajs/inertia-laravel",
