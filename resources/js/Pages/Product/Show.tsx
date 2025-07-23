@@ -5,12 +5,18 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
+import StarRating from "@/Components/Core/StarRating";
+import Modal from "@/Components/Core/Modal";
+import TextAreaInput from "@/Components/Core/TextAreaInput";
+import PrimaryButton from "@/Components/Core/PrimaryButton";
+import InputError from "@/Components/Core/InputError";
 
 function Show({
-                appName, product, variationOptions
+                appName, product, variationOptions, hasPurchased
 }: PageProps<{
   product: Product,
-  variationOptions: number[]
+  variationOptions: number[],
+  hasPurchased: boolean
 }>) {
 
   const form = useForm<{
@@ -24,6 +30,16 @@ function Show({
   })
 
   const {url} = usePage();
+
+  const reviewForm = useForm<{
+    rating: number;
+    comment: string;
+  }>({
+    rating: 5,
+    comment: ''
+  });
+
+  const [showReviews, setShowReviews] = useState(false);
 
   const [selectedOptions, setSelectedOptions] =
     useState<Record<number, VariationTypeOption>>([]);
@@ -112,6 +128,14 @@ function Show({
       onError: (err) => {
         console.log(err)
       }
+    })
+  }
+
+  const submitReview = (e: React.FormEvent) => {
+    e.preventDefault()
+    reviewForm.post(route('reviews.store', product.id), {
+      preserveScroll: true,
+      onSuccess: () => reviewForm.reset()
     })
   }
 
@@ -206,10 +230,16 @@ function Show({
             </p>
 
             <div>
-              <div className="text-3xl font-semibold">
-                <CurrencyFormatter amount={computedProduct.price}/>
-              </div>
+            <div className="text-3xl font-semibold">
+              <CurrencyFormatter amount={computedProduct.price}/>
             </div>
+            {product.average_rating !== null && (
+              <button onClick={() => setShowReviews(true)} className="mt-2 flex items-center">
+                <StarRating rating={product.average_rating} />
+                <span className="ml-2 text-sm">{product.average_rating.toFixed(1)} out of 5</span>
+              </button>
+            )}
+          </div>
 
             {/*<pre>{JSON.stringify(product.variationTypes, undefined, 2)}</pre>*/}
             {renderProductVariationTypes()}
@@ -236,6 +266,37 @@ function Show({
           </div>
         </div>
       </div>
+      <Modal show={showReviews} onClose={() => setShowReviews(false)}>
+        <div className="p-4">
+          <h3 className="text-xl mb-4">Reviews</h3>
+          {product.reviews.map(r => (
+            <div key={r.id} className="mb-4 border-b pb-2">
+              <StarRating rating={r.rating} />
+              <p className="text-sm text-gray-500">By {r.user.name}</p>
+              <p>{r.comment}</p>
+            </div>
+          ))}
+          {hasPurchased && (
+            <form onSubmit={submitReview} className="space-y-2">
+              <select
+                value={reviewForm.data.rating}
+                onChange={e => reviewForm.setData('rating', parseInt(e.target.value))}
+                className="select select-bordered w-full"
+              >
+                {[1,2,3,4,5].map(star => (
+                  <option key={star} value={star}>{star} stars</option>
+                ))}
+              </select>
+              <TextAreaInput
+                value={reviewForm.data.comment}
+                onChange={e => reviewForm.setData('comment', e.target.value)}
+                className="w-full" placeholder="Write your comment..."/>
+              <InputError message={reviewForm.errors.comment} />
+              <PrimaryButton type="submit">Submit Review</PrimaryButton>
+            </form>
+          )}
+        </div>
+      </Modal>
     </AuthenticatedLayout>
   );
 }

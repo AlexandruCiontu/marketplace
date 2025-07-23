@@ -40,6 +40,16 @@ export type VariationType = {
   type: 'Select' | 'Radio' | 'Image';
   options: VariationTypeOption[]
 }
+export type Review = {
+  id: number;
+  rating: number;
+  comment: string;
+  user: {
+    id: number;
+    name: string;
+  };
+};
+
 
 export type Product = {
   id: number;
@@ -76,6 +86,8 @@ export type Product = {
     price: number;
   gross_price: number;
   }>
+  average_rating: number | null;
+  reviews: Review[];
 }
 
 export type ProductListItem = {
