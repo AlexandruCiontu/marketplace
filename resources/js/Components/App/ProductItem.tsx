@@ -35,7 +35,7 @@ export default function ProductItem({ product }: { product: ProductListItem }) {
       <Link href={route("product.show", product.slug)}>
         <figure>
           <img
-            src={product.image}
+            src={product.image ?? '/default-image.jpg'}
             alt={product.title}
             className="w-full h-48 aspect-square object-contain"
           />

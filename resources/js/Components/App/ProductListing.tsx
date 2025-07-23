@@ -11,6 +11,12 @@ function ProductListing({products}: { products: PaginationProps<ProductListItem>
           No products found
         </div>
       )}
+
+      {products.data.length > 0 && (
+        <div className="mb-4 text-sm text-gray-500">
+          Showing {products.meta.from} – {products.meta.to} of {products.meta.total} products
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {products.data.map(product => (
           <ProductItem product={product} key={product.id}/>
@@ -23,14 +29,15 @@ function ProductListing({products}: { products: PaginationProps<ProductListItem>
           <div className={"hidden justify-center md:flex"}>
             <div className="join mt-8">
               {products.meta.links.map((link, ind) => (
-                <Link href={link.url}
+                <Link
+                      href={link.url ?? '#'}
                       key={ind}
                       preserveScroll
                       preserveState
                       className={[
                         `join-item btn`,
                         (link.active ? 'btn-primary' : ''),
-                        (!link.url ? 'btn-disabled' : '')
+                        (!link.url ? 'btn-disabled pointer-events-none' : '')
                       ]
                         .join(' ')}
                       dangerouslySetInnerHTML={{__html: link.label}}></Link>
@@ -38,22 +45,22 @@ function ProductListing({products}: { products: PaginationProps<ProductListItem>
             </div>
           </div>
           <div className={"flex justify-between my-4 md:hidden"}>
-            <Link href={products.links.prev}
+            <Link href={products.links.prev ?? '#'}
                   preserveScroll
                   preserveState
                   className={[
                     `btn btn-primary`,
-                    (!products.links.prev ? 'btn-disabled' : '')
+                    (!products.links.prev ? 'btn-disabled pointer-events-none' : '')
                   ]
                     .join(' ')}>
               Previous
             </Link>
-            <Link href={products.links.next}
+            <Link href={products.links.next ?? '#'}
                   preserveScroll
                   preserveState
                   className={[
                     `btn btn-primary`,
-                    (!products.links.next ? 'btn-disabled' : '')
+                    (!products.links.next ? 'btn-disabled pointer-events-none' : '')
                   ]
                     .join(' ')}>
               Next
