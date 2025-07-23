@@ -87,6 +87,7 @@ export type Product = {
   gross_price: number;
   }>
   average_rating: number;
+
   reviews: Review[];
 }
 
