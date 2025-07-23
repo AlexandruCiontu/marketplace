@@ -4,6 +4,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  country_code: string;
+  phone: string;
   email_verified_at?: string;
   stripe_account_active: boolean;
   roles: string[];
@@ -12,6 +14,8 @@ export interface User {
     status_label: string;
     store_name: string;
     store_address: string;
+    country_code: string;
+    phone: string;
     cover_image: string;
   }
 }
@@ -36,6 +40,16 @@ export type VariationType = {
   type: 'Select' | 'Radio' | 'Image';
   options: VariationTypeOption[]
 }
+export type Review = {
+  id: number;
+  rating: number;
+  comment: string;
+  user: {
+    id: number;
+    name: string;
+  };
+};
+
 
 export type Product = {
   id: number;
@@ -50,6 +64,7 @@ export type Product = {
   width: number;
   height: number;
   image: string;
+  main_image_url: string;
   images: Image[];
   short_description: string;
   description: string;
@@ -73,6 +88,9 @@ export type Product = {
     price: number;
   gross_price: number;
   }>
+  average_rating: number;
+
+  reviews: Review[];
 }
 
 export type ProductListItem = {
@@ -156,6 +174,7 @@ export type PageProps<
   miniCartItems: CartItem[];
   departments: Department[];
   keyword: string;
+  countryCode: string;
 };
 
 
@@ -194,6 +213,8 @@ export type Vendor = {
   id: number;
   store_name: string;
   store_address: string;
+  country_code: string;
+  phone: string;
 }
 
 export type Category = {

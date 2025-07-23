@@ -30,6 +30,7 @@ class OrderResource extends JsonResource
             'id' => $this->id,
             'status' => $this->status,
             'total_price' => $this->total_price,
+            'gross_price' => $this->total_price,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'tracking_code' => $this->tracking_code,

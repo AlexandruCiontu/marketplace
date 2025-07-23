@@ -1,16 +1,23 @@
-import {PageProps, Product, VariationTypeOption} from "@/types";
+import {PageProps, Product, VariationTypeOption, ProductListItem} from "@/types";
 import {Head, Link, router, useForm, usePage} from "@inertiajs/react";
 import {useEffect, useMemo, useState} from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
+import StarRating from "@/Components/Core/StarRating";
+import Modal from "@/Components/Core/Modal";
+import TextAreaInput from "@/Components/Core/TextAreaInput";
+import PrimaryButton from "@/Components/Core/PrimaryButton";
+import InputError from "@/Components/Core/InputError";
 
 function Show({
-                appName, product, variationOptions
+                appName, product, variationOptions, hasPurchased, relatedProducts
 }: PageProps<{
   product: Product,
-  variationOptions: number[]
+  variationOptions: number[],
+  hasPurchased: boolean,
+  relatedProducts: ProductListItem[]
 }>) {
 
   const form = useForm<{
@@ -24,6 +31,16 @@ function Show({
   })
 
   const {url} = usePage();
+
+  const reviewForm = useForm<{
+    rating: number;
+    comment: string;
+  }>({
+    rating: 5,
+    comment: ''
+  });
+
+  const [showReviews, setShowReviews] = useState(false);
 
   const [selectedOptions, setSelectedOptions] =
     useState<Record<number, VariationTypeOption>>([]);
@@ -47,7 +64,8 @@ function Show({
       const optionIds = variation.variation_type_option_ids.sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         return {
-          price: variation.price * multiplier,
+price: variation.price * multiplier,
+
           quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
         }
       }
@@ -114,6 +132,14 @@ function Show({
       onError: (err) => {
         console.log(err)
       }
+    })
+  }
+
+  const submitReview = (e: React.FormEvent) => {
+    e.preventDefault()
+    reviewForm.post(route('reviews.store', product.id), {
+      preserveScroll: true,
+      onSuccess: () => reviewForm.reset()
     })
   }
 
@@ -208,10 +234,15 @@ function Show({
             </p>
 
             <div>
-              <div className="text-3xl font-semibold">
-                <CurrencyFormatter amount={computedProduct.price}/>
-              </div>
+            <div className="text-3xl font-semibold">
+              <CurrencyFormatter amount={computedProduct.price}/>
             </div>
+
+            <button onClick={() => setShowReviews(true)} className="mt-2 flex items-center">
+              <StarRating rating={product.average_rating} />
+            </button>
+
+          </div>
 
             {/*<pre>{JSON.stringify(product.variationTypes, undefined, 2)}</pre>*/}
             {renderProductVariationTypes()}
@@ -238,6 +269,58 @@ function Show({
           </div>
         </div>
       </div>
+      {relatedProducts.length > 0 && (
+        <div className="container mx-auto px-8 mt-12">
+          <h2 className="text-xl font-semibold mb-4">Îți mai recomandăm și:</h2>
+          <div className="flex gap-4 overflow-x-auto">
+            {relatedProducts.map(rp => (
+              <div key={rp.id} className="min-w-[200px] bg-white shadow rounded p-4">
+                <img src={rp.image} alt={rp.title} className="w-full h-40 object-cover rounded" />
+                <div className="mt-2">
+                  <h3 className="text-sm font-medium">{rp.title}</h3>
+                  <p className="text-purple-600 font-semibold mt-1">
+                    <CurrencyFormatter amount={rp.gross_price ?? rp.price} />
+                  </p>
+                  <Link href={`/product/${rp.slug}`} className="text-sm text-blue-500 mt-2 inline-block">
+                    Vezi produsul
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <Modal show={showReviews} onClose={() => setShowReviews(false)}>
+        <div className="p-4">
+          <h3 className="text-xl mb-4">Reviews</h3>
+          {product.reviews.map(r => (
+            <div key={r.id} className="mb-4 border-b pb-2">
+              <StarRating rating={r.rating} />
+              <p className="text-sm text-gray-500">By {r.user.name}</p>
+              <p>{r.comment}</p>
+            </div>
+          ))}
+          {hasPurchased && (
+            <form onSubmit={submitReview} className="space-y-2">
+              <select
+                value={reviewForm.data.rating}
+                onChange={e => reviewForm.setData('rating', parseInt(e.target.value))}
+                className="select select-bordered w-full"
+              >
+                {[1,2,3,4,5].map(star => (
+                  <option key={star} value={star}>{star} stars</option>
+                ))}
+              </select>
+              <TextAreaInput
+                value={reviewForm.data.comment}
+                onChange={e => reviewForm.setData('comment', e.target.value)}
+                className="w-full" placeholder="Write your comment..."/>
+              <InputError message={reviewForm.errors.comment} />
+              <PrimaryButton type="submit">Submit Review</PrimaryButton>
+            </form>
+          )}
+        </div>
+      </Modal>
     </AuthenticatedLayout>
   );
 }

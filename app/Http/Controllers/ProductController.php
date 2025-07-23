@@ -6,6 +6,7 @@ use App\Http\Resources\DepartmentResource;
 use App\Http\Resources\ProductListResource;
 use App\Http\Resources\ProductResource;
 use App\Models\Department;
+use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,15 +27,33 @@ class ProductController extends Controller
             ->paginate(24);
 
         return Inertia::render('Home', [
-            'products' => ProductListResource::collection($products)
+            'products' => ProductListResource::collection($products),
         ]);
     }
 
     public function show(Product $product)
     {
+        $product->load(['reviews.user']);
+
+        $hasPurchased = false;
+        if (auth()->check()) {
+            $hasPurchased = Order::where('user_id', auth()->id())
+                ->whereHas('orderItems', fn ($q) => $q->where('product_id', $product->id))
+                ->exists();
+        }
+
+        $relatedProducts = Product::query()
+            ->forWebsite()
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->take(10)
+            ->get();
+
         return Inertia::render('Product/Show', [
             'product' => new ProductResource($product),
-            'variationOptions' => request('options', [])
+            'variationOptions' => request('options', []),
+            'hasPurchased' => $hasPurchased,
+            'relatedProducts' => ProductListResource::collection($relatedProducts),
         ]);
     }
 

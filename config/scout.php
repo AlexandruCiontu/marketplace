@@ -213,6 +213,10 @@ return [
                             'facet' => true,
                         ],
                         [
+                            'name' => 'gross_price',
+                            'type' => 'float',
+                        ],
+                        [
                             'name' => 'vat_rate_type',
                             'type' => 'string',
                         ],

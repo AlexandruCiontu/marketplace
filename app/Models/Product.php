@@ -4,10 +4,10 @@ namespace App\Models;
 
 use App\Enums\ProductStatusEnum;
 use App\Enums\VendorStatusEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
@@ -118,6 +118,16 @@ class Product extends Model implements HasMedia
         return $this->hasMany(ProductVariation::class, 'product_id');
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function averageRating()
+    {
+        return $this->reviews()->avg('rating');
+    }
+
     public function getPriceForOptions($optionIds = []): float
     {
         $optionIds = array_values($optionIds);
@@ -171,6 +181,7 @@ class Product extends Model implements HasMedia
     public function getPriceForFirstOptions(): float
     {
         $firstOptions = $this->getFirstOptionsMap();
+
         return $firstOptions ? $this->getPriceForOptions($firstOptions) : $this->price;
     }
 
@@ -184,6 +195,7 @@ class Product extends Model implements HasMedia
                 }
             }
         }
+
         return $this->getFirstMediaUrl($collectionName, $conversion);
     }
 
@@ -198,13 +210,14 @@ class Product extends Model implements HasMedia
                 }
             }
         }
+
         return $this->getMedia('images');
     }
 
     public function getFirstOptionsMap(): array
     {
         return $this->variationTypes
-            ->mapWithKeys(fn($type) => [$type->id => $type->options[0]?->id])
+            ->mapWithKeys(fn ($type) => [$type->id => $type->options[0]?->id])
             ->toArray();
     }
 
@@ -212,7 +225,7 @@ class Product extends Model implements HasMedia
     {
         $optionIds = $optionIds ? array_values($optionIds) : [];
         sort($optionIds);
-        $variation = $this->variations->first(fn($variation) => $variation->variation_type_option_ids == $optionIds);
+        $variation = $this->variations->first(fn ($variation) => $variation->variation_type_option_ids == $optionIds);
 
         $quantity = $this->quantity;
         if ($variation) {
@@ -231,22 +244,30 @@ class Product extends Model implements HasMedia
     {
         $this->load(['category', 'department', 'user']);
 
+        $netPrice = (float) $this->getPriceForFirstOptions();
+        $grossPrice = app(\App\Services\VatService::class)
+            ->calculate($netPrice, $this->vat_rate_type)['gross'];
+
         return [
-            'id' => (string)$this->id,
+            'id' => (string) $this->id,
             'title' => $this->title,
             'description' => $this->description,
             'slug' => $this->slug,
-            'price' => (float)$this->getPriceForFirstOptions(),
+
+            'price' => (float) $grossPrice,
+            'gross_price' => (float) $grossPrice,
+            'net_price' => (float) $netPrice,
+
             'vat_rate_type' => $this->vat_rate_type,
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
-            'user_id' => (string)$this->user->id,
+            'user_id' => (string) $this->user->id,
             'user_name' => $this->user->name,
             'user_store_name' => $this->user->vendor->store_name,
-            'department_id' => (string)$this->department->id,
+            'department_id' => (string) $this->department->id,
             'department_name' => $this->department->name,
             'department_slug' => $this->department->slug,
-            'category_id' => (string)($this->category ? $this->category->id : ''),
+            'category_id' => (string) ($this->category ? $this->category->id : ''),
             'category_name' => $this->category ? $this->category->name : '',
             'category_slug' => $this->category ? $this->category->slug : '',
             'created_at' => $this->created_at->timestamp,

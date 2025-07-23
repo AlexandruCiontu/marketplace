@@ -19,6 +19,8 @@ class Vendor extends Model
         'status',
         'store_name',
         'store_address',
+        'country_code',
+        'phone',
         'cover_image',
         'commission_rate',
     ];
