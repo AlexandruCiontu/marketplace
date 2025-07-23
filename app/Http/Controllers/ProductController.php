@@ -42,10 +42,18 @@ class ProductController extends Controller
                 ->exists();
         }
 
+        $relatedProducts = Product::query()
+            ->forWebsite()
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->take(10)
+            ->get();
+
         return Inertia::render('Product/Show', [
             'product' => new ProductResource($product),
             'variationOptions' => request('options', []),
             'hasPurchased' => $hasPurchased,
+            'relatedProducts' => ProductListResource::collection($relatedProducts),
         ]);
     }
 

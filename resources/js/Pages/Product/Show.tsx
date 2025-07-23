@@ -1,4 +1,4 @@
-import {PageProps, Product, VariationTypeOption} from "@/types";
+import {PageProps, Product, VariationTypeOption, ProductListItem} from "@/types";
 import {Head, Link, router, useForm, usePage} from "@inertiajs/react";
 import {useEffect, useMemo, useState} from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -12,11 +12,12 @@ import PrimaryButton from "@/Components/Core/PrimaryButton";
 import InputError from "@/Components/Core/InputError";
 
 function Show({
-                appName, product, variationOptions, hasPurchased
+                appName, product, variationOptions, hasPurchased, relatedProducts
 }: PageProps<{
   product: Product,
   variationOptions: number[],
-  hasPurchased: boolean
+  hasPurchased: boolean,
+  relatedProducts: ProductListItem[]
 }>) {
 
   const form = useForm<{
@@ -265,6 +266,27 @@ function Show({
           </div>
         </div>
       </div>
+      {relatedProducts.length > 0 && (
+        <div className="container mx-auto px-8 mt-12">
+          <h2 className="text-xl font-semibold mb-4">Îți mai recomandăm și:</h2>
+          <div className="flex gap-4 overflow-x-auto">
+            {relatedProducts.map(rp => (
+              <div key={rp.id} className="min-w-[200px] bg-white shadow rounded p-4">
+                <img src={rp.image} alt={rp.title} className="w-full h-40 object-cover rounded" />
+                <div className="mt-2">
+                  <h3 className="text-sm font-medium">{rp.title}</h3>
+                  <p className="text-purple-600 font-semibold mt-1">
+                    <CurrencyFormatter amount={rp.gross_price ?? rp.price} />
+                  </p>
+                  <Link href={`/product/${rp.slug}`} className="text-sm text-blue-500 mt-2 inline-block">
+                    Vezi produsul
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <Modal show={showReviews} onClose={() => setShowReviews(false)}>
         <div className="p-4">
           <h3 className="text-xl mb-4">Reviews</h3>
