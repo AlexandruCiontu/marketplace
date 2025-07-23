@@ -233,12 +233,11 @@ function Show({
             <div className="text-3xl font-semibold">
               <CurrencyFormatter amount={computedProduct.price}/>
             </div>
-            {product.average_rating !== null && (
-              <button onClick={() => setShowReviews(true)} className="mt-2 flex items-center">
-                <StarRating rating={product.average_rating} />
-                <span className="ml-2 text-sm">{product.average_rating.toFixed(1)} out of 5</span>
-              </button>
-            )}
+
+            <button onClick={() => setShowReviews(true)} className="mt-2 flex items-center">
+              <StarRating rating={product.average_rating} />
+            </button>
+
           </div>
 
             {/*<pre>{JSON.stringify(product.variationTypes, undefined, 2)}</pre>*/}
