@@ -58,11 +58,14 @@ function Show({
       .map(op => op.id)
       .sort();
 
+    const multiplier = product.price > 0 ? product.gross_price / product.price : 1;
+
     for (let variation of product.variations) {
       const optionIds = variation.variation_type_option_ids.sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         return {
-          price: variation.gross_price ?? variation.price,
+price: variation.price * multiplier,
+
           quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
         }
       }
