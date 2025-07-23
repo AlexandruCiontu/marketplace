@@ -63,6 +63,7 @@ export type Product = {
   width: number;
   height: number;
   image: string;
+  main_image_url: string;
   images: Image[];
   short_description: string;
   description: string;

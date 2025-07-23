@@ -41,6 +41,7 @@ class ProductResource extends JsonResource
 
             // Imagine principală
             'image'             => $this->getFirstMediaUrl('images'),
+            'main_image_url'    => $this->getFirstMediaUrl('images'),
 
             // Galerie imagini
             'images' => $images->map(function ($image) {
