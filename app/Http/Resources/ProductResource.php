@@ -94,7 +94,7 @@ class ProductResource extends JsonResource
                     'gross_price' => $calc['gross'],
                 ];
             }),
-            'average_rating' => $this->averageRating(),
+            'average_rating' => round($this->averageRating() ?? 0, 1),
             'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
         ];
     }
