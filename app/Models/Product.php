@@ -235,27 +235,33 @@ class Product extends Model implements HasMedia
         $grossPrice = app(\App\Services\VatService::class)
             ->calculate($netPrice, $this->vat_rate_type)['gross'];
 
-        return [
-            'id' => (string)$this->id,
-            'title' => $this->title,
-            'description' => $this->description,
-            'slug' => $this->slug,
-            'price' => $grossPrice,
-            'gross_price' => $grossPrice,
-            'net_price' => $netPrice,
-            'vat_rate_type' => $this->vat_rate_type,
-            'quantity' => $this->quantity,
-            'image' => $this->getFirstImageUrl(),
-            'user_id' => (string)$this->user->id,
-            'user_name' => $this->user->name,
-            'user_store_name' => $this->user->vendor->store_name,
-            'department_id' => (string)$this->department->id,
-            'department_name' => $this->department->name,
-            'department_slug' => $this->department->slug,
-            'category_id' => (string)($this->category ? $this->category->id : ''),
-            'category_name' => $this->category ? $this->category->name : '',
-            'category_slug' => $this->category ? $this->category->slug : '',
-            'created_at' => $this->created_at->timestamp,
+        $data = [
+            'id' => (string) $this->id,
+            'title' => (string) $this->title,
+            'description' => (string) strip_tags($this->description ?? ''),
+            'slug' => (string) $this->slug,
+            'price' => (float) $grossPrice,
+            'gross_price' => (float) $grossPrice,
+            'net_price' => (float) $netPrice,
+            'vat_rate_type' => (string) $this->vat_rate_type,
+            'quantity' => (int) ($this->quantity ?? 0),
+            'image' => (string) $this->getFirstImageUrl(),
+
+            'user_id' => (string) optional($this->user)->id ?? '',
+            'user_name' => (string) optional($this->user)->name ?? '',
+            'user_store_name' => (string) optional($this->user->vendor)->store_name ?? '',
+
+            'department_id' => (string) optional($this->department)->id ?? '',
+            'department_name' => (string) optional($this->department)->name ?? '',
+            'department_slug' => (string) optional($this->department)->slug ?? '',
+
+            'category_id' => (string) optional($this->category)->id ?? '',
+            'category_name' => (string) optional($this->category)->name ?? '',
+            'category_slug' => (string) optional($this->category)->slug ?? '',
+
+            'created_at' => (int) $this->created_at->timestamp,
         ];
+
+        return $data;
     }
 }
