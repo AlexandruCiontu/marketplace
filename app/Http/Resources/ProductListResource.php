@@ -16,45 +16,45 @@ class ProductListResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // 1) Get the net price you already compute
+        // 1. Calculăm prețul net de bază pentru produs
         $net = $this->getPriceForFirstOptions();
 
-        // 2) Run VAT calculation (rate, vat amount, gross)
-        $vatResult = app(VatService::class)
-            ->calculate($net, $this->vat_rate_type);
+        // 2. Calculăm TVA și prețul brut (gross)
+        $vatResult = app(VatService::class)->calculate($net, $this->vat_rate_type);
 
-        // 3) Format numbers as strings with two decimals
-        $netFormatted   = number_format($net,          2, '.', '');
-        $vatFormatted   = number_format($vatResult['vat'],   2, '.', '');
+        // 3. Formatare pentru frontend
+        $netFormatted   = number_format($net, 2, '.', '');
+        $vatFormatted   = number_format($vatResult['vat'], 2, '.', '');
         $grossFormatted = number_format($vatResult['gross'], 2, '.', '');
 
         return [
+            // Identificator și date de bază
             'id'                 => $this->id,
             'title'              => $this->title,
             'slug'               => $this->slug,
-            // raw values if you need them in JS
+
+            // Prețuri (brut + net + TVA)
             'net_raw'            => $net,
             'vat_raw'            => $vatResult['vat'],
             'gross_raw'          => $vatResult['gross'],
-
-            // nicely formatted strings for display
             'net'                => $netFormatted,
             'vat'                => $vatFormatted,
             'gross'              => $grossFormatted,
-            'gross_price'       => $vatResult['gross'],
+            'gross_price'        => $vatResult['gross'], // ✅ important pentru React
 
+            // Stoc și imagine
             'quantity'           => $this->quantity,
             'image'              => $this->getFirstImageUrl(),
 
-            // seller info
+            // Informații despre vânzător
             'user_id'            => $this->user->id,
             'user_name'          => $this->user->name,
-            'user_store_name'    => $this->user->vendor->store_name,
+            'user_store_name'    => optional($this->user->vendor)->store_name,
 
-            // department info
-            'department_id'      => $this->department->id,
-            'department_name'    => $this->department->name,
-            'department_slug'    => $this->department->slug,
+            // Informații despre departament
+            'department_id'      => optional($this->department)->id,
+            'department_name'    => optional($this->department)->name,
+            'department_slug'    => optional($this->department)->slug,
         ];
     }
 }
