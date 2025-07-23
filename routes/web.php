@@ -4,6 +4,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ShippingAddressController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\VendorController;
@@ -85,6 +86,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/stripe/connect', [StripeController::class, 'connect'])
             ->name('stripe.connect')
             ->middleware(['role:'.\App\Enums\RolesEnum::Vendor->value]);
+
+        Route::post('/product/{product}/reviews', [ReviewController::class, 'store'])
+            ->name('reviews.store');
     });
 });
 
