@@ -43,6 +43,7 @@ export type Product = {
   slug: string;
   price: number;
   gross_price: number;
+  vat_rate_type: string;
   quantity: number;
   weight: number;
   length: number;
@@ -80,6 +81,7 @@ export type ProductListItem = {
   slug: string;
   price: number;
   gross_price: number;
+  vat_rate_type: string;
   quantity: number;
   image: string;
   user_id: number;

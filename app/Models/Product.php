@@ -133,7 +133,7 @@ class Product extends Model implements HasMedia
         return $this->price;
     }
 
-    public function getImageForOptions(array $optionIds = null)
+    public function getImageForOptions(?array $optionIds = null)
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -151,7 +151,7 @@ class Product extends Model implements HasMedia
         return $this->getFirstMediaUrl('images', 'small');
     }
 
-    public function getImagesForOptions(array $optionIds = null)
+    public function getImagesForOptions(?array $optionIds = null)
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -230,12 +230,14 @@ class Product extends Model implements HasMedia
     public function toSearchableArray()
     {
         $this->load(['category', 'department', 'user']);
+
         return [
             'id' => (string)$this->id,
             'title' => $this->title,
             'description' => $this->description,
             'slug' => $this->slug,
             'price' => (float)$this->getPriceForFirstOptions(),
+            'vat_rate_type' => $this->vat_rate_type,
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
             'user_id' => (string)$this->user->id,

@@ -213,6 +213,10 @@ return [
                             'facet' => true,
                         ],
                         [
+                            'name' => 'vat_rate_type',
+                            'type' => 'string',
+                        ],
+                        [
                             'name' => 'created_at',
                             'type' => 'int64',
                         ],
