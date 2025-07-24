@@ -24,7 +24,9 @@ class VatService
      */
     public function calculate(float $netAmount, string $rateType, ?string $countryCode = null): array
     {
+
         // Fallback la sesiune și la configurare dacă nu primim cod de țară
+
         $countryCode = $countryCode
             ?: session('country_code')
             ?: config('vat.default_country_code');

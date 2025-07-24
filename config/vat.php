@@ -1,6 +1,7 @@
 <?php
 
 return [
+
     /*
     |--------------------------------------------------------------------------
     | Default VAT Country Code
@@ -13,4 +14,5 @@ return [
     */
 
     'default_country_code' => env('VAT_DEFAULT_COUNTRY', 'RO'),
+
 ];

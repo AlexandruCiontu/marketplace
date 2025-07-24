@@ -138,11 +138,15 @@ php artisan migrate --seed
 composer run dev
 ```
 
+
 After deploying to production, reindex the products so the search index
 includes the latest VAT prices:
 
 ```bash
 php artisan scout:import "App\\Models\\Product"
+
+
+
 ```
 
 ## License
