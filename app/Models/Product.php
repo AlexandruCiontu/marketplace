@@ -245,8 +245,15 @@ class Product extends Model implements HasMedia
         $this->load(['category', 'department', 'user']);
 
         $netPrice = (float) $this->getPriceForFirstOptions();
+
+        // When indexing products we don't have access to the session. In that
+        // case the VAT service would return the net price because no country
+        // code is provided. To ensure prices in the search index always include
+        // VAT, fall back to Romania (RO) when no country is detected.
+        $countryCode = session('country_code') ?: 'RO';
+
         $grossPrice = app(\App\Services\VatService::class)
-            ->calculate($netPrice, $this->vat_rate_type, session('country_code'))['gross'];
+            ->calculate($netPrice, $this->vat_rate_type, $countryCode)['gross'];
 
         return [
             'id' => (string) $this->id,
