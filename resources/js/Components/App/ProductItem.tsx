@@ -1,9 +1,8 @@
 import { ProductListItem } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
-import { useEffect } from "react";
 
-export default function ProductItem({ product }: { product: ProductListItem }) {
+export default function ProductItem({ product, countryCode }: { product: ProductListItem; countryCode: string }) {
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -12,9 +11,6 @@ export default function ProductItem({ product }: { product: ProductListItem }) {
     quantity: 1,
   });
 
-  useEffect(() => {
-    console.log("PRODUCT DEBUG:", product);
-  }, [product]);
 
   const addToCart = () => {
     form.post(route("cart.store", product.id), {

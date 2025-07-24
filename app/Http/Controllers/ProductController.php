@@ -28,6 +28,7 @@ class ProductController extends Controller
 
         return Inertia::render('Home', [
             'products' => ProductListResource::collection($products),
+            'countryCode' => session('country_code'),
         ]);
     }
 
