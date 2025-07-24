@@ -40,7 +40,7 @@ class StripeController extends Controller
 
     public function failure()
     {
-
+        return Inertia::render('Stripe/Failure');
     }
 
     public function webhook(Request $request)
