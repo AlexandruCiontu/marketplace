@@ -132,10 +132,17 @@ APP_URL=http://localhost:8000
 php artisan migrate --seed
 ```
 
-#### 8. Start the application 
+#### 8. Start the application
 
 ```bash
 composer run dev
+```
+
+#### 9. Reindex products
+Run the following to refresh the search index after deployment:
+
+```bash
+php artisan scout:import "App\Models\Product"
 ```
 
 ## License
