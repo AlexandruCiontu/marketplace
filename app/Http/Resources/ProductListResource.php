@@ -40,8 +40,6 @@ class ProductListResource extends JsonResource
             'net'                => $netFormatted,
             'vat'                => $vatFormatted,
             'gross'              => $grossFormatted,
-
-            'vat_rate_type'      => $this->vat_rate_type,
             'gross_price'        => $vatResult['gross'], // ✅ important pentru React
 
             // Stoc și imagine

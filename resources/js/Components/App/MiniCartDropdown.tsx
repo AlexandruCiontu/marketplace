@@ -5,7 +5,7 @@ import {productRoute} from "@/helpers";
 
 function MiniCartDropdown() {
 
-  const {totalQuantity, totalGross, miniCartItems} = usePage().props
+  const {totalQuantity, totalPrice, miniCartItems} = usePage().props
 
   return (
     <details className="dropdown dropdown-end static sm:relative ">
@@ -60,7 +60,7 @@ function MiniCartDropdown() {
                     </div>
                     <div>
                       <CurrencyFormatter
-                        amount={item.quantity * item.gross_price}/>
+                        amount={item.quantity * item.price}/>
                     </div>
                   </div>
                 </div>
@@ -69,7 +69,7 @@ function MiniCartDropdown() {
           </div>
 
           <span className="text-lg">
-            Subtotal: <CurrencyFormatter amount={totalGross}/>
+            Subtotal: <CurrencyFormatter amount={totalPrice}/>
           </span>
           <div className="card-actions">
             <Link href={route('cart.index')}
