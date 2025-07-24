@@ -102,6 +102,7 @@ class StripeController extends Controller
 
                 Mail::to($orders[0]->user)->send(new CheckoutCompleted($orders));
 
+                break;
 
             case 'checkout.session.completed':
                 $session = $event->data->object;
@@ -152,6 +153,8 @@ class StripeController extends Controller
                     ->whereIn('product_id', $productsToDeletedFromCart)
                     ->where('saved_for_later', false)
                     ->delete();
+
+                break;
 
             default:
                 echo 'Received unknown event type ' . $event->type;
