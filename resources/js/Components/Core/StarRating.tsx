@@ -5,9 +5,10 @@ interface StarRatingProps {
   rating?: number | null;
 }
 
-export default function StarRating({ rating = 0 }: StarRatingProps) {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating - fullStars >= 0.5;
+export default function StarRating({ rating }: StarRatingProps) {
+  const value = rating ?? 0;
+  const fullStars = Math.floor(value);
+  const hasHalfStar = value - fullStars >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
   return (
@@ -34,7 +35,7 @@ export default function StarRating({ rating = 0 }: StarRatingProps) {
       ))}
 
       {/* Rating value */}
-      <span className="ml-2 text-sm text-gray-600">{rating.toFixed(1)} out of 5</span>
+      <span className="ml-2 text-sm text-gray-600">{value.toFixed(1)} out of 5</span>
     </div>
   );
 }
