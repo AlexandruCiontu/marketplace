@@ -31,7 +31,9 @@ class ProductResource extends JsonResource
             'meta_description' => $this->meta_description,
             'price' => $this->price,
             'quantity' => $this->quantity,
-            'image' => $this->getFirstMediaUrl('images'),
+            // Use the "small" conversion for the main image to keep file sizes
+            // small when displaying the product.
+            'image' => $this->getFirstImageUrl(),
             'images' => $images->map(function ($image) {
                 return [
                     'id' => $image->id,
