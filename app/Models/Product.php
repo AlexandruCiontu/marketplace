@@ -246,7 +246,7 @@ class Product extends Model implements HasMedia
 
         $netPrice = (float) $this->getPriceForFirstOptions();
         $grossPrice = app(\App\Services\VatService::class)
-            ->calculate($netPrice, $this->vat_rate_type)['gross'];
+            ->calculate($netPrice, $this->vat_rate_type, session('country_code'))['gross'];
 
         return [
             'id' => (string) $this->id,

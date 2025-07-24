@@ -1,9 +1,10 @@
 import React from 'react';
 import ProductItem from "@/Components/App/ProductItem";
-import {Link} from "@inertiajs/react";
-import {PaginationProps, ProductListItem} from "@/types";
+import {Link, usePage} from "@inertiajs/react";
+import {PaginationProps, ProductListItem, PageProps} from "@/types";
 
 function ProductListing({products}: { products: PaginationProps<ProductListItem> }) {
+  const {countryCode} = usePage<PageProps>().props;
   return (
     <div className="container py-8 px-4 mx-auto">
       {products.data.length === 0 && (
@@ -13,7 +14,7 @@ function ProductListing({products}: { products: PaginationProps<ProductListItem>
       )}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {products.data.map(product => (
-          <ProductItem product={product} key={product.id}/>
+          <ProductItem product={product} key={product.id} countryCode={countryCode}/>
         ))}
       </div>
       {/*<pre>{JSON.stringify(products, undefined, 2)}</pre>*/}
