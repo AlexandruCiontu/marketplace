@@ -138,11 +138,15 @@ php artisan migrate --seed
 composer run dev
 ```
 
-#### 9. Reindex products
-Run the following to refresh the search index after deployment:
+
+After deploying to production, reindex the products so the search index
+includes the latest VAT prices:
 
 ```bash
-php artisan scout:import "App\Models\Product"
+php artisan scout:import "App\\Models\\Product"
+
+
+
 ```
 
 ## License
