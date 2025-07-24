@@ -43,8 +43,6 @@ export type Product = {
   slug: string;
   price: number;
   gross_price: number;
-  gross_price: number;
-  gross_price: number;
   quantity: number;
   image: string;
   images: Image[];
@@ -77,8 +75,6 @@ export type ProductListItem = {
   title: string;
   slug: string;
   price: number;
-  gross_price: number;
-  gross_price: number;
   gross_price: number;
   quantity: number;
   image: string;

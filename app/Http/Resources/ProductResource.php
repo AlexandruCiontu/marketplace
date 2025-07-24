@@ -81,6 +81,8 @@ class ProductResource extends JsonResource
                     'variation_type_option_ids' => $variation->variation_type_option_ids,
                     'quantity' => $variation->quantity,
                     'price' => $variation->price,
+                    'gross_price' => app(\App\Services\VatService::class)
+                        ->calculate($variation->price, $this->vat_rate_type)['gross'],
                 ];
             }),
         ];

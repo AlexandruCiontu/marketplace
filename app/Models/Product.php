@@ -235,7 +235,10 @@ class Product extends Model implements HasMedia
             'title' => $this->title,
             'description' => $this->description,
             'slug' => $this->slug,
-            'price' => (float)$this->getPriceForFirstOptions(),
+            'price' => (float) $this->getPriceForFirstOptions(),
+            'gross_price' => app(\App\Services\VatService::class)
+                ->calculate((float) $this->getPriceForFirstOptions(), $this->vat_rate_type)['gross'],
+            'vat_rate_type' => $this->vat_rate_type,
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
             'user_id' => (string)$this->user->id,
