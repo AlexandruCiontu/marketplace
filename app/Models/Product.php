@@ -253,11 +253,9 @@ class Product extends Model implements HasMedia
             'title' => $this->title,
             'description' => $this->description,
             'slug' => $this->slug,
-
-            'price' => (float) $grossPrice,
-            'gross_price' => (float) $grossPrice,
-            'net_price' => (float) $netPrice,
-
+            'price' => $grossPrice,
+            'gross_price' => $grossPrice,
+            'net_price' => $netPrice,
             'vat_rate_type' => $this->vat_rate_type,
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
