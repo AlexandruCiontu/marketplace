@@ -1,4 +1,4 @@
-import {PageProps, Product, VariationTypeOption} from "@/types";
+import {PageProps, Product, VariationTypeOption, Media} from "@/types";
 import {Head, Link, router, useForm, usePage} from "@inertiajs/react";
 import {useEffect, useMemo, useState} from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -28,12 +28,12 @@ function Show({
   const [selectedOptions, setSelectedOptions] =
     useState<Record<number, VariationTypeOption>>([]);
 
-  const images = useMemo(() => {
+  const media = useMemo<Media[]>(() => {
     for (let typeId in selectedOptions) {
       const option = selectedOptions[typeId];
-      if (option.images.length > 0) return option.images;
+      if (option.images.length > 0) return [...option.images, ...product.videos];
     }
-    return product.images;
+    return [...product.images, ...product.videos];
   }, [product, selectedOptions]);
 
   const computedProduct = useMemo(() => {
@@ -124,7 +124,10 @@ function Show({
             <div className="flex gap-2 mb-4">
                 {type.options.map(option => (
                   <div onClick={() => chooseOption(type.id, option)} key={option.id}>
+
                     {option.images.length > 0 &&
+                    
+
                       <img src={option.images[0].thumb} alt="" className={'w-[64px] h-[64px] object-contain ' + (
                       selectedOptions[type.id]?.id === option.id ?
                         'outline outline-4 outline-primary' : ''
@@ -184,7 +187,7 @@ function Show({
 
         <meta property="og:title" content={product.title}/>
         <meta property="og:description" content={product.meta_description}/>
-        <meta property="og:image" content={images[0]?.small}/>
+        <meta property="og:image" content={media.find(m => 'small' in m)?.small}/>
         <meta property="og:url" content={route('product.show', product.slug)}/>
         <meta property="og:type" content="product"/>
         <meta property="og:site_name" content={appName}/>
@@ -193,7 +196,7 @@ function Show({
       <div className="container mx-auto p-8">
         <div className="grid gap-4 sm:gap-8 grid-cols-1 lg:grid-cols-12">
           <div className="col-span-12 md:col-span-7">
-            <Carousel images={images}/>
+            <Carousel media={media}/>
           </div>
           <div className="col-span-12 md:col-span-5">
             <h1 className="text-2xl ">{product.title}</h1>

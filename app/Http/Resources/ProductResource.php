@@ -21,6 +21,7 @@ class ProductResource extends JsonResource
         } else {
             $images = $this->getImages();
         }
+        $videos = $this->getVideos();
 
         return [
             'id' => $this->id,
@@ -40,6 +41,12 @@ class ProductResource extends JsonResource
                     'thumb' => $image->getUrl('thumb'),
                     'small' => $image->getUrl('small'),
                     'large' => $image->getUrl('large'),
+                ];
+            }),
+            'videos' => $videos->map(function ($video) {
+                return [
+                    'id' => $video->id,
+                    'url' => $video->getUrl(),
                 ];
             }),
             'user' => [
