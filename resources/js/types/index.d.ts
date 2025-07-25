@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   email_verified_at?: string;
+  avatar_url?: string;
   stripe_account_active: boolean;
   roles: string[];
   vendor: {

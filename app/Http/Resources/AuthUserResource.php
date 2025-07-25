@@ -26,14 +26,15 @@ class AuthUserResource extends JsonResource
                 return $permission->name;
             }),
             'roles' => $this->getRoleNames(),
-            'stripe_account_active' => (bool)$this->stripe_account_active,
-            'vendor' => !$this->vendor ? null : [
+            'avatar_url' => $this->avatar_url,
+            'stripe_account_active' => (bool) $this->stripe_account_active,
+            'vendor' => ! $this->vendor ? null : [
                 'status' => $this->vendor->status,
                 'status_label' => VendorStatusEnum::from($this->vendor->status)->label(),
                 'store_name' => $this->vendor->store_name,
                 'store_address' => $this->vendor->store_address,
                 'cover_image' => $this->vendor->cover_image,
-            ]
+            ],
         ];
     }
 }
