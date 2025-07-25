@@ -192,7 +192,12 @@ class Product extends Model implements HasMedia
     public function getFirstOptionsMap(): array
     {
         return $this->variationTypes
-            ->mapWithKeys(fn($type) => [$type->id => $type->options[0]?->id])
+            ->mapWithKeys(function ($type) {
+                // Use `first()` to avoid accessing a non-existent zero index
+                $firstOptionId = $type->options->first()?->id;
+
+                return [$type->id => $firstOptionId];
+            })
             ->toArray();
     }
 
