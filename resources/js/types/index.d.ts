@@ -21,7 +21,14 @@ export type Image = {
   thumb: string;
   small: string;
   large: string;
-}
+};
+
+export type Video = {
+  id: number;
+  url: string;
+};
+
+export type Media = Image | Video;
 
 export type VariationTypeOption = {
   id: number;
@@ -45,6 +52,7 @@ export type Product = {
   quantity: number;
   image: string;
   images: Image[];
+  videos: Video[];
   short_description: string;
   description: string;
   meta_title: string;
