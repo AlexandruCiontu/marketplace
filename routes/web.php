@@ -78,6 +78,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/stripe/connect', [StripeController::class, 'connect'])
             ->name('stripe.connect')
             ->middleware(['role:' . \App\Enums\RolesEnum::Vendor->value]);
+
+        Route::get('/vendor/details', [VendorController::class, 'details'])
+            ->name('vendor.details')
+            ->middleware(['role:' . \App\Enums\RolesEnum::Vendor->value]);
     });
 });
 

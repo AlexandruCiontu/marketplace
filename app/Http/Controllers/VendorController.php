@@ -57,4 +57,9 @@ class VendorController extends Controller
 
         $user->assignRole(RolesEnum::Vendor);
     }
+
+    public function details()
+    {
+        return Inertia::render('Vendor/Details');
+    }
 }
