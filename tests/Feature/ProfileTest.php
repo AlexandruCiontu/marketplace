@@ -33,6 +33,29 @@ test('profile information can be updated', function () {
     $this->assertNull($user->email_verified_at);
 });
 
+test('profile avatar can be uploaded', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->patch('/profile', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'avatar' => \Illuminate\Http\UploadedFile::fake()->image('avatar.jpg'),
+        ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/profile');
+
+    $this->assertDatabaseHas('media', [
+        'model_type' => App\Models\User::class,
+        'model_id' => $user->id,
+        'collection_name' => 'avatar',
+    ]);
+});
+
 test('email verification status is unchanged when the email address is unchanged', function () {
     $user = User::factory()->create();
 
