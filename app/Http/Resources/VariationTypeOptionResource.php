@@ -19,21 +19,22 @@ class VariationTypeOptionResource extends JsonResource
             'variation_type_id' => $this->variation_type_id,
             'name' => $this->name,
             'image' => $this->getFirstMediaUrl('images', 'small'),
-            'images' => $this->getMedia('images')->map(function ($image) {
-                return [
-                    'id' => $image->id,
-                    'thumb' => $image->getUrl('thumb'),
-                    'small' => $image->getUrl('small'),
-                    'large' => $image->getUrl('large'),
-                ];
-            }),
+            'images' => $this->getMedia('images')
+                ->map(function ($image) {
+                    return [
+                        'id' => $image->id,
+                        'thumb' => $image->getUrl('thumb'),
+                        'small' => $image->getUrl('small'),
+                        'large' => $image->getUrl('large'),
+                    ];
+                })
+                ->values(),
 
-            // Include relations
             'variationType' => $this->whenLoaded('variationType', function () {
                 return [
                     'id' => $this->variationType->id,
                     'name' => $this->variationType->name,
-                    'frontend_type' => $this->variationType->frontend_type,
+                    'type' => $this->variationType->type,
                 ];
             }),
         ];
