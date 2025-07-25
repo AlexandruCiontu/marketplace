@@ -122,15 +122,15 @@ function Show({
           <b>{type.name}</b>
           {type.type === 'Image' &&
             <div className="flex gap-2 mb-4">
-              {type.options.map(option => (
-                <div onClick={() => chooseOption(type.id, option)} key={option.id}>
-                  {option.images &&
-                    <img src={option.images[0].thumb} alt="" className={'w-[64px] h-[64px] object-contain ' + (
-                    selectedOptions[type.id]?.id === option.id ?
-                      'outline outline-4 outline-primary' : ''
-                  )}/>}
-                </div>
-              ))}
+                {type.options.map(option => (
+                  <div onClick={() => chooseOption(type.id, option)} key={option.id}>
+                    {option.images.length > 0 &&
+                      <img src={option.images[0].thumb} alt="" className={'w-[64px] h-[64px] object-contain ' + (
+                      selectedOptions[type.id]?.id === option.id ?
+                        'outline outline-4 outline-primary' : ''
+                    )}/>}
+                  </div>
+                ))}
             </div>}
           {type.type === 'Radio' &&
             <div className="flex join mb-4">
