@@ -31,10 +31,11 @@ Route::middleware([DetectCountryFromGeoIP::class])->group(function () {
         Route::post('/cart/add/{product}', 'store')->name('cart.store');
         Route::put('/cart/{product}', 'update')->name('cart.update');
         Route::delete('/cart/{product}', 'destroy')->name('cart.destroy');
-        Route::put('/cart/update-shipping-address/{address}', [CartController::class, 'updateShippingAddress'])->name('cart.shippingAddress');
+        Route::put('/cart/update-shipping-address/{address}', [CartController::class, 'updateShippingAddress'])
+            ->name('cart.shippingAddress');
     });
 
-    // Stripe webhook
+    // Stripe webhook (public, outside auth)
     Route::post('/stripe/webhook', [StripeController::class, 'webhook'])->name('stripe.webhook');
 
     // Auth routes
@@ -50,7 +51,7 @@ Route::middleware([DetectCountryFromGeoIP::class])->group(function () {
         Route::put('/shipping-address/make-default/{address}', [ShippingAddressController::class, 'makeDefault'])->name('shippingAddress.makeDefault');
         Route::delete('/shipping-address/{address}', [ShippingAddressController::class, 'destroy'])->name('shippingAddress.destroy');
 
-        // Orders
+        // Orders routes for buyers
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
@@ -66,7 +67,7 @@ Route::middleware([DetectCountryFromGeoIP::class])->group(function () {
                 ->name('stripe.connect')
                 ->middleware(['role:' . \App\Enums\RolesEnum::Vendor->value]);
 
-            // ✅ Add review for a product
+            // Add review for a product
             Route::post('/product/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
         });
     });

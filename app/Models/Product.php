@@ -4,8 +4,8 @@ namespace App\Models;
 
 use App\Enums\ProductStatusEnum;
 use App\Enums\VendorStatusEnum;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -33,31 +33,24 @@ class Product extends Model implements HasMedia
         'vat_rate_type',
     ];
 
-    protected static function booted()
-    {
-        static::created(function ($product) {
-            $product->searchable();
-        });
-
-        static::updated(function ($product) {
-            $product->searchable();
-        });
-
-        static::deleted(function ($product) {
-            $product->unsearchable();
-        });
-    }
-
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')->width(100);
-        $this->addMediaConversion('small')->width(480);
-        $this->addMediaConversion('large')->width(1200);
+        $this->addMediaConversion('thumb')
+            ->width(100)
+            ->nonQueued();
+
+        $this->addMediaConversion('small')
+            ->width(480)
+            ->nonQueued();
+
+        $this->addMediaConversion('large')
+            ->width(1200)
+            ->nonQueued();
     }
 
     public function scopeForVendor(Builder $query): Builder
     {
-        return $query->where('created_by', auth()->user()->id);
+        return $query->where('created_by', auth()->id());
     }
 
     public function scopePublished(Builder $query): Builder
@@ -123,158 +116,138 @@ class Product extends Model implements HasMedia
         return $this->hasMany(Review::class);
     }
 
-    public function averageRating()
-    {
-        return $this->reviews()->avg('rating');
-    }
-
     public function getPriceForOptions($optionIds = []): float
     {
-        $optionIds = array_values($optionIds);
+        $optionIds = array_values((array)$optionIds);
         sort($optionIds);
+
         foreach ($this->variations as $variation) {
             $a = $variation->variation_type_option_ids;
             sort($a);
-            if ($optionIds == $a) {
-                return $variation->price !== null ? $variation->price : $this->price;
+            if ($a === $optionIds) {
+                return $variation->price ?? $this->price;
             }
         }
 
         return $this->price;
     }
 
-    public function getImageForOptions(?array $optionIds = null)
+    public function getImageForOptions(array $optionIds = null): string
     {
         if ($optionIds) {
-            $optionIds = array_values($optionIds);
-            sort($optionIds);
-            $options = VariationTypeOption::whereIn('id', $optionIds)->get();
-
+            $ids = array_values($optionIds);
+            sort($ids);
+            $options = VariationTypeOption::whereIn('id', $ids)->get();
             foreach ($options as $option) {
-                $image = $option->getFirstMediaUrl('images', 'small');
-                if ($image) {
-                    return $image;
+                $url = $option->getFirstMediaUrl('images', 'small');
+                if ($url) {
+                    return $url;
                 }
             }
         }
-
         return $this->getFirstMediaUrl('images', 'small');
     }
 
-    public function getImagesForOptions(?array $optionIds = null)
+    public function getImagesForOptions(array $optionIds = null)
     {
         if ($optionIds) {
-            $optionIds = array_values($optionIds);
-            $options = VariationTypeOption::whereIn('id', $optionIds)->get();
-
+            $ids = array_values($optionIds);
+            sort($ids);
+            $options = VariationTypeOption::whereIn('id', $ids)->get();
             foreach ($options as $option) {
-                $images = $option->getMedia('images');
-                if ($images) {
-                    return $images;
+                $media = $option->getMedia('images');
+                if ($media && $media->isNotEmpty()) {
+                    return $media;
                 }
             }
         }
-
         return $this->getMedia('images');
     }
 
     public function getPriceForFirstOptions(): float
     {
         $firstOptions = $this->getFirstOptionsMap();
-
-        return $firstOptions ? $this->getPriceForOptions($firstOptions) : $this->price;
+        return !empty($firstOptions)
+            ? $this->getPriceForOptions($firstOptions)
+            : $this->price;
     }
 
-    public function getFirstImageUrl($collectionName = 'images', $conversion = 'small'): string
+    public function getFirstImageUrl(string $collectionName = 'images', string $conversion = 'small'): string
     {
-        if ($this->options->count() > 0) {
-            foreach ($this->options as $option) {
-                $imageUrl = $option->getFirstMediaUrl($collectionName, $conversion);
-                if ($imageUrl) {
-                    return $imageUrl;
+        if ($this->options->count()) {
+            foreach ($this->options as $opt) {
+                $url = $opt->getFirstMediaUrl($collectionName, $conversion);
+                if ($url) {
+                    return $url;
                 }
             }
         }
-
         return $this->getFirstMediaUrl($collectionName, $conversion);
     }
 
     public function getImages(): MediaCollection
     {
-        if ($this->options->count() > 0) {
-            foreach ($this->options as $option) {
-                /** @var VariationTypeOption $option */
-                $images = $option->getMedia('images');
-                if ($images) {
-                    return $images;
+        if ($this->options->count()) {
+            foreach ($this->options as $opt) {
+                $media = $opt->getMedia('images');
+                if ($media && $media->isNotEmpty()) {
+                    return $media;
                 }
             }
         }
-
         return $this->getMedia('images');
     }
 
     public function getFirstOptionsMap(): array
     {
         return $this->variationTypes
-            ->mapWithKeys(fn ($type) => [$type->id => $type->options[0]?->id])
+            ->mapWithKeys(fn($type) => [$type->id => $type->options->first()?->id])
             ->toArray();
     }
 
-    public function getTotalQuantity(mixed $optionIds)
+    public function getTotalQuantity(mixed $optionIds = null): int
     {
-        $optionIds = $optionIds ? array_values($optionIds) : [];
-        sort($optionIds);
-        $variation = $this->variations->first(fn ($variation) => $variation->variation_type_option_ids == $optionIds);
-
-        $quantity = $this->quantity;
-        if ($variation) {
-            $quantity = $variation->quantity;
-        }
-
-        return $quantity === null ? PHP_INT_MAX : $quantity;
+        $ids = $optionIds ? (array)$optionIds : [];
+        sort($ids);
+        $variation = $this->variations->first(fn($v) => $v->variation_type_option_ids === $ids);
+        $qty = $variation?->quantity ?? $this->quantity;
+        return $qty === null ? PHP_INT_MAX : $qty;
     }
 
-    public function searchableAs()
+    public function searchableAs(): string
     {
         return 'products_index';
     }
-
-    public function toSearchableArray()
+    public function toSearchableArray(): array
     {
         $this->load(['category', 'department', 'user']);
 
-        $netPrice = (float) $this->getPriceForFirstOptions();
+        $basePrice = $this->getPriceForFirstOptions();
+        $vatRateType = $this->vat_rate_type;
 
-        // When indexing products we don't have access to the session. In that
-        // case the VAT service would return the net price because no country
-        // code is provided. To ensure prices in the search index always include
-        // VAT, fall back to Romania (RO) when no country is detected.
-        $countryCode = session('country_code') ?: 'RO';
-
+        // Folosește serviciul de TVA pentru a calcula prețul brut
         $grossPrice = app(\App\Services\VatService::class)
-            ->calculate($netPrice, $this->vat_rate_type, $countryCode)['gross'];
+            ->calculate($basePrice, $vatRateType, session('country_code', 'RO'))['gross'] ?? $basePrice;
 
         return [
-            'id' => (string) $this->id,
+            'id' => (string)$this->id,
             'title' => $this->title,
             'description' => $this->description,
             'slug' => $this->slug,
-            'price' => $grossPrice,
-            'gross_price' => $grossPrice,
-            'net_price' => $netPrice,
-            'vat_rate_type' => $this->vat_rate_type,
+            'price' => (float)$basePrice,
+            'gross_price' => (float)$grossPrice,
+            'vat_rate_type' => $vatRateType,
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
-            'user_id' => (string) $this->user->id,
+            'user_id' => (string)$this->user->id,
             'user_name' => $this->user->name,
             'user_store_name' => $this->user->vendor->store_name,
-            'department_id' => (string) $this->department->id,
+            'department_id' => (string)$this->department->id,
             'department_name' => $this->department->name,
             'department_slug' => $this->department->slug,
-            'category_id' => (string) ($this->category ? $this->category->id : ''),
-            'category_name' => $this->category ? $this->category->name : '',
-            'category_slug' => $this->category ? $this->category->slug : '',
+            'category_id' => (string)($this->category?->id ?: ''),
+            'category_name' => $this->category?->name ?: '',
+            'category_slug' => $this->category?->slug ?: '',
             'created_at' => $this->created_at->timestamp,
         ];
     }
