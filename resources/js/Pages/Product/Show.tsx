@@ -6,10 +6,6 @@ import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import { arraysAreEqual } from "@/helpers";
 import StarRating from "@/Components/Core/StarRating";
-import Modal from "@/Components/Core/Modal";
-import TextAreaInput from "@/Components/Core/TextAreaInput";
-import PrimaryButton from "@/Components/Core/PrimaryButton";
-import InputError from "@/Components/Core/InputError";
 
 function Show({
                 appName,
@@ -23,25 +19,12 @@ function Show({
   hasPurchased: boolean;
   relatedProducts: ProductListItem[];
 }>) {
-  const form = useForm<{
-    option_ids: Record<string, number>;
-    quantity: number;
-    price: number | null;
-  }>({
+  const form = useForm({
     option_ids: {},
     quantity: 1,
     price: null,
   });
 
-  const reviewForm = useForm<{
-    rating: number;
-    comment: string;
-  }>({
-    rating: 5,
-    comment: "",
-  });
-
-  const [showReviews, setShowReviews] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Record<number, VariationTypeOption>>({});
   const { url } = usePage();
 
@@ -84,24 +67,20 @@ function Show({
       : { gross: price, vat: 0 };
 
     return {
-      price,
-      gross_price: result.gross,
-      vat_amount: result.vat,
+      price: parseFloat(Number(price).toFixed(2)),
+      gross_price: parseFloat(Number(result.gross).toFixed(2)),
+      vat_amount: parseFloat(Number(result.vat).toFixed(2)),
       vat_rate_type: vatRateType,
       quantity,
     };
   }, [product, selectedOptions]);
 
   useEffect(() => {
-    if (
-      product?.variationTypes &&
-      Object.keys(selectedOptions).length === 0
-    ) {
+    if (product?.variationTypes && Object.keys(selectedOptions).length === 0) {
       product.variationTypes.forEach((type) => {
         const selectedOptionId = variationOptions?.[type.id];
         const defaultOption =
-          type.options?.find((op) => op.id === selectedOptionId) ??
-          type.options?.[0];
+          type.options?.find((op) => op.id === selectedOptionId) ?? type.options?.[0];
         if (defaultOption) {
           chooseOption(type.id, defaultOption, false);
         }
@@ -147,100 +126,14 @@ function Show({
     });
   };
 
-  const submitReview = (e: React.FormEvent) => {
-    e.preventDefault();
-    reviewForm.post(route("reviews.store", product.id), {
-      preserveScroll: true,
-      onSuccess: () => reviewForm.reset(),
-    });
-  };
-
   useEffect(() => {
     form.setData("option_ids", getOptionIdsMap(selectedOptions));
   }, [selectedOptions]);
-
-  const renderProductVariationTypes = () => {
-    if (!Array.isArray(product.variationTypes)) return null;
-    return product.variationTypes.map((type) => (
-      <div key={type.id}>
-        <b>{type.name}</b>
-        {type.type === "Image" && Array.isArray(type.options) && (
-          <div className="flex gap-2 mb-4">
-            {type.options.map((option) => (
-              <div
-                onClick={() => chooseOption(type.id, option)}
-                key={option.id}
-              >
-                {option.images?.[0] && (
-                  <img
-                    src={option.images[0].thumb}
-                    alt={option.name}
-                    className={
-                      "w-[64px] h-[64px] object-contain " +
-                      (selectedOptions[type.id]?.id === option.id
-                        ? "outline outline-4 outline-primary"
-                        : "")
-                    }
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-        {type.type === "Radio" && Array.isArray(type.options) && (
-          <div className="flex join mb-4">
-            {type.options.map((option) => (
-              <input
-                onChange={() => chooseOption(type.id, option)}
-                key={option.id}
-                className="join-item btn"
-                type="radio"
-                value={option.id}
-                checked={selectedOptions[type.id]?.id === option.id}
-                name={`variation_type_${type.id}`}
-                aria-label={option.name}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    ));
-  };
-
-  const renderAddToCartButton = () => (
-    <div className="mb-8 flex gap-4">
-      <select
-        value={form.data.quantity}
-        onChange={onQuantityChange}
-        className="select select-bordered w-full"
-      >
-        {Array.from({
-          length: Math.min(10, computedProduct.quantity),
-        }).map((_, i) => (
-          <option value={i + 1} key={i + 1}>
-            Quantity: {i + 1}
-          </option>
-        ))}
-      </select>
-      <button onClick={addToCart} className="btn btn-primary">
-        Add to Cart
-      </button>
-    </div>
-  );
 
   return (
     <AuthenticatedLayout>
       <Head>
         <title>{product.title}</title>
-        <meta name="title" content={product.meta_title || product.title} />
-        <meta name="description" content={product.meta_description} />
-        <link rel="canonical" href={route("product.show", product.slug)} />
-        <meta property="og:title" content={product.title} />
-        <meta property="og:description" content={product.meta_description} />
-        <meta property="og:image" content={images[0]?.small} />
-        <meta property="og:url" content={route("product.show", product.slug)} />
-        <meta property="og:type" content="product" />
-        <meta property="og:site_name" content={appName} />
       </Head>
 
       <div className="container mx-auto p-8">
@@ -250,8 +143,8 @@ function Show({
           </div>
 
           <div className="col-span-12 md:col-span-5">
-            <h1 className="text-2xl">{product.title}</h1>
-            <p className="mb-8">
+            <h1 className="text-2xl mb-2">{product.title}</h1>
+            <p className="mb-4">
               by{" "}
               <Link
                 href={route("vendor.profile", product.user.store_name)}
@@ -268,25 +161,55 @@ function Show({
               </Link>
             </p>
 
-            <div>
+            {/* Preț afișat mare + TVA */}
+            <div className="mb-4">
               <div className="text-3xl font-semibold">
                 <CurrencyFormatter amount={computedProduct.gross_price} />
               </div>
-              {computedProduct.vat_amount > 0 && (
+              <div className="text-sm text-gray-500">Price with VAT</div>
+              {computedProduct.vat_amount >= 0 && (
                 <div className="text-sm text-gray-500">
-                  Preț fără TVA: <CurrencyFormatter amount={computedProduct.price} /> — TVA:{" "}
-                  <CurrencyFormatter amount={computedProduct.vat_amount} />
+                  Price without VAT: <CurrencyFormatter amount={computedProduct.price} /> — VAT: <CurrencyFormatter amount={computedProduct.vat_amount} />
                 </div>
               )}
-              <button
-                onClick={() => setShowReviews(true)}
-                className="mt-2 flex items-center"
-              >
-                <StarRating rating={product.average_rating ?? 0} />
-              </button>
             </div>
 
-            {renderProductVariationTypes()}
+            {/* Variante (ex: mărimi, culori) */}
+            {product.variationTypes && product.variationTypes.length > 0 && (
+              <div className="mb-4">
+                {product.variationTypes.map((type) => (
+                  <div key={type.id} className="mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {type.name}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {type.options.map((option) => {
+                        const isSelected =
+                          selectedOptions[type.id]?.id === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className={`px-4 py-2 border rounded ${
+                              isSelected
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white text-gray-800 border-gray-300"
+                            }`}
+                            onClick={() => chooseOption(type.id, option)}
+                          >
+                            {option.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mb-4">
+              <StarRating rating={product.average_rating ?? 0} />
+            </div>
 
             {computedProduct.quantity < 10 && (
               <div className="text-error my-4">
@@ -294,14 +217,24 @@ function Show({
               </div>
             )}
 
-            {renderAddToCartButton()}
-
-            {product.weight && <div className="mb-2">Weight: {product.weight} kg</div>}
-            {(product.length || product.width || product.height) && (
-              <div className="mb-4">
-                Dimensions: {product.length} x {product.width} x {product.height} cm
-              </div>
-            )}
+            <div className="mb-4">
+              <select
+                value={form.data.quantity}
+                onChange={onQuantityChange}
+                className="select select-bordered w-full"
+              >
+                {Array.from({ length: Math.min(10, computedProduct.quantity) }).map(
+                  (_, i) => (
+                    <option value={i + 1} key={i + 1}>
+                      Quantity: {i + 1}
+                    </option>
+                  )
+                )}
+              </select>
+              <button onClick={addToCart} className="btn btn-primary mt-2">
+                Add to Cart
+              </button>
+            </div>
 
             <b className="text-xl">About the Item</b>
             <div
@@ -311,82 +244,6 @@ function Show({
           </div>
         </div>
       </div>
-
-      {Array.isArray(relatedProducts) && relatedProducts.length > 0 && (
-        <div className="container mx-auto px-8 mt-12">
-          <h2 className="text-xl font-semibold mb-4">Îți mai recomandăm și:</h2>
-          <div className="flex gap-4 overflow-x-auto">
-            {relatedProducts.map((rp) => (
-              <div key={rp.id} className="min-w-[200px] bg-white shadow rounded p-4">
-                <img
-                  src={rp.image}
-                  alt={rp.title}
-                  className="w-full h-40 object-cover rounded"
-                />
-                <div className="mt-2">
-                  <h3 className="text-sm font-medium">{rp.title}</h3>
-                  <p className="text-purple-600 font-semibold mt-1">
-                    <CurrencyFormatter amount={rp.gross_price ?? rp.price} />
-                  </p>
-                  <Link
-                    href={`/product/${rp.slug}`}
-                    className="text-sm text-blue-500 mt-2 inline-block"
-                  >
-                    Vezi produsul
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <Modal show={showReviews} onClose={() => setShowReviews(false)}>
-        <div className="p-4">
-          <h3 className="text-xl mb-4">Reviews</h3>
-          {Array.isArray(product.reviews) && product.reviews.length > 0 ? (
-            product.reviews.map((r) => (
-              <div key={r.id} className="mb-4 border-b pb-2">
-                <StarRating rating={r.rating} />
-                <p className="text-sm text-gray-500">
-                  By {r.user?.name || "Anonymous"}
-                </p>
-                <p>{r.comment}</p>
-              </div>
-            ))
-          ) : (
-            <p>No reviews yet.</p>
-          )}
-
-          {hasPurchased && (
-            <form onSubmit={submitReview} className="space-y-2">
-              <select
-                value={reviewForm.data.rating}
-                onChange={(e) =>
-                  reviewForm.setData("rating", parseInt(e.target.value, 10))
-                }
-                className="select select-bordered w-full"
-              >
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <option key={star} value={star}>
-                    {star} stars
-                  </option>
-                ))}
-              </select>
-              <TextAreaInput
-                value={reviewForm.data.comment}
-                onChange={(e) =>
-                  reviewForm.setData("comment", e.target.value)
-                }
-                className="w-full"
-                placeholder="Write your comment..."
-              />
-              <InputError message={reviewForm.errors.comment} />
-              <PrimaryButton type="submit">Submit Review</PrimaryButton>
-            </form>
-          )}
-        </div>
-      </Modal>
     </AuthenticatedLayout>
   );
 }
