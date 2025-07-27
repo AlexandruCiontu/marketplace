@@ -5,6 +5,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
+import vatService from "@/services/vatService";
 
 function Show({
                 appName, product, variationOptions
@@ -41,18 +42,43 @@ function Show({
       .map(op => op.id)
       .sort();
 
+    let price = product.price;
+    let quantity = product.quantity === null ? Number.MAX_VALUE : product.quantity;
+
     for (let variation of product.variations) {
       const optionIds = variation.variation_type_option_ids.sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
-        return {
-          price: variation.price,
-          quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
-        }
+        price = variation.price;
+        quantity = variation.quantity === null ? Number.MAX_VALUE : variation.quantity;
+        break;
       }
     }
+
+    const vatRateType = (product as any).vat_rate_type ?? 'standard';
+    const countryCode = (product as any).country_code;
+
+    if (price === null || price === undefined || isNaN(price as unknown as number)) {
+      return {
+        price: 0,
+        gross_price: 0,
+        vat_amount: 0,
+        vat_rate_type: vatRateType,
+        quantity,
+      };
+    }
+
+    console.log('Calling VAT service with:', price, vatRateType, countryCode);
+    const result = vatService
+      ? vatService.calculate(price, vatRateType, countryCode) ?? { gross: price, vat: 0 }
+      : { gross: price, vat: 0 };
+    console.log('VAT result:', result);
+
     return {
-      price: product.price,
-      quantity: product.quantity === null ? Number.MAX_VALUE : product.quantity,
+      price,
+      gross_price: result.gross,
+      vat_amount: result.vat,
+      vat_rate_type: vatRateType,
+      quantity,
     };
   }, [product, selectedOptions]);
 

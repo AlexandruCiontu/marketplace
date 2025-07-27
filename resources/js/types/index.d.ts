@@ -51,6 +51,7 @@ export type Product = {
   slug: string;
   price: number;
   quantity: number;
+  vat_rate_type?: string;
   image: string;
   images: Image[];
   videos: Video[];
