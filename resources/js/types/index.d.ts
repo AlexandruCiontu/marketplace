@@ -4,9 +4,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  country_code: string;
-  phone: string;
   email_verified_at?: string;
+  avatar_url?: string;
   stripe_account_active: boolean;
   roles: string[];
   vendor: {
@@ -14,8 +13,6 @@ export interface User {
     status_label: string;
     store_name: string;
     store_address: string;
-    country_code: string;
-    phone: string;
     cover_image: string;
   }
 }
@@ -25,7 +22,14 @@ export type Image = {
   thumb: string;
   small: string;
   large: string;
-}
+};
+
+export type Video = {
+  id: number;
+  url: string;
+};
+
+export type Media = Image | Video;
 
 export type VariationTypeOption = {
   id: number;
@@ -40,31 +44,17 @@ export type VariationType = {
   type: 'Select' | 'Radio' | 'Image';
   options: VariationTypeOption[]
 }
-export type Review = {
-  id: number;
-  rating: number;
-  comment: string;
-  user: {
-    id: number;
-    name: string;
-  };
-};
-
 
 export type Product = {
   id: number;
   title: string;
   slug: string;
   price: number;
-  gross_price: number;
   quantity: number;
-  weight: number;
-  length: number;
-  width: number;
-  height: number;
+  vat_rate_type?: string;
   image: string;
-  main_image_url: string;
   images: Image[];
+  videos: Video[];
   short_description: string;
   description: string;
   meta_title: string;
@@ -85,11 +75,7 @@ export type Product = {
     variation_type_option_ids: number[];
     quantity: number;
     price: number;
-  gross_price: number;
   }>
-  average_rating: number;
-
-  reviews: Review[];
 }
 
 export type ProductListItem = {
@@ -97,7 +83,6 @@ export type ProductListItem = {
   title: string;
   slug: string;
   price: number;
-  gross_price: number;
   quantity: number;
   image: string;
   user_id: number;
@@ -114,7 +99,6 @@ export type CartItem = {
   title: string;
   slug: string;
   price: number;
-  gross_price: number;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;
@@ -125,7 +109,6 @@ export type GroupedCartItems = {
   user: User;
   items: CartItem[];
   totalPrice: number;
-  totalGross: number;
   totalQuantity: number;
 }
 
@@ -168,11 +151,9 @@ export type PageProps<
   ziggy: Config & { location: string };
   totalQuantity: number;
   totalPrice: number;
-  totalGross: number;
   miniCartItems: CartItem[];
   departments: Department[];
   keyword: string;
-  countryCode: string;
 };
 
 
@@ -180,7 +161,6 @@ export type OrderItem = {
   id: number;
   quantity: number;
   price: number;
-  gross_price: number;
   variation_type_option_ids: number[];
   product: {
     id: number;
@@ -194,7 +174,6 @@ export type OrderItem = {
 export type Order = {
   id: number;
   total_price: number;
-  gross_price: number;
   status: string;
   created_at: string;
   vendorUser: {
@@ -211,8 +190,6 @@ export type Vendor = {
   id: number;
   store_name: string;
   store_address: string;
-  country_code: string;
-  phone: string;
 }
 
 export type Category = {

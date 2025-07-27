@@ -14,12 +14,15 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use SimonHamp\LaravelStripeConnect\Traits\Payable;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, HasRoles, Notifiable, Payable;
+    use HasFactory, HasRoles, InteractsWithMedia, Notifiable, Payable;
 
     /**
      * The attributes that are mass assignable.
@@ -29,8 +32,6 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
-        'country_code',
-        'phone',
         'password',
     ];
 
@@ -85,8 +86,24 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Order::class);
     }
 
-    public function reviews(): HasMany
+    public function registerMediaConversions(?Media $media = null): void
     {
-        return $this->hasMany(Review::class);
+        $this->addMediaConversion('thumb')
+            ->width(100)
+            ->nonQueued();
+
+        $this->addMediaConversion('small')
+            ->width(480)
+            ->nonQueued();
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('avatar', 'thumb');
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->getFirstMediaUrl('avatar', 'thumb');
     }
 }

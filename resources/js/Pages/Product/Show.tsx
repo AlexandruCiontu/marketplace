@@ -1,246 +1,257 @@
-import { PageProps, Product, VariationTypeOption, ProductListItem } from "@/types";
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { useEffect, useMemo, useState } from "react";
+import {PageProps, Product, VariationTypeOption, Media} from "@/types";
+import {Head, Link, router, useForm, usePage} from "@inertiajs/react";
+import {useEffect, useMemo, useState} from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
-import { arraysAreEqual } from "@/helpers";
-import StarRating from "@/Components/Core/StarRating";
+import {arraysAreEqual} from "@/helpers";
+import vatService from "@/services/vatService";
 
 function Show({
-                appName,
-                product,
-                variationOptions,
-                hasPurchased,
-                relatedProducts,
-              }: PageProps<{
-  product: Product;
-  variationOptions: Record<number, number>;
-  hasPurchased: boolean;
-  relatedProducts: ProductListItem[];
+                appName, product, variationOptions
+}: PageProps<{
+  product: Product,
+  variationOptions: number[]
 }>) {
-  const form = useForm({
+
+  const form = useForm<{
+    option_ids: Record<string, number>;
+    quantity: number;
+    price: number | null;
+  }>({
     option_ids: {},
     quantity: 1,
-    price: null,
-  });
+    price: null // TODO populate price on change
+  })
 
-  const [selectedOptions, setSelectedOptions] = useState<Record<number, VariationTypeOption>>({});
-  const { url } = usePage();
+  const {url} = usePage();
 
-  const images = useMemo(() => {
-    for (const typeId in selectedOptions) {
+  const [selectedOptions, setSelectedOptions] =
+    useState<Record<number, VariationTypeOption>>([]);
+
+  const media = useMemo<Media[]>(() => {
+    for (let typeId in selectedOptions) {
       const option = selectedOptions[typeId];
-      if (option?.images?.length > 0) {
-        return option.images;
-      }
+      if (option.images.length > 0) return [...option.images, ...product.videos];
     }
-    return product?.images ?? [];
+    return [...product.images, ...product.videos];
   }, [product, selectedOptions]);
 
   const computedProduct = useMemo(() => {
     const selectedOptionIds = Object.values(selectedOptions)
-      .map((op) => op.id)
+      .map(op => op.id)
       .sort();
 
     let price = product.price;
-    let vatRateType = product.vat_rate_type;
     let quantity = product.quantity === null ? Number.MAX_VALUE : product.quantity;
 
-    if (Array.isArray(product.variations)) {
-      for (const variation of product.variations) {
-        const optionIds = variation.variation_type_option_ids.slice().sort();
-        if (arraysAreEqual(selectedOptionIds, optionIds)) {
-          price = variation.price;
-          vatRateType = variation.vat_rate_type ?? vatRateType;
-          quantity = variation.quantity === null ? Number.MAX_VALUE : variation.quantity;
-          break;
-        }
+    for (let variation of product.variations) {
+      const optionIds = variation.variation_type_option_ids.sort();
+      if (arraysAreEqual(selectedOptionIds, optionIds)) {
+        price = variation.price;
+        quantity = variation.quantity === null ? Number.MAX_VALUE : variation.quantity;
+        break;
       }
     }
 
-    const vatService = window?.vatService ?? null;
-    const countryCode = window?.countryCode ?? 'RO';
+    const vatRateType = (product as any).vat_rate_type ?? 'standard';
+    const countryCode = (product as any).country_code;
 
+    if (price === null || price === undefined || isNaN(price as unknown as number)) {
+      return {
+        price: 0,
+        gross_price: 0,
+        vat_amount: 0,
+        vat_rate_type: vatRateType,
+        quantity,
+      };
+    }
+
+    console.log('Calling VAT service with:', price, vatRateType, countryCode);
     const result = vatService
-      ? vatService.calculate(price, vatRateType, countryCode)
+      ? vatService.calculate(price, vatRateType, countryCode) ?? { gross: price, vat: 0 }
       : { gross: price, vat: 0 };
+    console.log('VAT result:', result);
 
     return {
-      price: parseFloat(Number(price).toFixed(2)),
-      gross_price: parseFloat(Number(result.gross).toFixed(2)),
-      vat_amount: parseFloat(Number(result.vat).toFixed(2)),
+      price,
+      gross_price: result.gross,
+      vat_amount: result.vat,
       vat_rate_type: vatRateType,
       quantity,
     };
   }, [product, selectedOptions]);
 
-  useEffect(() => {
-    if (product?.variationTypes && Object.keys(selectedOptions).length === 0) {
-      product.variationTypes.forEach((type) => {
-        const selectedOptionId = variationOptions?.[type.id];
-        const defaultOption =
-          type.options?.find((op) => op.id === selectedOptionId) ?? type.options?.[0];
-        if (defaultOption) {
-          chooseOption(type.id, defaultOption, false);
-        }
-      });
-    }
-  }, [product, variationOptions]);
 
-  const getOptionIdsMap = (newOptions: Record<number, VariationTypeOption>) => {
+  useEffect(() => {
+    for (let type of product.variationTypes) {
+      // console.log(variationOptions)
+      const selectedOptionId: number = variationOptions[type.id];
+      console.log(selectedOptionId, type.options)
+      chooseOption(
+        type.id,
+        type.options.find(op => op.id == selectedOptionId) || type.options[0],
+        false
+      )
+    }
+  }, []);
+
+  const getOptionIdsMap = (newOptions: object) => {
     return Object.fromEntries(
-      Object.entries(newOptions).map(([typeId, op]) => [typeId, op.id])
-    );
-  };
+      Object.entries(newOptions).map(([a, b]) => [a, b.id])
+    )
+  }
 
   const chooseOption = (
     typeId: number,
     option: VariationTypeOption,
     updateRouter: boolean = true
   ) => {
-    setSelectedOptions((prev) => {
-      const newOpts = { ...prev, [typeId]: option };
 
-      if (updateRouter) {
-        router.get(
-          url,
-          { options: getOptionIdsMap(newOpts) },
-          { preserveScroll: true, preserveState: true }
-        );
+    setSelectedOptions((prevSelectedOptions) => {
+      const newOptions = {
+        ...prevSelectedOptions,
+        [typeId]: option
       }
 
-      return newOpts;
-    });
-  };
+      if (updateRouter) {
+        router.get(url, {
+          options: getOptionIdsMap(newOptions)
+        }, {
+          preserveScroll: true,
+          preserveState: true
+        })
+      }
+
+      return newOptions
+    })
+  }
 
   const onQuantityChange = (ev: React.ChangeEvent<HTMLSelectElement>) => {
-    form.setData("quantity", parseInt(ev.target.value, 10));
-  };
+    form.setData('quantity', parseInt(ev.target.value))
+  }
 
   const addToCart = () => {
-    form.post(route("cart.store", product.id), {
+    form.post(route('cart.store', product.id), {
       preserveScroll: true,
       preserveState: true,
-      onError: console.error,
-    });
-  };
+      onError: (err) => {
+        console.log(err)
+      }
+    })
+  }
+
+  const renderProductVariationTypes = () => {
+    return (
+      product.variationTypes.map((type, i) => (
+        <div key={type.id}>
+          <b>{type.name}</b>
+          {type.type === 'Image' &&
+            <div className="flex gap-2 mb-4">
+                {type.options.map(option => (
+                  <div onClick={() => chooseOption(type.id, option)} key={option.id}>
+
+                    {option.images.length > 0 &&
+                    
+
+                      <img src={option.images[0].thumb} alt="" className={'w-[64px] h-[64px] object-contain ' + (
+                      selectedOptions[type.id]?.id === option.id ?
+                        'outline outline-4 outline-primary' : ''
+                    )}/>}
+                  </div>
+                ))}
+            </div>}
+          {type.type === 'Radio' &&
+            <div className="flex join mb-4">
+              {type.options.map(option => (
+                <input onChange={() => chooseOption(type.id, option)}
+                       key={option.id}
+                       className="join-item btn"
+                       type="radio"
+                       value={option.id}
+                       checked={selectedOptions[type.id]?.id === option.id}
+                       name={'variation_type_' + type.id}
+                       aria-label={option.name}/>
+              ))}
+            </div>}
+        </div>
+      ))
+    )
+  }
+
+  const renderAddToCartButton = () => {
+    return (<div className="mb-8 flex gap-4">
+        <select value={form.data.quantity}
+                onChange={onQuantityChange}
+                className="select select-bordered w-full">
+          {Array.from({
+            length: Math.min(10, computedProduct.quantity)
+          }).map((el, i) => (
+            <option value={i + 1} key={i + 1}>Quantity: {i + 1}</option>
+          ))}
+        </select>
+        <button onClick={addToCart} className="btn btn-primary">Add to Cart</button>
+      </div>
+    )
+  }
 
   useEffect(() => {
-    form.setData("option_ids", getOptionIdsMap(selectedOptions));
+    const idsMap = Object.fromEntries(
+      Object.entries(selectedOptions).map(([typeId, option]: [string, VariationTypeOption]) => [typeId, option.id])
+    )
+    console.log(idsMap)
+    form.setData('option_ids', idsMap)
   }, [selectedOptions]);
 
   return (
     <AuthenticatedLayout>
       <Head>
         <title>{product.title}</title>
+        <meta name="title" content={product.meta_title || product.title}/>
+        <meta name="description" content={product.meta_description}/>
+        <link rel="canonical" href={route('product.show', product.slug)}/>
+
+        <meta property="og:title" content={product.title}/>
+        <meta property="og:description" content={product.meta_description}/>
+        <meta property="og:image" content={media.find(m => 'small' in m)?.small}/>
+        <meta property="og:url" content={route('product.show', product.slug)}/>
+        <meta property="og:type" content="product"/>
+        <meta property="og:site_name" content={appName}/>
       </Head>
 
       <div className="container mx-auto p-8">
         <div className="grid gap-4 sm:gap-8 grid-cols-1 lg:grid-cols-12">
           <div className="col-span-12 md:col-span-7">
-            <Carousel images={images} />
+            <Carousel media={media}/>
           </div>
-
           <div className="col-span-12 md:col-span-5">
-            <h1 className="text-2xl mb-2">{product.title}</h1>
-            <p className="mb-4">
-              by{" "}
-              <Link
-                href={route("vendor.profile", product.user.store_name)}
-                className="hover:underline"
-              >
-                {product.user.name}
-              </Link>{" "}
-              in{" "}
-              <Link
-                href={route("product.byDepartment", product.department.slug)}
-                className="hover:underline"
-              >
-                {product.department.name}
-              </Link>
+            <h1 className="text-2xl ">{product.title}</h1>
+
+            <p className={'mb-8'}>
+              by <Link href={route('vendor.profile', product.user.store_name)} className="hover:underline">
+              {product.user.name}
+            </Link>&nbsp;
+              in <Link href={route('product.byDepartment', product.department.slug)} className="hover:underline">{product.department.name}</Link>
             </p>
 
-            {/* Preț afișat mare + TVA */}
-            <div className="mb-4">
+            <div>
               <div className="text-3xl font-semibold">
-                <CurrencyFormatter amount={computedProduct.gross_price} />
+                <CurrencyFormatter amount={computedProduct.price}/>
               </div>
-              <div className="text-sm text-gray-500">Price with VAT</div>
-              {computedProduct.vat_amount >= 0 && (
-                <div className="text-sm text-gray-500">
-                  Price without VAT: <CurrencyFormatter amount={computedProduct.price} /> — VAT: <CurrencyFormatter amount={computedProduct.vat_amount} />
-                </div>
-              )}
             </div>
 
-            {/* Variante (ex: mărimi, culori) */}
-            {product.variationTypes && product.variationTypes.length > 0 && (
-              <div className="mb-4">
-                {product.variationTypes.map((type) => (
-                  <div key={type.id} className="mb-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {type.name}
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {type.options.map((option) => {
-                        const isSelected =
-                          selectedOptions[type.id]?.id === option.id;
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            className={`px-4 py-2 border rounded ${
-                              isSelected
-                                ? "bg-blue-600 text-white border-blue-600"
-                                : "bg-white text-gray-800 border-gray-300"
-                            }`}
-                            onClick={() => chooseOption(type.id, option)}
-                          >
-                            {option.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/*<pre>{JSON.stringify(product.variationTypes, undefined, 2)}</pre>*/}
+            {renderProductVariationTypes()}
 
-            <div className="mb-4">
-              <StarRating rating={product.average_rating ?? 0} />
-            </div>
-
-            {computedProduct.quantity < 10 && (
+            {computedProduct.quantity != undefined && computedProduct.quantity < 10 &&
               <div className="text-error my-4">
-                Only {computedProduct.quantity} left
+                <span>Only {computedProduct.quantity} left</span>
               </div>
-            )}
-
-            <div className="mb-4">
-              <select
-                value={form.data.quantity}
-                onChange={onQuantityChange}
-                className="select select-bordered w-full"
-              >
-                {Array.from({ length: Math.min(10, computedProduct.quantity) }).map(
-                  (_, i) => (
-                    <option value={i + 1} key={i + 1}>
-                      Quantity: {i + 1}
-                    </option>
-                  )
-                )}
-              </select>
-              <button onClick={addToCart} className="btn btn-primary mt-2">
-                Add to Cart
-              </button>
-            </div>
+            }
+            {renderAddToCartButton()}
 
             <b className="text-xl">About the Item</b>
-            <div
-              className="wysiwyg-output overflow-x-hidden break-words"
-              dangerouslySetInnerHTML={{ __html: product.description }}
-            />
+            <div className="wysiwyg-output" dangerouslySetInnerHTML={{__html: product.description}}/>
           </div>
         </div>
       </div>
@@ -249,4 +260,3 @@ function Show({
 }
 
 export default Show;
-

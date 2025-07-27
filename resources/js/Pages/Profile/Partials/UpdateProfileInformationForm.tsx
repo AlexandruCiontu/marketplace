@@ -21,7 +21,14 @@ export default function UpdateProfileInformation({
         useForm({
             name: user.name,
             email: user.email,
+            avatar: null as File | null,
         });
+
+    const onAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setData('avatar', e.target.files[0]);
+        }
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -96,6 +103,17 @@ export default function UpdateProfileInformation({
                         )}
                     </div>
                 )}
+
+                <div>
+                    <InputLabel htmlFor="avatar" value="Avatar" />
+                    <input
+                        id="avatar"
+                        type="file"
+                        className="file-input file-input-bordered mt-1 w-full"
+                        onChange={onAvatarChange}
+                    />
+                    <InputError className="mt-2" message={errors.avatar} />
+                </div>
 
                 <div className="flex items-center gap-4">
                     <PrimaryButton disabled={processing}>Save</PrimaryButton>
