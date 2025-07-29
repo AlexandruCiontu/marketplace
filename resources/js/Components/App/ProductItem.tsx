@@ -4,8 +4,6 @@ import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import { calculateVatAndGross } from "@/utils/vat";
 import { useVatCountry } from '@/hooks/useVatCountry';
 
-import { useVatCountry } from '@/hooks/useVatCountry';
-
 export default function ProductItem({ product }: { product: ProductListItem }) {
   const form = useForm<{
     option_ids: Record<string, number>;

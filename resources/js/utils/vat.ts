@@ -1,7 +1,7 @@
 import rates from '@/data/rates.json';
 
 export function getVatRate(countryCode: string, rateType: string = 'standard'): number {
-  const country = (rates as any).rates?.[countryCode] ?? (rates as any).rates?.RO;
+  const country = (rates as any).rates?.[countryCode];
   if (!country) return 0;
 
   switch (rateType) {

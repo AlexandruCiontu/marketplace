@@ -256,3 +256,21 @@ export type Country = {
     [key: string]: string;
   }
 }
+
+export type VatRate = {
+  country: string;
+  vat_name: string;
+  vat_abbr: string;
+  standard_rate: number;
+  reduced_rate?: number | false;
+  reduced_rate_alt?: number | false;
+  super_reduced_rate?: number | false;
+  parking_rate?: number | false;
+};
+
+export type VatRatesData = {
+  last_updated: string;
+  disclaimer: string;
+  source: string;
+  rates: Record<string, VatRate>;
+};

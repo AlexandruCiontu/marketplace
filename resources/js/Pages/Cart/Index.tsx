@@ -28,7 +28,6 @@ function Index(
   const { countryCode, updateCountry } = useVatCountry();
 
   const countryName = rates.rates?.[countryCode]?.country ?? countryCode
-  const countryName = rates.rates?.[countryCode]?.country ?? countryCode
 
   const fallbackGross = Object.values(cartItems).reduce((acc, group) => {
     return acc + group.items.reduce((a, item) => {
