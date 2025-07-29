@@ -1,9 +1,11 @@
-import React, {useState} from 'react';
-import {Link, router, useForm} from "@inertiajs/react";
-import {CartItem as CartItemType} from "@/types";
-import TextInput from "@/Components/Core/TextInput";
-import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
-import {productRoute} from "@/helpers";
+import React, { useState } from 'react';
+import { Link, router, useForm } from '@inertiajs/react';
+import { CartItem as CartItemType } from '@/types';
+import TextInput from '@/Components/Core/TextInput';
+import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
+import { productRoute } from '@/helpers';
+import { getVatRate, calculateVatIncludedPrice } from '@/utils/vat';
+import { useVatCountry } from '@/hooks/useVatCountry';
 
 function CartItem({item}: { item: CartItemType }) {
   const deleteForm = useForm({
@@ -12,6 +14,10 @@ function CartItem({item}: { item: CartItemType }) {
 
   const [quantity, setQuantity] = useState(item.quantity)
   const [error, setError] = useState('')
+  const { countryCode } = useVatCountry()
+  const rate = getVatRate(countryCode, item.vat_rate_type ?? 'standard')
+  const grossPrice = calculateVatIncludedPrice(item.price, rate)
+  const vatAmount = grossPrice - item.price
 
   const onDeleteClick = () => {
     deleteForm.delete(route('cart.destroy', item.product_id), {
@@ -74,7 +80,10 @@ function CartItem({item}: { item: CartItemType }) {
             </button>
             <button className="btn btn-sm btn-ghost order-4 whitespace-nowrap">Save for Later</button>
             <div className="font-bold text-lg text-right order-2 sm:order-4 sm:ml-auto">
-              <CurrencyFormatter amount={item.gross_price * quantity}/>
+              <CurrencyFormatter amount={grossPrice * quantity}/>
+              <div className="text-xs text-gray-500">
+                Includes VAT: <CurrencyFormatter amount={vatAmount * quantity} />
+              </div>
             </div>
           </div>
         </div>
