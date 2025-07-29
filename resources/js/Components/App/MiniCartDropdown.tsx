@@ -1,11 +1,21 @@
 import React from 'react';
 import {Link, usePage} from "@inertiajs/react";
+import rates from '@/data/rates.json';
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {productRoute} from "@/helpers";
 
 function MiniCartDropdown() {
 
-  const {totalQuantity, totalPrice, totalGross, miniCartItems} = usePage().props
+  const {totalQuantity, totalPrice, totalGross, miniCartItems, countryCode} = usePage().props
+  const standardRate = rates.rates?.[countryCode]?.standard_rate ?? rates.rates?.RO.standard_rate ?? 0
+  const fallbackGross = miniCartItems.reduce((acc, item) => {
+    const itemGross = item.price_with_vat ?? (item.price * (1 + ((item.vat_rate ?? standardRate) / 100)))
+    return acc + itemGross * item.quantity
+  }, 0)
+  const fallbackPrice = miniCartItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
+
+  const displayedTotalGross = totalGross ?? fallbackGross
+  const displayedTotalPrice = totalPrice ?? fallbackPrice
 
   return (
     <details className="dropdown dropdown-end static sm:relative ">
@@ -40,7 +50,9 @@ function MiniCartDropdown() {
                 You don't have any items yet.
               </div>
             )}
-            {miniCartItems.map((item) => (
+            {miniCartItems.map((item) => {
+              const itemGross = item.price_with_vat ?? (item.price * (1 + ((item.vat_rate ?? standardRate) / 100)))
+              return (
               <div key={item.id} className={'flex gap-4 p-3'}>
                 <Link href={productRoute(item)}
                       className={'w-16 h-16 flex justify-center items-center'}>
@@ -60,18 +72,18 @@ function MiniCartDropdown() {
                     </div>
                     <div>
                       <CurrencyFormatter
-                        amount={item.quantity * item.price_with_vat}/>
+                        amount={item.quantity * itemGross}/>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+              )})}
           </div>
 
           <div className="text-lg space-y-1">
-            <div>Subtotal: <CurrencyFormatter amount={totalPrice}/></div>
-            <div>VAT: <CurrencyFormatter amount={totalGross - totalPrice}/></div>
-            <div className="font-bold">Total: <CurrencyFormatter amount={totalGross}/></div>
+            <div>Subtotal: <CurrencyFormatter amount={displayedTotalPrice}/></div>
+            <div>VAT: <CurrencyFormatter amount={displayedTotalGross - displayedTotalPrice}/></div>
+            <div className="font-bold">Total: <CurrencyFormatter amount={displayedTotalGross}/></div>
           </div>
           <div className="card-actions">
             <Link href={route('cart.index')}

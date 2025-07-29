@@ -15,8 +15,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Ibericode\Vat\Facades\Vat;
-use App\Helpers\VatHelper;
+use App\Services\VatService;
 
 class Product extends Model implements HasMedia
 {
@@ -249,7 +248,9 @@ class Product extends Model implements HasMedia
     {
         $country = session('country_code', 'RO');
 
-        return VatHelper::getRate($country, $this->vat_rate_type);
+        $rateType = $this->vat_rate_type ?: 'standard';
+
+        return app(\App\Services\VatService::class)->getRate($country, $rateType);
     }
 
     // ✅ TVA calculat dinamic pe baza codului de țară

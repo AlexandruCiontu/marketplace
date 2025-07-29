@@ -7,6 +7,7 @@ import {CreditCardIcon} from "@heroicons/react/24/outline";
 import CartItem from "@/Components/App/CartItem";
 import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
+import rates from '@/data/rates.json';
 
 function Index(
   {
@@ -24,6 +25,22 @@ function Index(
     addresses: Address[],
     countrycode: string
   }>) {
+
+  const countryCode = countrycode
+  const standardRate = rates.rates?.[countryCode]?.standard_rate ?? rates.rates?.RO.standard_rate ?? 0
+
+  const fallbackGross = Object.values(cartItems).reduce((acc, group) => {
+    return acc + group.items.reduce((a, item) => {
+      const gross = item.price_with_vat ?? (item.price * (1 + ((item.vat_rate ?? standardRate) / 100)))
+      return a + gross * item.quantity
+    }, 0)
+  }, 0)
+  const fallbackPrice = Object.values(cartItems).reduce((acc, group) => {
+    return acc + group.items.reduce((a, item) => a + item.price * item.quantity, 0)
+  }, 0)
+
+  const displayedTotalGross = totalGross ?? fallbackGross
+  const displayedTotalPrice = totalPrice ?? fallbackPrice
 
   const onAddressChange = (address: Address) => {
     router.put(route('cart.shippingAddress', address.id), {}, {
@@ -124,7 +141,7 @@ function Index(
             <div className="card-body gap-1">
               <div className="flex justify-between">
                 <span>Subtotal ({totalQuantity})</span>
-                <CurrencyFormatter amount={totalPrice}/>
+                <CurrencyFormatter amount={displayedTotalPrice}/>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -132,11 +149,11 @@ function Index(
               </div>
               <div className="flex justify-between">
                 <span>VAT</span>
-                <CurrencyFormatter amount={totalGross - totalPrice}/>
+                <CurrencyFormatter amount={displayedTotalGross - displayedTotalPrice}/>
               </div>
               <div className="flex justify-between font-bold text-xl">
                 <span>Total</span>
-                <CurrencyFormatter amount={totalGross}/>
+                <CurrencyFormatter amount={displayedTotalGross}/>
               </div>
               <form action={route('cart.checkout')} method="post">
                 <input type="hidden" name="_token" value={csrf_token}/>
