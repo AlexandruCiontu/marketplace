@@ -13,6 +13,27 @@ class VatService
         // Poți schimba path-ul dacă preferi altă locație pentru cache
         $this->rates = new Rates(storage_path('framework/cache/vat_rates.cache'));
     }
+    public function getRate(string $countryCode, string $rateType): float
+    {
+        try {
+            $rate = $this->rates->getRateForCountry($countryCode, $rateType);
+        } catch (\Throwable $e) {
+            $rate = null;
+        }
+
+        if (! is_numeric($rate) || $rate <= 0) {
+            if ($rateType === 'reduced2') {
+                $rate = $this->rates->getRateForCountry($countryCode, 'reduced');
+                if (! is_numeric($rate) || $rate <= 0) {
+                    $rate = $this->rates->getRateForCountry($countryCode, 'standard');
+                }
+            } else {
+                $rate = $this->rates->getRateForCountry($countryCode, 'standard');
+            }
+        }
+
+        return (float) ($rate ?: 0.0);
+    }
 
     /**
      * Calculează TVA-ul și totalul brut pentru un preț net.
@@ -34,16 +55,7 @@ class VatService
             ];
         }
 
-        try {
-            $rate = $this->rates->getRateForCountry($countryCode, $rateType);
-
-            // ✅ Fallback la 'standard' dacă rata e invalidă (false, null, 0 etc.)
-            if (!is_numeric($rate) || $rate <= 0) {
-                $rate = $this->rates->getRateForCountry($countryCode, 'standard') ?? 0.0;
-            }
-        } catch (\Throwable $e) {
-            $rate = 0.0;
-        }
+        $rate = $this->getRate($countryCode, $rateType);
 
         $vat   = round($netAmount * $rate / 100, 2);
         $gross = round($netAmount + $vat, 2);

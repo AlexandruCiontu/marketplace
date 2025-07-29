@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class VariationTypeOption extends Model implements HasMedia
 {
@@ -32,5 +33,15 @@ class VariationTypeOption extends Model implements HasMedia
     public function variationType(): BelongsTo
     {
         return $this->belongsTo(VariationType::class);
+    }
+
+    /**
+     * Allow eager loading media as 'images'.
+     */
+    public function images(): MorphMany
+    {
+        /** @var \Illuminate\Database\Eloquent\Relations\MorphMany $relation */
+        $relation = $this->media();
+        return $relation->where('collection_name', 'images');
     }
 }

@@ -24,12 +24,7 @@ export type Image = {
   large: string;
 };
 
-export type Video = {
-  id: number;
-  url: string;
-};
-
-export type Media = Image | Video;
+export type Media = Image;
 
 export type VariationTypeOption = {
   id: number;
@@ -50,11 +45,14 @@ export type Product = {
   title: string;
   slug: string;
   price: number;
+  vat_rate: number;
+  vat_amount: number;
+  price_with_vat: number;
+  gross_price: number;
   quantity: number;
   vat_rate_type?: string;
   image: string;
   images: Image[];
-  videos: Video[];
   short_description: string;
   description: string;
   meta_title: string;
@@ -75,6 +73,9 @@ export type Product = {
     variation_type_option_ids: number[];
     quantity: number;
     price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   }>
 }
 
@@ -83,6 +84,11 @@ export type ProductListItem = {
   title: string;
   slug: string;
   price: number;
+  vat_rate: number;
+  vat_amount: number;
+  price_with_vat: number;
+  gross_price: number;
+  vat_rate_type?: string;
   quantity: number;
   image: string;
   user_id: number;
@@ -99,6 +105,11 @@ export type CartItem = {
   title: string;
   slug: string;
   price: number;
+  vat_rate: number;
+  vat_amount: number;
+  price_with_vat: number;
+  gross_price: number;
+  vat_rate_type?: string;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;
@@ -109,6 +120,7 @@ export type GroupedCartItems = {
   user: User;
   items: CartItem[];
   totalPrice: number;
+  totalGross: number;
   totalQuantity: number;
 }
 
@@ -151,6 +163,7 @@ export type PageProps<
   ziggy: Config & { location: string };
   totalQuantity: number;
   totalPrice: number;
+  totalGross: number;
   miniCartItems: CartItem[];
   departments: Department[];
   keyword: string;
@@ -161,6 +174,9 @@ export type OrderItem = {
   id: number;
   quantity: number;
   price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   variation_type_option_ids: number[];
   product: {
     id: number;
@@ -174,6 +190,9 @@ export type OrderItem = {
 export type Order = {
   id: number;
   total_price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   status: string;
   created_at: string;
   vendorUser: {
@@ -231,3 +250,21 @@ export type Country = {
     [key: string]: string;
   }
 }
+
+export type VatRate = {
+  country: string;
+  vat_name: string;
+  vat_abbr: string;
+  standard_rate: number;
+  reduced_rate?: number | false;
+  reduced_rate_alt?: number | false;
+  super_reduced_rate?: number | false;
+  parking_rate?: number | false;
+};
+
+export type VatRatesData = {
+  last_updated: string;
+  disclaimer: string;
+  source: string;
+  rates: Record<string, VatRate>;
+};

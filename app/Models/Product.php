@@ -10,13 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Ibericode\Vat\Facades\Vat;
-use App\Helpers\VatHelper;
+use App\Services\VatService;
 
 class Product extends Model implements HasMedia
 {
@@ -68,6 +68,17 @@ class Product extends Model implements HasMedia
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Optional relationship for loading images via Eloquent.
+     * Allows usage of `$product->load('images')`.
+     */
+    public function images(): MorphMany
+    {
+        /** @var \Illuminate\Database\Eloquent\Relations\MorphMany $relation */
+        $relation = $this->media();
+        return $relation->where('collection_name', 'images');
     }
 
     public function variationTypes(): HasMany
@@ -172,10 +183,6 @@ class Product extends Model implements HasMedia
         return $this->getMedia('images');
     }
 
-    public function getVideos(): MediaCollection
-    {
-        return $this->getMedia('videos');
-    }
 
     public function getFirstOptionsMap(): array
     {
@@ -221,7 +228,6 @@ class Product extends Model implements HasMedia
             'slug' => $this->slug,
             'price' => (float)$this->getPriceForFirstOptions(),
             'vat_rate_type' => $this->vat_rate_type,
-            'gross_price' => $this->gross_price, // ✅ ADĂUGAT
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
             'user_id' => (string)$this->user->id,
@@ -243,21 +249,27 @@ class Product extends Model implements HasMedia
         return $this->hasMany(Review::class);
     }
 
+    /**
+     * Return the VAT rate for the currently selected country.
+     */
+    public function getVatRate(): float
+    {
+        $country = session('country_code', 'RO');
+
+        $rateType = $this->vat_rate_type ?: 'standard';
+
+        return app(\App\Services\VatService::class)->getRate($country, $rateType);
+    }
+
     // ✅ TVA calculat dinamic pe baza codului de țară
     public function getVatAmountAttribute(): float
     {
-        $country = session('country_code', 'RO'); // fallback dacă nu e setată
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
-
-        return round($this->price * ($rate / 100), 2);
+        return round($this->price * ($this->getVatRate() / 100), 2);
     }
 
     public function getGrossPriceAttribute(): float
     {
-        $country = session('country_code', 'RO'); // fallback
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
-
-        return round($this->price * (1 + $rate / 100), 2);
+        return round($this->price + $this->vat_amount, 2);
     }
 
 }

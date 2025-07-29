@@ -1,17 +1,17 @@
-import {PageProps, Product, VariationTypeOption, Media} from "@/types";
-import {Head, Link, router, useForm, usePage} from "@inertiajs/react";
-import {useEffect, useMemo, useState} from "react";
+import { PageProps, Product, VariationTypeOption, Image } from "@/types";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { useEffect, useMemo, useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
+import { calculateVatIncludedPrice, getVatRate } from '@/utils/vat';
+import ErrorBoundary from '@/Components/Core/ErrorBoundary';
+import { useVatCountry } from '@/hooks/useVatCountry';
 
-function Show({
-                appName, product, variationOptions
-              }: PageProps<{
-  product: Product,
-  variationOptions: number[]
-}>) {
+function Show(props: PageProps<{ product: Product; variationOptions: number[] }>) {
+  const { appName, product, variationOptions } = props
+  console.log(product)
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -26,15 +26,28 @@ function Show({
   const [selectedOptions, setSelectedOptions] =
     useState<Record<number, VariationTypeOption>>([]);
 
-  const media = useMemo<Media[]>(() => {
+  const images = useMemo<Image[]>(() => {
+    if (!product) return [];
     for (let typeId in selectedOptions) {
       const option = selectedOptions[typeId];
-      if (option.images.length > 0) return [...option.images, ...product.videos];
+      if (option?.images?.length > 0) return option.images;
     }
-    return [...product.images, ...product.videos];
+    return product.images ?? [];
   }, [product, selectedOptions]);
 
+  const { countryCode } = useVatCountry();
+
   const computedProduct = useMemo(() => {
+    if (!product) {
+      return {
+        price: 0,
+        gross_price: 0,
+        vat_amount: 0,
+        vat_rate_type: 'standard',
+        quantity: 0,
+      };
+    }
+
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
       .sort();
@@ -42,7 +55,7 @@ function Show({
     let price = product.price;
     let quantity = product.quantity === null ? Number.MAX_VALUE : product.quantity;
 
-    for (let variation of product.variations) {
+    for (let variation of product.variations || []) {
       const optionIds = variation.variation_type_option_ids.sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         price = variation.price;
@@ -51,17 +64,19 @@ function Show({
       }
     }
 
+    const rate = product.vat_rate ?? getVatRate(countryCode, product.vat_rate_type ?? 'standard');
+    const gross = calculateVatIncludedPrice(price, rate);
     return {
       price,
-      gross_price: product.gross_price,
-      vat_amount: product.vat_amount,
+      gross_price: gross,
+      vat_amount: +(gross - price).toFixed(2),
       vat_rate_type: product.vat_rate_type,
       quantity,
     };
-  }, [product, selectedOptions]);
+  }, [product, selectedOptions, countryCode]);
 
   useEffect(() => {
-    for (let type of product.variationTypes) {
+    for (let type of (product.variationTypes || [])) {
       const selectedOptionId: number = variationOptions[type.id];
       chooseOption(
         type.id,
@@ -116,7 +131,7 @@ function Show({
   }
 
   const renderProductVariationTypes = () => {
-    return product.variationTypes.map((type, i) => (
+    return (product.variationTypes || []).map((type, i) => (
       <div key={type.id}>
         <b>{type.name}</b>
         {type.type === 'Image' &&
@@ -170,16 +185,25 @@ function Show({
     form.setData('option_ids', idsMap)
   }, [selectedOptions]);
 
+  if (!product) {
+    return (
+      <AuthenticatedLayout>
+        <div className="p-8">Product not found.</div>
+      </AuthenticatedLayout>
+    );
+  }
+
   return (
-    <AuthenticatedLayout>
-      <Head>
-        <title>{product.title}</title>
+    <ErrorBoundary>
+      <AuthenticatedLayout>
+        <Head>
+          <title>{product.title}</title>
         <meta name="title" content={product.meta_title || product.title}/>
         <meta name="description" content={product.meta_description}/>
         <link rel="canonical" href={route('product.show', product.slug)}/>
         <meta property="og:title" content={product.title}/>
         <meta property="og:description" content={product.meta_description}/>
-        <meta property="og:image" content={media.find(m => 'small' in m)?.small}/>
+        <meta property="og:image" content={images[0]?.small}/>
         <meta property="og:url" content={route('product.show', product.slug)}/>
         <meta property="og:type" content="product"/>
         <meta property="og:site_name" content={appName}/>
@@ -188,13 +212,17 @@ function Show({
       <div className="container mx-auto p-8">
         <div className="grid gap-4 sm:gap-8 grid-cols-1 lg:grid-cols-12">
           <div className="col-span-12 md:col-span-7">
-            <Carousel media={media}/>
+            {images.length > 0 ? (
+              <Carousel media={images}/>
+            ) : (
+              <p>No image available</p>
+            )}
           </div>
           <div className="col-span-12 md:col-span-5">
             <h1 className="text-2xl">{product.title}</h1>
             <p className={'mb-8'}>
-              by <Link href={route('vendor.profile', product.user.store_name)} className="hover:underline">{product.user.name}</Link>&nbsp;
-              in <Link href={route('product.byDepartment', product.department.slug)} className="hover:underline">{product.department.name}</Link>
+              by <Link href={route('vendor.profile', product.user?.store_name ?? '')} className="hover:underline">{product.user?.name}</Link>&nbsp;
+              in <Link href={route('product.byDepartment', product.department?.slug ?? '')} className="hover:underline">{product.department?.name}</Link>
             </p>
 
             <div className="mb-4">
@@ -223,7 +251,8 @@ function Show({
           </div>
         </div>
       </div>
-    </AuthenticatedLayout>
+      </AuthenticatedLayout>
+    </ErrorBoundary>
   );
 }
 

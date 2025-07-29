@@ -1,11 +1,23 @@
 import React from 'react';
 import {Link, usePage} from "@inertiajs/react";
+import { calculateVatIncludedPrice, getVatRate } from '@/utils/vat';
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {productRoute} from "@/helpers";
+import { useVatCountry } from '@/hooks/useVatCountry';
 
 function MiniCartDropdown() {
 
-  const {totalQuantity, totalPrice, miniCartItems} = usePage().props
+  const {totalQuantity, totalPrice, totalGross, miniCartItems} = usePage().props
+  const { countryCode } = useVatCountry();
+  const fallbackGross = miniCartItems.reduce((acc, item) => {
+    const rate = item.vat_rate ?? getVatRate(countryCode, item.vat_rate_type ?? 'standard')
+    const itemGross = item.gross_price ?? calculateVatIncludedPrice(item.price, rate)
+    return acc + itemGross * item.quantity
+  }, 0)
+  const fallbackPrice = miniCartItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
+
+  const displayedTotalGross = totalGross ?? fallbackGross
+  const displayedTotalPrice = totalPrice ?? fallbackPrice
 
   return (
     <details className="dropdown dropdown-end static sm:relative ">
@@ -40,7 +52,10 @@ function MiniCartDropdown() {
                 You don't have any items yet.
               </div>
             )}
-            {miniCartItems.map((item) => (
+            {miniCartItems.map((item) => {
+              const rate = item.vat_rate ?? getVatRate(countryCode, item.vat_rate_type ?? 'standard')
+              const itemGross = item.gross_price ?? calculateVatIncludedPrice(item.price, rate)
+              return (
               <div key={item.id} className={'flex gap-4 p-3'}>
                 <Link href={productRoute(item)}
                       className={'w-16 h-16 flex justify-center items-center'}>
@@ -60,17 +75,19 @@ function MiniCartDropdown() {
                     </div>
                     <div>
                       <CurrencyFormatter
-                        amount={item.quantity * item.price}/>
+                        amount={item.quantity * itemGross}/>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+              )})}
           </div>
 
-          <span className="text-lg">
-            Subtotal: <CurrencyFormatter amount={totalPrice}/>
-          </span>
+          <div className="text-lg space-y-1">
+            <div>Subtotal: <CurrencyFormatter amount={displayedTotalPrice}/></div>
+            <div>VAT: <CurrencyFormatter amount={displayedTotalGross - displayedTotalPrice}/></div>
+            <div className="font-bold">Total: <CurrencyFormatter amount={displayedTotalGross}/></div>
+          </div>
           <div className="card-actions">
             <Link href={route('cart.index')}
                   className="btn btn-primary btn-block">

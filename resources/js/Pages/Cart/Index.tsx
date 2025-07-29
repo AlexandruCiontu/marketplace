@@ -7,6 +7,11 @@ import {CreditCardIcon} from "@heroicons/react/24/outline";
 import CartItem from "@/Components/App/CartItem";
 import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
+import rates from '@/data/rates.json';
+import { calculateVatIncludedPrice, getVatRate } from '@/utils/vat';
+import { useVatCountry } from '@/hooks/useVatCountry';
+import axios from 'axios';
+import { useState } from 'react';
 
 function Index(
   {
@@ -16,14 +21,45 @@ function Index(
     totalPrice,
     totalGross,
     shippingAddress,
-    addresses,
-    countrycode, // 🆕 codul țării din sesiune
+    addresses
   }: PageProps<{
     cartItems: Record<number, GroupedCartItems>,
     shippingAddress: Address,
-    addresses: Address[],
-    countrycode: string
+    addresses: Address[]
   }>) {
+  const { countryCode, updateCountry } = useVatCountry();
+  const [selectedCountry, setSelectedCountry] = useState(countryCode);
+
+  const countryName = rates.rates?.[selectedCountry]?.country ?? selectedCountry;
+
+  const fetchCart = () => {
+    router.reload({
+      preserveState: true,
+      only: ['cartItems', 'totalPrice', 'totalGross', 'totalQuantity'],
+    });
+  };
+
+  const handleCountryChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCode = e.target.value;
+    setSelectedCountry(newCode);
+    await axios.post('/api/cart/vat-country', { country_code: newCode });
+    updateCountry(newCode);
+    fetchCart();
+  };
+
+  const fallbackGross = Object.values(cartItems).reduce((acc, group) => {
+    return acc + group.items.reduce((a, item) => {
+      const rate = item.vat_rate ?? getVatRate(selectedCountry, item.vat_rate_type ?? 'standard')
+      const gross = item.gross_price ?? calculateVatIncludedPrice(item.price, rate)
+      return a + gross * item.quantity
+    }, 0)
+  }, 0)
+  const fallbackPrice = Object.values(cartItems).reduce((acc, group) => {
+    return acc + group.items.reduce((a, item) => a + item.price * item.quantity, 0)
+  }, 0)
+
+  const displayedTotalGross = totalGross ?? fallbackGross
+  const displayedTotalPrice = totalPrice ?? fallbackPrice
 
   const onAddressChange = (address: Address) => {
     router.put(route('cart.shippingAddress', address.id), {}, {
@@ -95,17 +131,17 @@ function Index(
                              onChange={onAddressChange}
                              buttonLabel="Change Address"/>
 
+              <div className="mt-2 text-sm text-gray-500">VAT Country: {countryName}</div>
+
               {/* 🌍 Selector țară pentru TVA */}
-              <form method="POST" action={route('set.vat.country')} className="mt-6">
-                <input type="hidden" name="_token" value={csrf_token}/>
+              <div className="mt-6">
                 <label htmlFor="vat_country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   VAT Country
                 </label>
                 <select
-                  name="vat_country"
                   id="vat_country"
-                  defaultValue={countryCode ?? 'RO'}
-                  onChange={(e) => e.currentTarget.form?.submit()}
+                  value={selectedCountry}
+                  onChange={handleCountryChange}
                   className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 >
                   {[
@@ -116,27 +152,27 @@ function Index(
                     <option key={code} value={code}>{code}</option>
                   ))}
                 </select>
-              </form>
+              </div>
             </div>
           </div>
 
           <div className="card bg-white dark:bg-gray-800">
             <div className="card-body gap-1">
               <div className="flex justify-between">
-                <span>Items ({totalQuantity})</span>
-                <CurrencyFormatter amount={totalPrice}/>
+                <span>Subtotal ({totalQuantity})</span>
+                <CurrencyFormatter amount={displayedTotalPrice}/>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
                 <span>N/A</span>
               </div>
               <div className="flex justify-between">
-                <span>Tax</span>
-                <CurrencyFormatter amount={totalGross - totalPrice}/>
+                <span>VAT</span>
+                <CurrencyFormatter amount={displayedTotalGross - displayedTotalPrice}/>
               </div>
               <div className="flex justify-between font-bold text-xl">
-                <span>Order Total</span>
-                <CurrencyFormatter amount={totalGross}/>
+                <span>Total</span>
+                <CurrencyFormatter amount={displayedTotalGross}/>
               </div>
               <form action={route('cart.checkout')} method="post">
                 <input type="hidden" name="_token" value={csrf_token}/>

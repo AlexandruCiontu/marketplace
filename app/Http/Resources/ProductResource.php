@@ -12,8 +12,10 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         $options = $request->input('options') ?: [];
-        $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
-        $videos = $this->getVideos();
+
+        $images = $options
+            ? $this->getImagesForOptions($options)
+            : $this->getMedia('images');
 
         return [
             'id' => $this->id,
@@ -27,16 +29,10 @@ class ProductResource extends JsonResource
             'image' => $this->getFirstImageUrl(),
             'images' => $images->map(function ($image) {
                 return [
-                    'id' => $image->id,
-                    'thumb' => $image->getUrl('thumb'),
+                    'url' => $image->getUrl(),
+                    'thumbnail' => $image->getUrl('thumb'),
                     'small' => $image->getUrl('small'),
                     'large' => $image->getUrl('large'),
-                ];
-            }),
-            'videos' => $videos->map(function ($video) {
-                return [
-                    'id' => $video->id,
-                    'url' => $video->getUrl(),
                 ];
             }),
             'user' => [
@@ -60,8 +56,8 @@ class ProductResource extends JsonResource
                             'name' => $option->name,
                             'images' => $option->getMedia('images')->map(function ($image) {
                                 return [
-                                    'id' => $image->id,
-                                    'thumb' => $image->getUrl('thumb'),
+                                    'url' => $image->getUrl(),
+                                    'thumbnail' => $image->getUrl('thumb'),
                                     'small' => $image->getUrl('small'),
                                     'large' => $image->getUrl('large'),
                                 ];
@@ -79,13 +75,12 @@ class ProductResource extends JsonResource
                 ];
             }),
 
-            // ✅ TVA fields
-            // ✅ TVA fields
             'vat_rate_type' => $this->vat_rate_type ?? 'standard',
-            'country_code' => session('country_code') ?? 'RO',
-            'price_with_vat' => round((float) $this->price_with_vat, 2),
-            'vat_amount' => round((float) $this->vat_amount, 2),
-            'gross_price' => round((float) $this->gross_price, 2),
+            'vat_rate'      => $this->getVatRate(),
+            'country_code'  => session('country_code') ?? 'RO',
+            'net_price'     => round((float) $this->price, 2),
+            'vat_amount'    => round((float) $this->vat_amount, 2),
+            'gross_price'   => round((float) $this->gross_price, 2),
         ];
     }
 }
