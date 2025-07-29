@@ -3,10 +3,12 @@ import {Link, usePage} from "@inertiajs/react";
 import { calculateVatAndGross } from '@/utils/vat';
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {productRoute} from "@/helpers";
+import { useVatCountry } from '@/hooks/useVatCountry';
 
 function MiniCartDropdown() {
 
-  const {totalQuantity, totalPrice, totalGross, miniCartItems, countryCode} = usePage().props
+  const {totalQuantity, totalPrice, totalGross, miniCartItems} = usePage().props
+  const { countryCode } = useVatCountry();
   const fallbackGross = miniCartItems.reduce((acc, item) => {
     const itemGross = item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
     return acc + itemGross * item.quantity

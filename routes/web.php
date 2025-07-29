@@ -7,6 +7,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\ShippingAddressController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\VatCountryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Stevebauman\Location\Facades\Location;
@@ -41,6 +42,12 @@ Route::controller(CartController::class)->group(function () {
     Route::put('/cart/{product}', 'update')->name('cart.update');
     Route::delete('/cart/{product}', 'destroy')->name('cart.destroy');
     Route::put('/cart/update-shipping-address/{address}', 'updateShippingAddress')->name('cart.shippingAddress');
+});
+
+// VAT country API
+Route::prefix('api')->group(function () {
+    Route::get('/vat-country', [VatCountryController::class, 'show']);
+    Route::post('/vat-country', [VatCountryController::class, 'update']);
 });
 
 Route::post('/stripe/webhook', [StripeController::class, 'webhook'])->name('stripe.webhook');

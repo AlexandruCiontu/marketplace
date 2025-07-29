@@ -9,6 +9,7 @@ import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
 import rates from '@/data/rates.json';
 import { calculateVatAndGross } from '@/utils/vat';
+import { useVatCountry } from '@/hooks/useVatCountry';
 
 function Index(
   {
@@ -18,16 +19,15 @@ function Index(
     totalPrice,
     totalGross,
     shippingAddress,
-    addresses,
-    countrycode, // 🆕 codul țării din sesiune
+    addresses
   }: PageProps<{
     cartItems: Record<number, GroupedCartItems>,
     shippingAddress: Address,
-    addresses: Address[],
-    countrycode: string
+    addresses: Address[]
   }>) {
+  const { countryCode, updateCountry } = useVatCountry();
 
-  const countryCode = countrycode
+  const countryName = rates.rates?.[countryCode]?.country ?? countryCode
   const countryName = rates.rates?.[countryCode]?.country ?? countryCode
 
   const fallbackGross = Object.values(cartItems).reduce((acc, group) => {
@@ -116,16 +116,14 @@ function Index(
               <div className="mt-2 text-sm text-gray-500">VAT Country: {countryName}</div>
 
               {/* 🌍 Selector țară pentru TVA */}
-              <form method="POST" action={route('set.vat.country')} className="mt-6">
-                <input type="hidden" name="_token" value={csrf_token}/>
+              <div className="mt-6">
                 <label htmlFor="vat_country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   VAT Country
                 </label>
                 <select
-                  name="vat_country"
                   id="vat_country"
-                  defaultValue={countryCode ?? 'RO'}
-                  onChange={(e) => e.currentTarget.form?.submit()}
+                  value={countryCode}
+                  onChange={(e) => updateCountry(e.target.value)}
                   className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 >
                   {[
@@ -136,7 +134,7 @@ function Index(
                     <option key={code} value={code}>{code}</option>
                   ))}
                 </select>
-              </form>
+              </div>
             </div>
           </div>
 

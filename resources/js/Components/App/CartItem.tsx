@@ -1,10 +1,11 @@
 import React, {useState} from 'react';
-import {Link, router, useForm, usePage} from "@inertiajs/react";
+import {Link, router, useForm} from "@inertiajs/react";
 import {CartItem as CartItemType} from "@/types";
 import TextInput from "@/Components/Core/TextInput";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {productRoute} from "@/helpers";
 import { calculateVatAndGross } from '@/utils/vat';
+import { useVatCountry } from '@/hooks/useVatCountry';
 
 function CartItem({item}: { item: CartItemType }) {
   const deleteForm = useForm({
@@ -14,7 +15,7 @@ function CartItem({item}: { item: CartItemType }) {
   const [quantity, setQuantity] = useState(item.quantity)
   const [error, setError] = useState('')
 
-  const {countryCode} = usePage().props
+  const { countryCode } = useVatCountry();
 
   const onDeleteClick = () => {
     deleteForm.delete(route('cart.destroy', item.product_id), {
