@@ -5,15 +5,13 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
-import vatService from "@/services/vatService";
 
 function Show({
                 appName, product, variationOptions
-}: PageProps<{
+              }: PageProps<{
   product: Product,
   variationOptions: number[]
 }>) {
-
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -21,11 +19,10 @@ function Show({
   }>({
     option_ids: {},
     quantity: 1,
-    price: null // TODO populate price on change
+    price: null
   })
 
   const {url} = usePage();
-
   const [selectedOptions, setSelectedOptions] =
     useState<Record<number, VariationTypeOption>>([]);
 
@@ -54,40 +51,18 @@ function Show({
       }
     }
 
-    const vatRateType = (product as any).vat_rate_type ?? 'standard';
-    const countryCode = (product as any).country_code;
-
-    if (price === null || price === undefined || isNaN(price as unknown as number)) {
-      return {
-        price: 0,
-        gross_price: 0,
-        vat_amount: 0,
-        vat_rate_type: vatRateType,
-        quantity,
-      };
-    }
-
-    console.log('Calling VAT service with:', price, vatRateType, countryCode);
-    const result = vatService
-      ? vatService.calculate(price, vatRateType, countryCode) ?? { gross: price, vat: 0 }
-      : { gross: price, vat: 0 };
-    console.log('VAT result:', result);
-
     return {
       price,
-      gross_price: result.gross,
-      vat_amount: result.vat,
-      vat_rate_type: vatRateType,
+      gross_price: product.gross_price,
+      vat_amount: product.vat_amount,
+      vat_rate_type: product.vat_rate_type,
       quantity,
     };
   }, [product, selectedOptions]);
 
-
   useEffect(() => {
     for (let type of product.variationTypes) {
-      // console.log(variationOptions)
       const selectedOptionId: number = variationOptions[type.id];
-      console.log(selectedOptionId, type.options)
       chooseOption(
         type.id,
         type.options.find(op => op.id == selectedOptionId) || type.options[0],
@@ -107,7 +82,6 @@ function Show({
     option: VariationTypeOption,
     updateRouter: boolean = true
   ) => {
-
     setSelectedOptions((prevSelectedOptions) => {
       const newOptions = {
         ...prevSelectedOptions,
@@ -142,64 +116,57 @@ function Show({
   }
 
   const renderProductVariationTypes = () => {
-    return (
-      product.variationTypes.map((type, i) => (
-        <div key={type.id}>
-          <b>{type.name}</b>
-          {type.type === 'Image' &&
-            <div className="flex gap-2 mb-4">
-                {type.options.map(option => (
-                  <div onClick={() => chooseOption(type.id, option)} key={option.id}>
-
-                    {option.images.length > 0 &&
-                    
-
-                      <img src={option.images[0].thumb} alt="" className={'w-[64px] h-[64px] object-contain ' + (
-                      selectedOptions[type.id]?.id === option.id ?
-                        'outline outline-4 outline-primary' : ''
-                    )}/>}
-                  </div>
-                ))}
-            </div>}
-          {type.type === 'Radio' &&
-            <div className="flex join mb-4">
-              {type.options.map(option => (
-                <input onChange={() => chooseOption(type.id, option)}
-                       key={option.id}
-                       className="join-item btn"
-                       type="radio"
-                       value={option.id}
-                       checked={selectedOptions[type.id]?.id === option.id}
-                       name={'variation_type_' + type.id}
-                       aria-label={option.name}/>
-              ))}
-            </div>}
-        </div>
-      ))
-    )
+    return product.variationTypes.map((type, i) => (
+      <div key={type.id}>
+        <b>{type.name}</b>
+        {type.type === 'Image' &&
+          <div className="flex gap-2 mb-4">
+            {type.options.map(option => (
+              <div onClick={() => chooseOption(type.id, option)} key={option.id}>
+                {option.images.length > 0 &&
+                  <img src={option.images[0].thumb} alt="" className={'w-[64px] h-[64px] object-contain ' + (
+                    selectedOptions[type.id]?.id === option.id ? 'outline outline-4 outline-primary' : ''
+                  )}/>
+                }
+              </div>
+            ))}
+          </div>}
+        {type.type === 'Radio' &&
+          <div className="flex join mb-4">
+            {type.options.map(option => (
+              <input onChange={() => chooseOption(type.id, option)}
+                     key={option.id}
+                     className="join-item btn"
+                     type="radio"
+                     value={option.id}
+                     checked={selectedOptions[type.id]?.id === option.id}
+                     name={'variation_type_' + type.id}
+                     aria-label={option.name}/>
+            ))}
+          </div>}
+      </div>
+    ));
   }
 
   const renderAddToCartButton = () => {
-    return (<div className="mb-8 flex gap-4">
+    return (
+      <div className="mb-8 flex gap-4">
         <select value={form.data.quantity}
                 onChange={onQuantityChange}
                 className="select select-bordered w-full">
-          {Array.from({
-            length: Math.min(10, computedProduct.quantity)
-          }).map((el, i) => (
+          {Array.from({length: Math.min(10, computedProduct.quantity)}).map((_, i) => (
             <option value={i + 1} key={i + 1}>Quantity: {i + 1}</option>
           ))}
         </select>
         <button onClick={addToCart} className="btn btn-primary">Add to Cart</button>
       </div>
-    )
+    );
   }
 
   useEffect(() => {
     const idsMap = Object.fromEntries(
       Object.entries(selectedOptions).map(([typeId, option]: [string, VariationTypeOption]) => [typeId, option.id])
     )
-    console.log(idsMap)
     form.setData('option_ids', idsMap)
   }, [selectedOptions]);
 
@@ -210,7 +177,6 @@ function Show({
         <meta name="title" content={product.meta_title || product.title}/>
         <meta name="description" content={product.meta_description}/>
         <link rel="canonical" href={route('product.show', product.slug)}/>
-
         <meta property="og:title" content={product.title}/>
         <meta property="og:description" content={product.meta_description}/>
         <meta property="og:image" content={media.find(m => 'small' in m)?.small}/>
@@ -225,22 +191,23 @@ function Show({
             <Carousel media={media}/>
           </div>
           <div className="col-span-12 md:col-span-5">
-            <h1 className="text-2xl ">{product.title}</h1>
-
+            <h1 className="text-2xl">{product.title}</h1>
             <p className={'mb-8'}>
-              by <Link href={route('vendor.profile', product.user.store_name)} className="hover:underline">
-              {product.user.name}
-            </Link>&nbsp;
+              by <Link href={route('vendor.profile', product.user.store_name)} className="hover:underline">{product.user.name}</Link>&nbsp;
               in <Link href={route('product.byDepartment', product.department.slug)} className="hover:underline">{product.department.name}</Link>
             </p>
 
-            <div>
+            <div className="mb-4">
               <div className="text-3xl font-semibold">
-                <CurrencyFormatter amount={computedProduct.price}/>
+                <CurrencyFormatter amount={computedProduct.gross_price}/>
               </div>
+              {computedProduct.vat_amount > 0 && (
+                <p className="text-sm text-gray-500">
+                  Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount}/>
+                </p>
+              )}
             </div>
 
-            {/*<pre>{JSON.stringify(product.variationTypes, undefined, 2)}</pre>*/}
             {renderProductVariationTypes()}
 
             {computedProduct.quantity != undefined && computedProduct.quantity < 10 &&
@@ -248,6 +215,7 @@ function Show({
                 <span>Only {computedProduct.quantity} left</span>
               </div>
             }
+
             {renderAddToCartButton()}
 
             <b className="text-xl">About the Item</b>
@@ -260,3 +228,4 @@ function Show({
 }
 
 export default Show;
+

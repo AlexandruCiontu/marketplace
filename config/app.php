@@ -130,3 +130,4 @@ return [
 
     'platform_fee_pct' => 10
 ];
+

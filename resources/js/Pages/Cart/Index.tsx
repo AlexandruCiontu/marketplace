@@ -16,13 +16,14 @@ function Index(
     totalPrice,
     totalGross,
     shippingAddress,
-    addresses
+    addresses,
+    countrycode, // 🆕 codul țării din sesiune
   }: PageProps<{
     cartItems: Record<number, GroupedCartItems>,
     shippingAddress: Address,
-    addresses: Address[]
+    addresses: Address[],
+    countrycode: string
   }>) {
-
 
   const onAddressChange = (address: Address) => {
     router.put(route('cart.shippingAddress', address.id), {}, {
@@ -38,9 +39,7 @@ function Index(
       <div className="container mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-4">
         <div className="card flex-1 bg-white dark:bg-gray-800 order-2 lg:order-1">
           <div className="card-body">
-            <h2 className="text-lg font-bold">
-              Shopping Cart
-            </h2>
+            <h2 className="text-lg font-bold">Shopping Cart</h2>
 
             <div className="my-4">
               {Object.keys(cartItems).length === 0 && (
@@ -50,8 +49,7 @@ function Index(
               )}
               {Object.values(cartItems).map(cartItem => (
                 <div key={cartItem.user.id}>
-                  <div
-                    className={"flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-gray-300 mb-4"}>
+                  <div className={"flex flex-col sm:flex-row items-center justify-between pb-4 border-b border-gray-300 mb-4"}>
                     <Link href={route('vendor.profile', cartItem.user.name)} className={"underline"}>
                       {cartItem.user.name}
                     </Link>
@@ -72,6 +70,7 @@ function Index(
             </div>
           </div>
         </div>
+
         <div className="lg:min-w-[260px] order-1 lg:order-2">
           <div className="card bg-white dark:bg-gray-800 mb-4">
             <div className="card-body">
@@ -95,8 +94,32 @@ function Index(
                              selectedAddress={shippingAddress}
                              onChange={onAddressChange}
                              buttonLabel="Change Address"/>
+
+              {/* 🌍 Selector țară pentru TVA */}
+              <form method="POST" action={route('set.vat.country')} className="mt-6">
+                <input type="hidden" name="_token" value={csrf_token}/>
+                <label htmlFor="vat_country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  VAT Country
+                </label>
+                <select
+                  name="vat_country"
+                  id="vat_country"
+                  defaultValue={countryCode ?? 'RO'}
+                  onChange={(e) => e.currentTarget.form?.submit()}
+                  className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
+                  {[
+                    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
+                    'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT',
+                    'RO', 'SK', 'SI', 'ES', 'SE'
+                  ].map(code => (
+                    <option key={code} value={code}>{code}</option>
+                  ))}
+                </select>
+              </form>
             </div>
           </div>
+
           <div className="card bg-white dark:bg-gray-800">
             <div className="card-body gap-1">
               <div className="flex justify-between">

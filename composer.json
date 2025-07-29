@@ -19,12 +19,14 @@
         "laravel/scout": "^10.15",
         "laravel/tinker": "^2.9",
         "league/csv": "^9.24",
+        "mpociot/vat-calculator": "^3.22",
         "php-http/curl-client": "^2.3",
         "simonhamp/laravel-stripe-connect": "^0.5.0",
         "spatie/laravel-permission": "^6.10",
         "stevebauman/location": "^7.5",
         "stripe/stripe-php": "^16.6",
         "tightenco/ziggy": "^2.0",
+        "torann/geoip": "^3.0",
         "typesense/typesense-php": "^5.1"
     },
     "require-dev": {
@@ -86,6 +88,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true
 }

@@ -27,6 +27,7 @@ class CartController extends Controller
             'cartItems' => $cartService->getCartItemsGrouped(),
             'addresses' => $user ? ShippingAddressResource::collection($user->shippingAddresses)->collection->toArray() : [],
             'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null,
+            'countryCode' => session('country_code', 'RO'),
         ]);
     }
 

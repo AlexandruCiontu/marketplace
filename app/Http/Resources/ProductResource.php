@@ -8,19 +8,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ProductResource extends JsonResource
 {
     public static $wrap = false;
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
         $options = $request->input('options') ?: [];
-        if ($options) {
-            $images = $this->getImagesForOptions($options);
-        } else {
-            $images = $this->getImages();
-        }
+        $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
         $videos = $this->getVideos();
 
         return [
@@ -32,8 +24,6 @@ class ProductResource extends JsonResource
             'meta_description' => $this->meta_description,
             'price' => $this->price,
             'quantity' => $this->quantity,
-            // Use the "small" conversion for the main image to keep file sizes
-            // small when displaying the product.
             'image' => $this->getFirstImageUrl(),
             'images' => $images->map(function ($image) {
                 return [
@@ -87,7 +77,15 @@ class ProductResource extends JsonResource
                     'quantity' => $variation->quantity,
                     'price' => $variation->price,
                 ];
-            })
+            }),
+
+            // ✅ TVA fields
+            // ✅ TVA fields
+            'vat_rate_type' => $this->vat_rate_type ?? 'standard',
+            'country_code' => session('country_code') ?? 'RO',
+            'price_with_vat' => round((float) $this->price_with_vat, 2),
+            'vat_amount' => round((float) $this->vat_amount, 2),
+            'gross_price' => round((float) $this->gross_price, 2),
         ];
     }
 }
