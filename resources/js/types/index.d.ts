@@ -50,6 +50,9 @@ export type Product = {
   title: string;
   slug: string;
   price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   quantity: number;
   vat_rate_type?: string;
   image: string;
@@ -75,6 +78,9 @@ export type Product = {
     variation_type_option_ids: number[];
     quantity: number;
     price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   }>
 }
 
@@ -83,6 +89,9 @@ export type ProductListItem = {
   title: string;
   slug: string;
   price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   quantity: number;
   image: string;
   user_id: number;
@@ -99,6 +108,9 @@ export type CartItem = {
   title: string;
   slug: string;
   price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;
@@ -109,6 +121,7 @@ export type GroupedCartItems = {
   user: User;
   items: CartItem[];
   totalPrice: number;
+  totalGross: number;
   totalQuantity: number;
 }
 
@@ -151,6 +164,7 @@ export type PageProps<
   ziggy: Config & { location: string };
   totalQuantity: number;
   totalPrice: number;
+  totalGross: number;
   miniCartItems: CartItem[];
   departments: Department[];
   keyword: string;
@@ -161,6 +175,9 @@ export type OrderItem = {
   id: number;
   quantity: number;
   price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   variation_type_option_ids: number[];
   product: {
     id: number;
@@ -174,6 +191,9 @@ export type OrderItem = {
 export type Order = {
   id: number;
   total_price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   status: string;
   created_at: string;
   vendorUser: {

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\VariationTypeOption;
+use App\Services\VatService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
@@ -73,6 +74,8 @@ class CartService
                     ->keyBy('id');
 
                 $cartItemData = [];
+                $vatService = app(VatService::class);
+                $countryCode = session('country_code', 'RO');
                 foreach ($cartItems as $key => $cartItem) {
                     $product = data_get($products, $cartItem['product_id']);
                     if (! $product) {
@@ -102,17 +105,25 @@ class CartService
                         ];
                     }
 
+                    $vatData = $vatService->calculate(
+                        netAmount: $cartItem['price'],
+                        rateType: $product->vat_rate_type ?? 'standard',
+                        countryCode: $countryCode,
+                    );
+
                     $cartItemData[] = [
                         'id' => $cartItem['id'],
                         'product_id' => $product->id,
                         'title' => $product->title,
                         'slug' => $product->slug,
                         'price' => $cartItem['price'],
-                        'gross_price' => app(\App\Services\VatService::class)->calculate($cartItem['price'], $product->vat_rate_type)['gross'],
+                        'vat_rate' => $vatData['rate'],
+                        'vat_amount' => $vatData['vat'],
+                        'gross_price' => $vatData['gross'],
                         'quantity' => $cartItem['quantity'],
                         'option_ids' => $cartItem['option_ids'],
                         'options' => $optionInfo,
-                        'image' => $imageUrl ?: $product->getFirstMediaUrl('images', 'small'),
+                        'image' => $imageUrl ?: $product->getFirstImageUrl('images', 'small'),
                         'user' => [
                             'id' => $product->created_by,
                             'name' => $product->user->vendor->store_name,
@@ -303,6 +314,20 @@ class CartService
     public function getCartItemsGrouped(): array
     {
         $cartItems = $this->getCartItems();
+
+        $vatService = app(VatService::class);
+        $countryCode = session('country_code', 'RO');
+
+        foreach ($cartItems as &$item) {
+            $product = Product::find($item['product_id']);
+
+            $rateType = $product->vat_rate_type ?? 'standard';
+            $vatData = $vatService->calculate($item['price'], $rateType, $countryCode);
+
+            $item['vat_rate'] = $vatData['rate'];
+            $item['vat_amount'] = $vatData['vat'];
+            $item['gross_price'] = $vatData['gross'];
+        }
 
         return collect($cartItems)
             ->groupBy(fn ($item) => $item['user']['id'])
