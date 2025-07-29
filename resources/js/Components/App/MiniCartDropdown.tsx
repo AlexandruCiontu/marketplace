@@ -10,7 +10,7 @@ function MiniCartDropdown() {
   const {totalQuantity, totalPrice, totalGross, miniCartItems} = usePage().props
   const { countryCode } = useVatCountry();
   const fallbackGross = miniCartItems.reduce((acc, item) => {
-    const itemGross = item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
+    const itemGross = item.gross_price ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
     return acc + itemGross * item.quantity
   }, 0)
   const fallbackPrice = miniCartItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
@@ -52,7 +52,7 @@ function MiniCartDropdown() {
               </div>
             )}
             {miniCartItems.map((item) => {
-              const itemGross = item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
+              const itemGross = item.gross_price ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
               return (
               <div key={item.id} className={'flex gap-4 p-3'}>
                 <Link href={productRoute(item)}

@@ -32,9 +32,7 @@ export default function ProductItem({ product }: { product: ProductListItem }) {
     countryCode
   );
 
-  const displayPrice = Number(
-    product.price_with_vat ?? product.gross_price ?? vatInfo.gross
-  );
+  const displayPrice = Number(product.gross_price ?? vatInfo.gross);
 
   return (
     <div className="card bg-base-100 shadow">

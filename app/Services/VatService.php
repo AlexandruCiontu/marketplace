@@ -17,16 +17,22 @@ class VatService
     {
         try {
             $rate = $this->rates->getRateForCountry($countryCode, $rateType);
-
-            // Fallback la "standard" dacă nu există rata cerută
-            if (!is_numeric($rate) || $rate <= 0) {
-                $rate = $this->rates->getRateForCountry($countryCode, 'standard') ?? 0.0;
-            }
         } catch (\Throwable $e) {
-            $rate = 0.0;
+            $rate = null;
         }
 
-        return (float) $rate;
+        if (! is_numeric($rate) || $rate <= 0) {
+            if ($rateType === 'reduced2') {
+                $rate = $this->rates->getRateForCountry($countryCode, 'reduced');
+                if (! is_numeric($rate) || $rate <= 0) {
+                    $rate = $this->rates->getRateForCountry($countryCode, 'standard');
+                }
+            } else {
+                $rate = $this->rates->getRateForCountry($countryCode, 'standard');
+            }
+        }
+
+        return (float) ($rate ?: 0.0);
     }
 
     /**

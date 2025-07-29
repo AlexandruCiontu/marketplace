@@ -79,7 +79,7 @@ function CartItem({item}: { item: CartItemType }) {
             <button className="btn btn-sm btn-ghost order-4 whitespace-nowrap">Save for Later</button>
             <div className="font-bold text-lg text-right order-2 sm:order-4 sm:ml-auto">
               <CurrencyFormatter
-                amount={(item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross) * quantity}
+                amount={(item.gross_price ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross) * quantity}
               />
             </div>
           </div>

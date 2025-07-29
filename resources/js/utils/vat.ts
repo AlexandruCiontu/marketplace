@@ -6,7 +6,12 @@ export function getVatRate(countryCode: string, rateType: string = 'standard'): 
 
   switch (rateType) {
     case 'reduced2':
-      return country.reduced_rate_alt ?? country.standard_rate ?? 0;
+      return (
+        country.reduced_rate_alt ??
+        country.reduced_rate ??
+        country.standard_rate ??
+        0
+      );
     case 'reduced':
       return country.reduced_rate ?? country.standard_rate ?? 0;
     case 'zero':

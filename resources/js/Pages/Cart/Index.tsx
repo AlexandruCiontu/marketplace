@@ -31,7 +31,7 @@ function Index(
 
   const fallbackGross = Object.values(cartItems).reduce((acc, group) => {
     return acc + group.items.reduce((a, item) => {
-      const gross = item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
+      const gross = item.gross_price ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
       return a + gross * item.quantity
     }, 0)
   }, 0)
