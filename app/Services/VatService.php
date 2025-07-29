@@ -13,11 +13,6 @@ class VatService
         // Poți schimba path-ul dacă preferi altă locație pentru cache
         $this->rates = new Rates(storage_path('framework/cache/vat_rates.cache'));
     }
-
-    /**
-     * Returnează rata TVA pentru o țară și tip de taxă.
-     * Dacă rata nu este disponibilă, folosește automat rata standard.
-     */
     public function getRate(string $countryCode, string $rateType): float
     {
         try {
