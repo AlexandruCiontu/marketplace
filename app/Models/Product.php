@@ -183,10 +183,6 @@ class Product extends Model implements HasMedia
         return $this->getMedia('images');
     }
 
-    public function getVideos(): MediaCollection
-    {
-        return $this->getMedia('videos');
-    }
 
     public function getFirstOptionsMap(): array
     {

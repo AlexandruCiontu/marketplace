@@ -1,4 +1,4 @@
-import {Media} from "@/types";
+import {Image} from "@/types";
 import {useEffect, useState} from "react";
 import {
   ChevronLeftIcon,
@@ -7,8 +7,8 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
-function Carousel({media}: { media: Media[] }) {
-  const [selectedMedia, setSelectedMedia] = useState<Media>(media[0]);
+function Carousel({media}: { media: Image[] }) {
+  const [selectedMedia, setSelectedMedia] = useState<Image>(media[0]);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [thumbnailsPerView, setThumbnailsPerView] = useState(3); // default for small screens
@@ -110,19 +110,11 @@ function Carousel({media}: { media: Media[] }) {
                   : "hover:border-blue-500")
               }
             >
-              {"thumb" in item ? (
-                <img
-                  src={item.thumb}
-                  alt=""
-                  className="w-[64px] h-[64px] min-w-[64px] object-contain"
-                />
-              ) : (
-                <video
-                  src={item.url}
-                  className="w-[64px] h-[64px] min-w-[64px] object-cover"
-                  muted
-                />
-              )}
+              <img
+                src={item.thumb}
+                alt=""
+                className="w-[64px] h-[64px] min-w-[64px] object-contain"
+              />
             </button>
           ))}
         </div>
@@ -142,19 +134,11 @@ function Carousel({media}: { media: Media[] }) {
       {/* Selected Image Section */}
       <div className="order-1 sm:order-2 carousel w-full">
         <div className="carousel-item w-full">
-          {"thumb" in selectedMedia ? (
-            <img
-              src={selectedMedia.large}
-              className="max-w-full h-auto md:h-[600px] mx-auto object-contain"
-              alt="Selected"
-            />
-          ) : (
-            <video
-              src={selectedMedia.url}
-              className="max-w-full h-auto md:h-[600px] mx-auto"
-              controls
-            />
-          )}
+          <img
+            src={selectedMedia.large}
+            className="max-w-full h-auto md:h-[600px] mx-auto object-contain"
+            alt="Selected"
+          />
         </div>
       </div>
     </div>

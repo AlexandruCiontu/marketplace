@@ -39,7 +39,6 @@ class ProductController extends Controller
             'variationTypes.options.images',
             'variations',
             'images',
-            'videos',
             'user.vendor',
             'department',
         ]);
