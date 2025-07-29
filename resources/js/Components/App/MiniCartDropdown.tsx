@@ -43,7 +43,7 @@ function MiniCartDropdown() {
               </div>
             )}
             {miniCartItems.map((item) => {
-              const rate = getVatRate(countryCode, item.vat_rate_type ?? 'standard');
+              const rate = getVatRate(countryCode, (item.vat_rate_type as any) ?? 'standard');
               const gross = calculateVatIncludedPrice(item.price, rate);
               return (
                 <div key={item.id} className={'flex gap-4 p-3'}>

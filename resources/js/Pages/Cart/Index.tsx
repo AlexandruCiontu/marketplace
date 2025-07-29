@@ -9,21 +9,24 @@ import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
 
 function Index(
-  {
-    csrf_token,
-    cartItems,
-    totalQuantity,
-    totalPrice,
-    totalGross,
-    shippingAddress,
-    addresses,
-    countrycode, // 🆕 codul țării din sesiune
-  }: PageProps<{
-    cartItems: Record<number, GroupedCartItems>,
-    shippingAddress: Address,
-    addresses: Address[],
-    countrycode: string
-  }>) {
+    {
+      csrf_token,
+      cartItems,
+      totalQuantity,
+      totalPrice,
+      totalGross,
+      shippingAddress,
+      addresses,
+      countrycode,
+    }: PageProps<{
+      cartItems: Record<number, GroupedCartItems>,
+      shippingAddress: Address,
+      addresses: Address[],
+      countrycode: string,
+      totalGross: number
+    }>) {
+
+  const countryCode = countrycode;
 
   const onAddressChange = (address: Address) => {
     router.put(route('cart.shippingAddress', address.id), {}, {
