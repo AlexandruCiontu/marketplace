@@ -34,7 +34,15 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product->load(['reviews.user']);
+        $product->load([
+            'reviews.user',
+            'variationTypes.options.images',
+            'variations',
+            'images',
+            'videos',
+            'user.vendor',
+            'department',
+        ]);
 
         $hasPurchased = false;
         if (auth()->check()) {
