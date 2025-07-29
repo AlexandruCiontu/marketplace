@@ -1,4 +1,4 @@
-import { ProductListItem } from "@/types";
+import { ProductListItem, VatRateType } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import { getVatRate, calculateVatIncludedPrice } from '@/utils/vat';
@@ -23,7 +23,7 @@ export default function ProductItem({ product, countryCode }: { product: Product
     });
   };
 
-  const rate = getVatRate(countryCode, (product.vat_rate_type as any) ?? 'standard');
+  const rate = getVatRate(countryCode, (product.vat_rate_type as VatRateType) ?? 'standard_rate');
   const displayPrice = calculateVatIncludedPrice(
     product.net_price ?? product.price,
     rate

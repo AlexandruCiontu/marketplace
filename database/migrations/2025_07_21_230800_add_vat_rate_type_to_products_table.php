@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->enum('vat_rate_type', ['standard','reduced','reduced2','zero'])->default('standard')->after('price');
+            $table->enum('vat_rate_type', ['standard_rate','reduced_rate','reduced_rate_alt','super_reduced_rate'])->default('standard_rate')->after('price');
         });
     }
 

@@ -4,6 +4,7 @@ import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
 import { productRoute } from '@/helpers';
 import { getVatRate, calculateVatIncludedPrice } from '@/utils/vat';
 import { useVatCountry } from '@/hooks/useVatCountry';
+import type { VatRateType } from '@/types';
 
 function MiniCartDropdown() {
   const { totalQuantity, totalPrice, miniCartItems } = usePage().props;
@@ -43,7 +44,7 @@ function MiniCartDropdown() {
               </div>
             )}
             {miniCartItems.map((item) => {
-              const rate = getVatRate(countryCode, (item.vat_rate_type as any) ?? 'standard');
+              const rate = getVatRate(countryCode, (item.vat_rate_type as VatRateType) ?? 'standard_rate');
               const gross = calculateVatIncludedPrice(item.price, rate);
               return (
                 <div key={item.id} className={'flex gap-4 p-3'}>

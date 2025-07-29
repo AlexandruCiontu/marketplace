@@ -4,23 +4,14 @@ const rates = (ratesData as any).rates as Record<string, any>;
 
 export function getVatRate(
   countryCode: string,
-  type: 'standard' | 'reduced' | 'reduced2' | 'zero' = 'standard'
+  type: 'standard_rate' | 'reduced_rate' | 'reduced_rate_alt' | 'super_reduced_rate' = 'standard_rate'
 ): number {
-  const fallback = rates['RO'];
-  const country = rates[countryCode] ?? fallback;
-  if (!country) return 0.19; // default
-  switch (type) {
-    case 'reduced':
-      return country.reduced_rate ?? country.standard_rate ?? fallback.standard_rate;
-    case 'reduced2':
-      return (
-        country.reduced_rate_alt ?? country.reduced_rate ?? country.standard_rate ?? fallback.standard_rate
-      );
-    case 'zero':
-      return 0;
-    default:
-      return country.standard_rate ?? fallback.standard_rate;
+  const country = rates[countryCode] ?? rates['RO'];
+  const rate = country?.[type];
+  if (typeof rate === 'number') {
+    return rate;
   }
+  return country?.standard_rate ?? 0;
 }
 
 export function calculateVatIncludedPrice(net: number, rate: number): number {

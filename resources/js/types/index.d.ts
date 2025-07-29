@@ -1,5 +1,11 @@
 import {Config} from 'ziggy-js';
 
+export type VatRateType =
+  | 'standard_rate'
+  | 'reduced_rate'
+  | 'reduced_rate_alt'
+  | 'super_reduced_rate';
+
 export interface User {
   id: number;
   name: string;

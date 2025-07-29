@@ -82,7 +82,7 @@ class ProductResource extends JsonResource
             // ✅ TVA fields
             // ✅ TVA fields
             'net_price' => round((float) $this->price, 2),
-            'vat_rate_type' => $this->vat_rate_type ?? 'standard',
+            'vat_rate_type' => $this->vat_rate_type ?? 'standard_rate',
             'country_code' => session('country_code') ?? 'RO',
             'price_with_vat' => round((float) $this->price_with_vat, 2),
             'vat_amount' => round((float) $this->vat_amount, 2),
