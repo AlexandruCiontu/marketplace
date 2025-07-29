@@ -4,7 +4,7 @@ import {CartItem as CartItemType} from "@/types";
 import TextInput from "@/Components/Core/TextInput";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {productRoute} from "@/helpers";
-import rates from '@/data/rates.json';
+import { calculateVatAndGross } from '@/utils/vat';
 
 function CartItem({item}: { item: CartItemType }) {
   const deleteForm = useForm({
@@ -15,7 +15,6 @@ function CartItem({item}: { item: CartItemType }) {
   const [error, setError] = useState('')
 
   const {countryCode} = usePage().props
-  const standardRate = rates.rates?.[countryCode]?.standard_rate ?? rates.rates?.RO.standard_rate ?? 0
 
   const onDeleteClick = () => {
     deleteForm.delete(route('cart.destroy', item.product_id), {
@@ -78,7 +77,9 @@ function CartItem({item}: { item: CartItemType }) {
             </button>
             <button className="btn btn-sm btn-ghost order-4 whitespace-nowrap">Save for Later</button>
             <div className="font-bold text-lg text-right order-2 sm:order-4 sm:ml-auto">
-              <CurrencyFormatter amount={(item.price_with_vat ?? (item.price * (1 + ((item.vat_rate ?? standardRate) / 100)))) * quantity}/>
+              <CurrencyFormatter
+                amount={(item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross) * quantity}
+              />
             </div>
           </div>
         </div>

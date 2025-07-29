@@ -8,6 +8,7 @@ import CartItem from "@/Components/App/CartItem";
 import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
 import rates from '@/data/rates.json';
+import { calculateVatAndGross } from '@/utils/vat';
 
 function Index(
   {
@@ -27,11 +28,11 @@ function Index(
   }>) {
 
   const countryCode = countrycode
-  const standardRate = rates.rates?.[countryCode]?.standard_rate ?? rates.rates?.RO.standard_rate ?? 0
+  const countryName = rates.rates?.[countryCode]?.country ?? countryCode
 
   const fallbackGross = Object.values(cartItems).reduce((acc, group) => {
     return acc + group.items.reduce((a, item) => {
-      const gross = item.price_with_vat ?? (item.price * (1 + ((item.vat_rate ?? standardRate) / 100)))
+      const gross = item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
       return a + gross * item.quantity
     }, 0)
   }, 0)
@@ -111,6 +112,8 @@ function Index(
                              selectedAddress={shippingAddress}
                              onChange={onAddressChange}
                              buttonLabel="Change Address"/>
+
+              <div className="mt-2 text-sm text-gray-500">VAT Country: {countryName}</div>
 
               {/* 🌍 Selector țară pentru TVA */}
               <form method="POST" action={route('set.vat.country')} className="mt-6">

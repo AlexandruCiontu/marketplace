@@ -117,6 +117,7 @@ class CartService
                         'product_id' => $product->id,
                         'title' => $product->title,
                         'slug' => $product->slug,
+                        'vat_rate_type' => $rateType,
                         'price' => $cartItem['price'],
                         'vat_rate' => $vatData['rate'],
                         'vat_amount' => $vatData['vat'],
@@ -326,6 +327,7 @@ class CartService
             $rateType = $product->vat_rate_type ?: 'standard';
             $vatData = $vatService->calculate($item['price'], $rateType, $countryCode);
 
+            $item['vat_rate_type'] = $rateType;
             $item['vat_rate'] = $vatData['rate'];
             $item['vat_amount'] = $vatData['vat'];
             $item['price_with_vat'] = $vatData['gross'];

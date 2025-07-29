@@ -58,6 +58,7 @@ class CartItemResource extends JsonResource
             'option_ids' => $optionIds,
             'options' => $options,
             'price' => round($this->price, 2),
+            'vat_rate_type' => $rateType,
             'vat_rate' => $vatData['rate'],
             'vat_amount' => $vatData['vat'],
             'price_with_vat' => $vatData['gross'],

@@ -94,6 +94,7 @@ export type ProductListItem = {
   vat_amount: number;
   price_with_vat: number;
   gross_price: number;
+  vat_rate_type?: string;
   quantity: number;
   image: string;
   user_id: number;
@@ -114,6 +115,7 @@ export type CartItem = {
   vat_amount: number;
   price_with_vat: number;
   gross_price: number;
+  vat_rate_type?: string;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;

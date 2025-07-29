@@ -1,15 +1,14 @@
 import React from 'react';
 import {Link, usePage} from "@inertiajs/react";
-import rates from '@/data/rates.json';
+import { calculateVatAndGross } from '@/utils/vat';
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {productRoute} from "@/helpers";
 
 function MiniCartDropdown() {
 
   const {totalQuantity, totalPrice, totalGross, miniCartItems, countryCode} = usePage().props
-  const standardRate = rates.rates?.[countryCode]?.standard_rate ?? rates.rates?.RO.standard_rate ?? 0
   const fallbackGross = miniCartItems.reduce((acc, item) => {
-    const itemGross = item.price_with_vat ?? (item.price * (1 + ((item.vat_rate ?? standardRate) / 100)))
+    const itemGross = item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
     return acc + itemGross * item.quantity
   }, 0)
   const fallbackPrice = miniCartItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
@@ -51,7 +50,7 @@ function MiniCartDropdown() {
               </div>
             )}
             {miniCartItems.map((item) => {
-              const itemGross = item.price_with_vat ?? (item.price * (1 + ((item.vat_rate ?? standardRate) / 100)))
+              const itemGross = item.price_with_vat ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
               return (
               <div key={item.id} className={'flex gap-4 p-3'}>
                 <Link href={productRoute(item)}

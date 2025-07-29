@@ -1,6 +1,7 @@
 import { ProductListItem } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
+import { calculateVatAndGross } from "@/utils/vat";
 
 export default function ProductItem({ product, countryCode }: { product: ProductListItem; countryCode: string }) {
   const form = useForm<{
@@ -22,8 +23,14 @@ export default function ProductItem({ product, countryCode }: { product: Product
     });
   };
 
+  const vatInfo = calculateVatAndGross(
+    product.price,
+    product.vat_rate_type ?? 'standard',
+    countryCode
+  );
+
   const displayPrice = Number(
-    product.gross_price ?? product.price ?? 0
+    product.price_with_vat ?? product.gross_price ?? vatInfo.gross
   );
 
   return (
