@@ -123,7 +123,7 @@ function Index(
           <div className="card bg-white dark:bg-gray-800">
             <div className="card-body gap-1">
               <div className="flex justify-between">
-                <span>Items ({totalQuantity})</span>
+                <span>Subtotal ({totalQuantity})</span>
                 <CurrencyFormatter amount={totalPrice}/>
               </div>
               <div className="flex justify-between">
@@ -131,11 +131,11 @@ function Index(
                 <span>N/A</span>
               </div>
               <div className="flex justify-between">
-                <span>Tax</span>
+                <span>VAT</span>
                 <CurrencyFormatter amount={totalGross - totalPrice}/>
               </div>
               <div className="flex justify-between font-bold text-xl">
-                <span>Order Total</span>
+                <span>Total</span>
                 <CurrencyFormatter amount={totalGross}/>
               </div>
               <form action={route('cart.checkout')} method="post">

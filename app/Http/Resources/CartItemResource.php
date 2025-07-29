@@ -20,9 +20,10 @@ class CartItemResource extends JsonResource
             $product = Product::find($this->product_id);
         }
 
+        $rateType = $product->vat_rate_type ?: 'standard';
         $vatData = $vatService->calculate(
             netAmount: $this->price,
-            rateType: $product->vat_rate_type ?? 'standard',
+            rateType: $rateType,
             countryCode: $countryCode,
         );
 
@@ -59,6 +60,7 @@ class CartItemResource extends JsonResource
             'price' => round($this->price, 2),
             'vat_rate' => $vatData['rate'],
             'vat_amount' => $vatData['vat'],
+            'price_with_vat' => $vatData['gross'],
             'gross_price' => $vatData['gross'],
         ];
     }

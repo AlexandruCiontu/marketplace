@@ -52,6 +52,7 @@ export type Product = {
   price: number;
   vat_rate: number;
   vat_amount: number;
+  price_with_vat: number;
   gross_price: number;
   quantity: number;
   vat_rate_type?: string;
@@ -91,6 +92,7 @@ export type ProductListItem = {
   price: number;
   vat_rate: number;
   vat_amount: number;
+  price_with_vat: number;
   gross_price: number;
   quantity: number;
   image: string;
@@ -110,6 +112,7 @@ export type CartItem = {
   price: number;
   vat_rate: number;
   vat_amount: number;
+  price_with_vat: number;
   gross_price: number;
   quantity: number;
   image: string;

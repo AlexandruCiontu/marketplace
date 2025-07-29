@@ -105,9 +105,10 @@ class CartService
                         ];
                     }
 
-                    $vatData = $vatService->calculate(
+                    $rateType = $product->vat_rate_type ?: 'standard';
+                    $vatData  = $vatService->calculate(
                         netAmount: $cartItem['price'],
-                        rateType: $product->vat_rate_type ?? 'standard',
+                        rateType: $rateType,
                         countryCode: $countryCode,
                     );
 
@@ -119,6 +120,7 @@ class CartService
                         'price' => $cartItem['price'],
                         'vat_rate' => $vatData['rate'],
                         'vat_amount' => $vatData['vat'],
+                        'price_with_vat' => $vatData['gross'],
                         'gross_price' => $vatData['gross'],
                         'quantity' => $cartItem['quantity'],
                         'option_ids' => $cartItem['option_ids'],
@@ -321,11 +323,12 @@ class CartService
         foreach ($cartItems as &$item) {
             $product = Product::find($item['product_id']);
 
-            $rateType = $product->vat_rate_type ?? 'standard';
+            $rateType = $product->vat_rate_type ?: 'standard';
             $vatData = $vatService->calculate($item['price'], $rateType, $countryCode);
 
             $item['vat_rate'] = $vatData['rate'];
             $item['vat_amount'] = $vatData['vat'];
+            $item['price_with_vat'] = $vatData['gross'];
             $item['gross_price'] = $vatData['gross'];
         }
 
