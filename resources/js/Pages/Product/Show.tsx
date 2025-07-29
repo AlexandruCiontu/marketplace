@@ -27,16 +27,27 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
     useState<Record<number, VariationTypeOption>>([]);
 
   const images = useMemo<Image[]>(() => {
+    if (!product) return [];
     for (let typeId in selectedOptions) {
       const option = selectedOptions[typeId];
-      if (option.images.length > 0) return option.images;
+      if (option?.images?.length > 0) return option.images;
     }
-    return product.images;
+    return product.images ?? [];
   }, [product, selectedOptions]);
 
   const { countryCode } = useVatCountry();
 
   const computedProduct = useMemo(() => {
+    if (!product) {
+      return {
+        price: 0,
+        gross_price: 0,
+        vat_amount: 0,
+        vat_rate_type: 'standard',
+        quantity: 0,
+      };
+    }
+
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
       .sort();
