@@ -4,7 +4,7 @@ const rates = (ratesData as any).rates as Record<string, any>;
 
 export function getVatRate(
   countryCode: string,
-  type: 'standard' | 'reduced' | 'reduced2' = 'standard'
+  type: 'standard' | 'reduced' | 'reduced2' | 'zero' = 'standard'
 ): number {
   const fallback = rates['RO'];
   const country = rates[countryCode] ?? fallback;
@@ -16,6 +16,8 @@ export function getVatRate(
       return (
         country.reduced_rate_alt ?? country.reduced_rate ?? country.standard_rate ?? fallback.standard_rate
       );
+    case 'zero':
+      return 0;
     default:
       return country.standard_rate ?? fallback.standard_rate;
   }
