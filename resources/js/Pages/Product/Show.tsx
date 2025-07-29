@@ -5,7 +5,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
-import { calculateVatAndGross } from '@/utils/vat';
+import { calculateVatIncludedPrice, getVatRate } from '@/utils/vat';
 import { useVatCountry } from '@/hooks/useVatCountry';
 
 function Show(props: PageProps<{ product: Product; variationOptions: number[] }>) {
@@ -52,16 +52,12 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
       }
     }
 
-    const vatInfo = calculateVatAndGross(
-      price,
-      product.vat_rate_type ?? 'standard',
-      countryCode
-    );
-
+    const rate = product.vat_rate ?? getVatRate(countryCode, product.vat_rate_type ?? 'standard');
+    const gross = calculateVatIncludedPrice(price, rate);
     return {
       price,
-      gross_price: vatInfo.gross,
-      vat_amount: vatInfo.vat,
+      gross_price: gross,
+      vat_amount: +(gross - price).toFixed(2),
       vat_rate_type: product.vat_rate_type,
       quantity,
     };

@@ -8,7 +8,7 @@ import CartItem from "@/Components/App/CartItem";
 import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
 import rates from '@/data/rates.json';
-import { calculateVatAndGross } from '@/utils/vat';
+import { calculateVatIncludedPrice, getVatRate } from '@/utils/vat';
 import { useVatCountry } from '@/hooks/useVatCountry';
 import axios from 'axios';
 import { useState } from 'react';
@@ -49,7 +49,8 @@ function Index(
 
   const fallbackGross = Object.values(cartItems).reduce((acc, group) => {
     return acc + group.items.reduce((a, item) => {
-      const gross = item.gross_price ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', selectedCountry).gross
+      const rate = item.vat_rate ?? getVatRate(selectedCountry, item.vat_rate_type ?? 'standard')
+      const gross = item.gross_price ?? calculateVatIncludedPrice(item.price, rate)
       return a + gross * item.quantity
     }, 0)
   }, 0)

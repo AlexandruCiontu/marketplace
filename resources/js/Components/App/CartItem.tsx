@@ -4,7 +4,7 @@ import {CartItem as CartItemType} from "@/types";
 import TextInput from "@/Components/Core/TextInput";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {productRoute} from "@/helpers";
-import { calculateVatAndGross } from '@/utils/vat';
+import { calculateVatIncludedPrice, getVatRate } from '@/utils/vat';
 import { useVatCountry } from '@/hooks/useVatCountry';
 
 function CartItem({item}: { item: CartItemType }) {
@@ -79,7 +79,15 @@ function CartItem({item}: { item: CartItemType }) {
             <button className="btn btn-sm btn-ghost order-4 whitespace-nowrap">Save for Later</button>
             <div className="font-bold text-lg text-right order-2 sm:order-4 sm:ml-auto">
               <CurrencyFormatter
-                amount={(item.gross_price ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross) * quantity}
+                amount={
+                  (
+                    item.gross_price ??
+                    calculateVatIncludedPrice(
+                      item.price,
+                      item.vat_rate ?? getVatRate(countryCode, item.vat_rate_type ?? 'standard')
+                    )
+                  ) * quantity
+                }
               />
             </div>
           </div>
