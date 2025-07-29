@@ -11,7 +11,7 @@ import { useVatCountry } from '@/hooks/useVatCountry';
 
 function Show(props: PageProps<{ product: Product; variationOptions: number[] }>) {
   const { appName, product, variationOptions } = props
-  console.log(props)
+  console.log('Produs:', product)
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -44,7 +44,7 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
     let price = product.price;
     let quantity = product.quantity === null ? Number.MAX_VALUE : product.quantity;
 
-    for (let variation of product.variations) {
+    for (let variation of product.variations || []) {
       const optionIds = variation.variation_type_option_ids.sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         price = variation.price;
@@ -65,7 +65,7 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
   }, [product, selectedOptions, countryCode]);
 
   useEffect(() => {
-    for (let type of product.variationTypes) {
+    for (let type of (product.variationTypes || [])) {
       const selectedOptionId: number = variationOptions[type.id];
       chooseOption(
         type.id,
@@ -120,7 +120,7 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
   }
 
   const renderProductVariationTypes = () => {
-    return product.variationTypes.map((type, i) => (
+    return (product.variationTypes || []).map((type, i) => (
       <div key={type.id}>
         <b>{type.name}</b>
         {type.type === 'Image' &&
@@ -206,8 +206,8 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
           <div className="col-span-12 md:col-span-5">
             <h1 className="text-2xl">{product.title}</h1>
             <p className={'mb-8'}>
-              by <Link href={route('vendor.profile', product.user.store_name)} className="hover:underline">{product.user.name}</Link>&nbsp;
-              in <Link href={route('product.byDepartment', product.department.slug)} className="hover:underline">{product.department.name}</Link>
+              by <Link href={route('vendor.profile', product.user?.store_name ?? '')} className="hover:underline">{product.user?.name}</Link>&nbsp;
+              in <Link href={route('product.byDepartment', product.department?.slug ?? '')} className="hover:underline">{product.department?.name}</Link>
             </p>
 
             <div className="mb-4">
