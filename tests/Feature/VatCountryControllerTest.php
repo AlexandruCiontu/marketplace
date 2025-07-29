@@ -19,6 +19,7 @@ it('updates the vat country in the session', function () {
     $response->assertStatus(200)
         ->assertJson(['country_code' => 'HU']);
 
-    $this->get('/api/vat-country')->assertJson(['country_code' => 'HU']);
+    expect(session('vat_country'))->toBe('HU');
+    expect(session('country_code'))->toBe('HU');
 });
 
