@@ -1,6 +1,6 @@
-import {PageProps, Product, VariationTypeOption, Media} from "@/types";
-import {Head, Link, router, useForm, usePage} from "@inertiajs/react";
-import {useEffect, useMemo, useState} from "react";
+import { PageProps, Product, VariationTypeOption, Media } from "@/types";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { useEffect, useMemo, useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
@@ -8,12 +8,9 @@ import {arraysAreEqual} from "@/helpers";
 import { calculateVatAndGross } from '@/utils/vat';
 import { useVatCountry } from '@/hooks/useVatCountry';
 
-function Show({
-                appName, product, variationOptions
-              }: PageProps<{
-  product: Product,
-  variationOptions: number[]
-}>) {
+function Show(props: PageProps<{ product: Product; variationOptions: number[] }>) {
+  const { appName, product, variationOptions } = props
+  console.log(props)
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
