@@ -48,6 +48,7 @@ Route::controller(CartController::class)->group(function () {
 Route::prefix('api')->group(function () {
     Route::get('/vat-country', [VatCountryController::class, 'show']);
     Route::post('/vat-country', [VatCountryController::class, 'update']);
+    Route::post('/cart/vat-country', [VatCountryController::class, 'update']);
 });
 
 Route::post('/stripe/webhook', [StripeController::class, 'webhook'])->name('stripe.webhook');

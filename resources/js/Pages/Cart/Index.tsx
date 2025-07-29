@@ -10,6 +10,8 @@ import SelectAddress from "@/Components/App/SelectAddress";
 import rates from '@/data/rates.json';
 import { calculateVatAndGross } from '@/utils/vat';
 import { useVatCountry } from '@/hooks/useVatCountry';
+import axios from 'axios';
+import { useState } from 'react';
 
 function Index(
   {
@@ -26,12 +28,28 @@ function Index(
     addresses: Address[]
   }>) {
   const { countryCode, updateCountry } = useVatCountry();
+  const [selectedCountry, setSelectedCountry] = useState(countryCode);
 
-  const countryName = rates.rates?.[countryCode]?.country ?? countryCode;
+  const countryName = rates.rates?.[selectedCountry]?.country ?? selectedCountry;
+
+  const fetchCart = () => {
+    router.reload({
+      preserveState: true,
+      only: ['cartItems', 'totalPrice', 'totalGross', 'totalQuantity'],
+    });
+  };
+
+  const handleCountryChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCode = e.target.value;
+    setSelectedCountry(newCode);
+    await axios.post('/api/cart/vat-country', { country_code: newCode });
+    updateCountry(newCode);
+    fetchCart();
+  };
 
   const fallbackGross = Object.values(cartItems).reduce((acc, group) => {
     return acc + group.items.reduce((a, item) => {
-      const gross = item.gross_price ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', countryCode).gross
+      const gross = item.gross_price ?? calculateVatAndGross(item.price, item.vat_rate_type ?? 'standard', selectedCountry).gross
       return a + gross * item.quantity
     }, 0)
   }, 0)
@@ -121,8 +139,8 @@ function Index(
                 </label>
                 <select
                   id="vat_country"
-                  value={countryCode}
-                  onChange={(e) => updateCountry(e.target.value)}
+                  value={selectedCountry}
+                  onChange={handleCountryChange}
                   className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 >
                   {[
