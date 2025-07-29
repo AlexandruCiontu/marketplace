@@ -6,6 +6,7 @@ import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
 import { calculateVatIncludedPrice, getVatRate } from '@/utils/vat';
+import ErrorBoundary from '@/Components/Core/ErrorBoundary';
 import { useVatCountry } from '@/hooks/useVatCountry';
 
 function Show(props: PageProps<{ product: Product; variationOptions: number[] }>) {
@@ -173,10 +174,19 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
     form.setData('option_ids', idsMap)
   }, [selectedOptions]);
 
+  if (!product) {
+    return (
+      <AuthenticatedLayout>
+        <div className="p-8">Product not found.</div>
+      </AuthenticatedLayout>
+    );
+  }
+
   return (
-    <AuthenticatedLayout>
-      <Head>
-        <title>{product.title}</title>
+    <ErrorBoundary>
+      <AuthenticatedLayout>
+        <Head>
+          <title>{product.title}</title>
         <meta name="title" content={product.meta_title || product.title}/>
         <meta name="description" content={product.meta_description}/>
         <link rel="canonical" href={route('product.show', product.slug)}/>
@@ -226,7 +236,8 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
           </div>
         </div>
       </div>
-    </AuthenticatedLayout>
+      </AuthenticatedLayout>
+    </ErrorBoundary>
   );
 }
 

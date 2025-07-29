@@ -79,14 +79,12 @@ class ProductResource extends JsonResource
                 ];
             }),
 
-            // ✅ TVA fields
-            // ✅ TVA fields
             'vat_rate_type' => $this->vat_rate_type ?? 'standard',
-            'country_code' => session('country_code') ?? 'RO',
-            'price_with_vat' => round((float) $this->price_with_vat, 2),
-            'net_price' => round((float) $this->price, 2),
-            'vat_amount' => round((float) $this->vat_amount, 2),
-            'gross_price' => round((float) $this->gross_price, 2),
+            'vat_rate'      => $this->getVatRate(),
+            'country_code'  => session('country_code') ?? 'RO',
+            'net_price'     => round((float) $this->price, 2),
+            'vat_amount'    => round((float) $this->vat_amount, 2),
+            'gross_price'   => round((float) $this->gross_price, 2),
         ];
     }
 }
