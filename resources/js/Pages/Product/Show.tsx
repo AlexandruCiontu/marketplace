@@ -11,7 +11,7 @@ import { useVatCountry } from '@/hooks/useVatCountry';
 
 function Show(props: PageProps<{ product: Product; variationOptions: number[] }>) {
   const { appName, product, variationOptions } = props
-  console.log(props)
+  console.log(product)
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
