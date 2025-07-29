@@ -12,7 +12,10 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         $options = $request->input('options') ?: [];
-        $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
+
+        $images = $options
+            ? $this->getImagesForOptions($options)
+            : $this->getMedia('images');
 
         return [
             'id' => $this->id,
@@ -26,8 +29,8 @@ class ProductResource extends JsonResource
             'image' => $this->getFirstImageUrl(),
             'images' => $images->map(function ($image) {
                 return [
-                    'id' => $image->id,
-                    'thumb' => $image->getUrl('thumb'),
+                    'url' => $image->getUrl(),
+                    'thumbnail' => $image->getUrl('thumb'),
                     'small' => $image->getUrl('small'),
                     'large' => $image->getUrl('large'),
                 ];
@@ -53,8 +56,8 @@ class ProductResource extends JsonResource
                             'name' => $option->name,
                             'images' => $option->getMedia('images')->map(function ($image) {
                                 return [
-                                    'id' => $image->id,
-                                    'thumb' => $image->getUrl('thumb'),
+                                    'url' => $image->getUrl(),
+                                    'thumbnail' => $image->getUrl('thumb'),
                                     'small' => $image->getUrl('small'),
                                     'large' => $image->getUrl('large'),
                                 ];

@@ -11,6 +11,7 @@ import { useVatCountry } from '@/hooks/useVatCountry';
 
 function Show(props: PageProps<{ product: Product; variationOptions: number[] }>) {
   const { appName, product, variationOptions } = props
+  console.log(props)
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -200,7 +201,11 @@ function Show(props: PageProps<{ product: Product; variationOptions: number[] }>
       <div className="container mx-auto p-8">
         <div className="grid gap-4 sm:gap-8 grid-cols-1 lg:grid-cols-12">
           <div className="col-span-12 md:col-span-7">
-            <Carousel media={images}/>
+            {images.length > 0 ? (
+              <Carousel media={images}/>
+            ) : (
+              <p>No image available</p>
+            )}
           </div>
           <div className="col-span-12 md:col-span-5">
             <h1 className="text-2xl">{product.title}</h1>
