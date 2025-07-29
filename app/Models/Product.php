@@ -242,21 +242,25 @@ class Product extends Model implements HasMedia
         return $this->hasMany(Review::class);
     }
 
+    /**
+     * Return the VAT rate for the currently selected country.
+     */
+    public function getVatRate(): float
+    {
+        $country = session('country_code', 'RO');
+
+        return VatHelper::getRate($country, $this->vat_rate_type);
+    }
+
     // ✅ TVA calculat dinamic pe baza codului de țară
     public function getVatAmountAttribute(): float
     {
-        $country = session('country_code', 'RO'); // fallback dacă nu e setată
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
-
-        return round($this->price * ($rate / 100), 2);
+        return round($this->price * ($this->getVatRate() / 100), 2);
     }
 
     public function getGrossPriceAttribute(): float
     {
-        $country = session('country_code', 'RO'); // fallback
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
-
-        return round($this->price * (1 + $rate / 100), 2);
+        return round($this->price + $this->vat_amount, 2);
     }
 
 }
