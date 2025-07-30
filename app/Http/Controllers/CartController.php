@@ -31,6 +31,25 @@ class CartController extends Controller
         ]);
     }
 
+    public function setVatCountry(Request $request)
+    {
+        $code = $request->input('vat_country');
+
+        $euCountries = [
+            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
+            'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT',
+            'RO', 'SK', 'SI', 'ES', 'SE',
+        ];
+
+        if (! in_array($code, $euCountries)) {
+            $code = 'RO';
+        }
+
+        session(['country_code' => $code]);
+
+        return back();
+    }
+
     /**
      * Store a newly created resource in storage.
      */

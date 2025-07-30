@@ -4,10 +4,11 @@
 
 <x-filament-widgets::widget class="fi-account-widget">
     <x-filament::section>
-        <div class="flex items-center gap-x-3">
-            <x-filament-panels::avatar.user size="lg" :user="$user" />
+        <x-filament::grid :default="2" class="items-center">
+            <div class="flex items-center gap-x-3">
+                <x-filament-panels::avatar.user size="lg" :user="$user" />
 
-            <div class="flex-1">
+                <div class="flex-1">
                 <h2 class="grid flex-1 text-base font-semibold leading-6 text-gray-950 dark:text-white">
                     {{ __('filament-panels::widgets/account-widget.welcome', ['app' => config('app.name')]) }}
                 </h2>
@@ -33,15 +34,16 @@
             </form>
         </div>
 
-        @if($user->hasRole(\App\Enums\RolesEnum::Vendor->value) && !$user->stripe_account_active)
-            <div class="mt-4">
-                <form action="{{ route('stripe.connect') }}" method="post">
-                    @csrf
-                    <x-filament::button type="submit" color="primary">
-                        Connect to Stripe
-                    </x-filament::button>
-                </form>
-            </div>
-        @endif
+            @if($user->hasRole(\App\Enums\RolesEnum::Vendor->value) && !$user->stripe_account_active)
+                <div class="flex justify-end">
+                    <form action="{{ route('stripe.connect') }}" method="post">
+                        @csrf
+                        <x-filament::button type="submit" color="primary">
+                            Connect to Stripe
+                        </x-filament::button>
+                    </form>
+                </div>
+            @endif
+        </x-filament::grid>
     </x-filament::section>
 </x-filament-widgets::widget>

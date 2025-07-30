@@ -18,16 +18,16 @@ function Index(
       totalGross,
       shippingAddress,
       addresses,
-      countrycode,
+      countryCode: initialCountryCode,
     }: PageProps<{
       cartItems: Record<number, GroupedCartItems>,
       shippingAddress: Address,
       addresses: Address[],
-      countrycode: string,
+      countryCode: string,
       totalGross: number
     }>) {
 
-  const [countryCode, setCountryCode] = useState(countrycode);
+  const [countryCode, setCountryCode] = useState(initialCountryCode);
 
   const onAddressChange = (address: Address) => {
     router.put(route('cart.shippingAddress', address.id), {}, {
