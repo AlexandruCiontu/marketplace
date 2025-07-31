@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Services\VatService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Services\VatService;
 
 class OrderViewResource extends JsonResource
 {
@@ -21,6 +21,8 @@ class OrderViewResource extends JsonResource
             'id' => $this->id,
             'total_price' => $this->total_price,
             'gross_price' => $this->total_price,
+            'net_total' => $this->net_total,
+            'vat_total' => $this->vat_total,
             'status' => $this->status,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'vendorUser' => new VendorUserResource($this->vendorUser),
@@ -37,7 +39,7 @@ class OrderViewResource extends JsonResource
                     'description' => $item->product->description,
                     'image' => $item->product->getImageForOptions($item->variation_type_option_ids ?: []),
                 ],
-            ])
+            ]),
         ];
     }
 }

@@ -165,6 +165,11 @@ class CartService
         return $total;
     }
 
+    public function getTotalVat(): float
+    {
+        return $this->getTotalGross() - $this->getTotalPrice();
+    }
+
     protected function updateItemQuantityInDatabase(int $productId, int $quantity, array $optionIds): void
     {
         $userId = Auth::id();

@@ -38,6 +38,7 @@ class HandleInertiaRequests extends Middleware
         $totalQuantity = $cartService->getTotalQuantity();
         $totalPrice = $cartService->getTotalPrice();
         $totalGross = $cartService->getTotalGross();
+        $totalVat = $cartService->getTotalVat();
 
         $cartItems = $cartService->getCartItems();
 
@@ -68,6 +69,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'totalPrice' => $totalPrice,
             'totalGross' => $totalGross,
+            'totalVat' => $totalVat,
             'totalQuantity' => $totalQuantity,
             'miniCartItems' => $cartItems,
             'departments' => DepartmentResource::collection($departments)->collection->toArray(),

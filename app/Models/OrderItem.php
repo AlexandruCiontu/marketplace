@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class OrderItem extends Model
 {
@@ -16,11 +15,14 @@ class OrderItem extends Model
         'product_id',
         'quantity',
         'price',
-        'variation_type_option_ids'
+        'variation_type_option_ids',
+        'vat_rate',
+        'vat_amount',
+        'gross_price',
     ];
 
     protected $casts = [
-        'variation_type_option_ids' => 'array'
+        'variation_type_option_ids' => 'array',
     ];
 
     public function order(): BelongsTo
