@@ -41,6 +41,9 @@ class ProductListResource extends JsonResource
             'vat'                => $vatFormatted,
             'gross'              => $grossFormatted,
             'gross_price'        => $vatResult['gross'], // ✅ important pentru React
+            'net_price'          => round($net, 2),
+            'vat_rate_type'      => $this->vat_rate_type ?? 'standard_rate',
+            'country_code'       => session('country_code', 'RO'),
 
             // Stoc și imagine
             'quantity'           => $this->quantity,

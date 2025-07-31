@@ -16,10 +16,10 @@ class VatHelper
      * se folosește automat fallback la rata standard.
      *
      * @param string $countryCode Ex: 'RO', 'DE'
-     * @param string $type Ex: 'standard', 'reduced', 'reduced2', 'super_reduced', 'zero'
+     * @param string $type Ex: 'standard_rate', 'reduced_rate', 'reduced_rate_alt', 'super_reduced_rate'
      * @return float
      */
-    public static function getRate(string $countryCode, string $type = 'standard'): float
+    public static function getRate(string $countryCode, string $type = 'standard_rate'): float
     {
         try {
             // Încarcă datele o singură dată
@@ -45,21 +45,13 @@ class VatHelper
                 return 0.0;
             }
 
-            // Fallback logic complet și legal
-            return match ($type) {
-                'standard'      => (float)($countryRates['standard_rate'] ?? 0.0),
-                'reduced'       => is_numeric($countryRates['reduced_rate'] ?? null)
-                    ? (float)$countryRates['reduced_rate']
-                    : (float)($countryRates['standard_rate'] ?? 0.0),
-                'reduced2'      => is_numeric($countryRates['reduced_rate_alt'] ?? null)
-                    ? (float)$countryRates['reduced_rate_alt']
-                    : (float)($countryRates['standard_rate'] ?? 0.0),
-                'super_reduced' => is_numeric($countryRates['super_reduced_rate'] ?? null)
-                    ? (float)$countryRates['super_reduced_rate']
-                    : (float)($countryRates['standard_rate'] ?? 0.0),
-                'zero'          => 0.0, // TVA zero e întotdeauna 0
-                default         => (float)($countryRates['standard_rate'] ?? 0.0),
-            };
+            $rate = $countryRates[$type] ?? null;
+
+            if (is_numeric($rate)) {
+                return (float)$rate;
+            }
+
+            return (float)($countryRates['standard_rate'] ?? 0.0);
         } catch (\Throwable $e) {
             return 0.0;
         }
@@ -76,16 +68,7 @@ class VatHelper
     {
         self::getRate($countryCode); // Încarcă ratele dacă nu sunt deja
 
-        $mapping = [
-            'standard' => 'standard_rate',
-            'reduced' => 'reduced_rate',
-            'reduced2' => 'reduced_rate_alt',
-            'super_reduced' => 'super_reduced_rate',
-            'zero' => 'zero_rate',
-        ];
-
-        $jsonKey = $mapping[$type] ?? 'standard_rate';
-        $rate = self::$rates[$countryCode][$jsonKey] ?? null;
+        $rate = self::$rates[$countryCode][$type] ?? null;
 
         return is_numeric($rate) && $rate > 0;
     }

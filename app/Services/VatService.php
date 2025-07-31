@@ -39,7 +39,7 @@ class VatService
 
             // ✅ Fallback la 'standard' dacă rata e invalidă (false, null, 0 etc.)
             if (!is_numeric($rate) || $rate <= 0) {
-                $rate = $this->rates->getRateForCountry($countryCode, 'standard') ?? 0.0;
+                $rate = $this->rates->getRateForCountry($countryCode, 'standard_rate') ?? 0.0;
             }
         } catch (\Throwable $e) {
             $rate = 0.0;

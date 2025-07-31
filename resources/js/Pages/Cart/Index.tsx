@@ -1,6 +1,7 @@
-import {PageProps, GroupedCartItems, Address} from "@/types";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {Head, Link, router} from "@inertiajs/react";
+import { useState } from 'react';
+import { PageProps, GroupedCartItems, Address } from '@/types';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, Link, router } from '@inertiajs/react';
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import PrimaryButton from "@/Components/Core/PrimaryButton";
 import {CreditCardIcon} from "@heroicons/react/24/outline";
@@ -9,21 +10,24 @@ import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
 
 function Index(
-  {
-    csrf_token,
-    cartItems,
-    totalQuantity,
-    totalPrice,
-    totalGross,
-    shippingAddress,
-    addresses,
-    countrycode, // 🆕 codul țării din sesiune
-  }: PageProps<{
-    cartItems: Record<number, GroupedCartItems>,
-    shippingAddress: Address,
-    addresses: Address[],
-    countrycode: string
-  }>) {
+    {
+      csrf_token,
+      cartItems,
+      totalQuantity,
+      totalPrice,
+      totalGross,
+      shippingAddress,
+      addresses,
+      countryCode: initialCountryCode,
+    }: PageProps<{
+      cartItems: Record<number, GroupedCartItems>,
+      shippingAddress: Address,
+      addresses: Address[],
+      countryCode: string,
+      totalGross: number
+    }>) {
+
+  const [countryCode, setCountryCode] = useState(initialCountryCode);
 
   const onAddressChange = (address: Address) => {
     router.put(route('cart.shippingAddress', address.id), {}, {
@@ -104,8 +108,11 @@ function Index(
                 <select
                   name="vat_country"
                   id="vat_country"
-                  defaultValue={countryCode ?? 'RO'}
-                  onChange={(e) => e.currentTarget.form?.submit()}
+                  value={countryCode ?? 'RO'}
+                  onChange={(e) => {
+                    setCountryCode(e.target.value);
+                    e.currentTarget.form?.submit();
+                  }}
                   className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 >
                   {[

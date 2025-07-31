@@ -11,4 +11,10 @@ export default defineConfig({
         }),
         react(),
     ],
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+            '@data': '/resources/js/data',
+        },
+    },
 });

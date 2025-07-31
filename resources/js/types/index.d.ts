@@ -1,5 +1,11 @@
 import {Config} from 'ziggy-js';
 
+export type VatRateType =
+  | 'standard_rate'
+  | 'reduced_rate'
+  | 'reduced_rate_alt'
+  | 'super_reduced_rate';
+
 export interface User {
   id: number;
   name: string;
@@ -14,7 +20,11 @@ export interface User {
     store_name: string;
     store_address: string;
     cover_image: string;
+    country_code?: string;
+    phone?: string;
   }
+  country_code?: string;
+  phone?: string;
 }
 
 export type Image = {
@@ -52,6 +62,9 @@ export type Product = {
   price: number;
   quantity: number;
   vat_rate_type?: string;
+  net_price?: number;
+  gross_price?: number;
+  vat_amount?: number;
   image: string;
   images: Image[];
   videos: Video[];
@@ -83,6 +96,8 @@ export type ProductListItem = {
   title: string;
   slug: string;
   price: number;
+  net_price: number;
+  vat_rate_type: string;
   quantity: number;
   image: string;
   user_id: number;
@@ -99,6 +114,7 @@ export type CartItem = {
   title: string;
   slug: string;
   price: number;
+  vat_rate_type: string;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;
@@ -154,6 +170,7 @@ export type PageProps<
   miniCartItems: CartItem[];
   departments: Department[];
   keyword: string;
+  countryCode: string;
 };
 
 

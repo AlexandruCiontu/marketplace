@@ -199,11 +199,11 @@ function Show({
 
             <div className="mb-4">
               <div className="text-3xl font-semibold">
-                <CurrencyFormatter amount={computedProduct.gross_price}/>
+                <CurrencyFormatter amount={computedProduct.gross_price ?? 0}/>
               </div>
-              {computedProduct.vat_amount > 0 && (
+              {computedProduct.vat_amount && computedProduct.vat_amount > 0 && (
                 <p className="text-sm text-gray-500">
-                  Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount}/>
+                  Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount ?? 0}/>
                 </p>
               )}
             </div>

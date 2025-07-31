@@ -4,7 +4,7 @@ import {Link, usePage} from "@inertiajs/react";
 import {PaginationProps, ProductListItem, PageProps} from "@/types";
 
 function ProductListing({products}: { products: PaginationProps<ProductListItem> }) {
-  const {countryCode} = usePage<PageProps>().props;
+  const { countryCode } = usePage<PageProps>().props as PageProps;
   return (
     <div className="container py-8 px-4 mx-auto">
       {products.data.length === 0 && (
