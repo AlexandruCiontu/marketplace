@@ -5,6 +5,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
+import { getVatRate, calculateVatIncludedPrice, calculateVatAmount } from '@/utils/vat';
 
 function Show({
                 appName, product, variationOptions
@@ -34,6 +35,8 @@ function Show({
     return [...product.images, ...product.videos];
   }, [product, selectedOptions]);
 
+  const { countryCode } = usePage<PageProps>().props as PageProps;
+
   const computedProduct = useMemo(() => {
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
@@ -51,14 +54,15 @@ function Show({
       }
     }
 
+    const rate = getVatRate(countryCode, (product.vat_rate_type as any) ?? 'standard_rate');
     return {
       price,
-      gross_price: product.gross_price,
-      vat_amount: product.vat_amount,
+      gross_price: calculateVatIncludedPrice(price, rate),
+      vat_amount: calculateVatAmount(price, rate),
       vat_rate_type: product.vat_rate_type,
       quantity,
     };
-  }, [product, selectedOptions]);
+  }, [product, selectedOptions, countryCode]);
 
   useEffect(() => {
     for (let type of product.variationTypes) {

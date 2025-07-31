@@ -65,7 +65,6 @@ return [
                         ['name' => 'department_name', 'type' => 'string', 'facet' => true],
                         ['name' => 'category_name', 'type' => 'string', 'facet' => true],
                         ['name' => 'price', 'type' => 'float', 'facet' => true],
-                        ['name' => 'gross_price', 'type' => 'float'],
                         ['name' => 'vat_rate_type', 'type' => 'string'], // <-- inclus aici
                         ['name' => 'created_at', 'type' => 'int64'],
                     ],

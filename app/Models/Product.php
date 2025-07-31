@@ -221,7 +221,6 @@ class Product extends Model implements HasMedia
             'slug' => $this->slug,
             'price' => (float)$this->getPriceForFirstOptions(),
             'vat_rate_type' => $this->vat_rate_type,
-            'gross_price' => $this->gross_price, // ✅ ADĂUGAT
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
             'user_id' => (string)$this->user->id,
