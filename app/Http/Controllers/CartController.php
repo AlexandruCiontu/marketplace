@@ -244,8 +244,9 @@ class CartController extends Controller
         if (! $address->belongs(auth()->user())) {
             abort(403, 'Unauthorized');
         }
-        // Update the shipping address in session
+        // Update the shipping address in session and set VAT country
         session()->put('shipping_address_id', $address->id);
+        session()->put('country_code', $address->country_code);
 
         return back();
     }
