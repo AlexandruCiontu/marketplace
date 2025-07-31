@@ -23,11 +23,16 @@ class CartController extends Controller
     {
         [$user, $defaultAddress] = $this->userShippingAddress();
 
+        $totals = $cartService->getTotals();
+
         return Inertia::render('Cart/Index', [
             'cartItems' => $cartService->getCartItemsGrouped(),
             'addresses' => $user ? ShippingAddressResource::collection($user->shippingAddresses)->collection->toArray() : [],
             'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null,
             'countryCode' => session('country_code', 'RO'),
+            'gross_total' => $totals['gross_total'],
+            'vat_total' => $totals['vat_total'],
+            'net_total' => $totals['net_total'],
         ]);
     }
 
