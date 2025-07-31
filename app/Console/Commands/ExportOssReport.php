@@ -9,9 +9,9 @@ use League\Csv\Writer;
 
 class ExportOssReport extends Command
 {
-    protected $signature = 'vat:export-oss {month?} {year?}';
+    protected $signature = 'export:oss-report {month?} {year?}';
 
-    protected $description = 'Export monthly VAT OSS report as CSV';
+    protected $description = 'Export monthly VAT OSS report per vendor as CSV';
 
     public function handle(): int
     {
@@ -20,24 +20,27 @@ class ExportOssReport extends Command
 
         $orders = Order::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
-            ->get(['vat_country_code', 'net_total', 'vat_total', 'total_price']);
+            ->get(['vendor_user_id', 'vat_country_code', 'net_total', 'vat_total', 'total_price'])
+            ->groupBy('vendor_user_id');
 
-        $csv = Writer::createFromString('');
-        $csv->insertOne(['country', 'net_total', 'vat_total', 'gross_total']);
+        foreach ($orders as $vendorId => $vendorOrders) {
+            $csv = Writer::createFromString('');
+            $csv->insertOne(['country_code', 'net_total', 'vat_amount', 'gross_total']);
 
-        foreach ($orders as $order) {
-            $csv->insertOne([
-                $order->vat_country_code,
-                $order->net_total,
-                $order->vat_total,
-                $order->total_price,
-            ]);
+            foreach ($vendorOrders as $order) {
+                $csv->insertOne([
+                    $order->vat_country_code,
+                    $order->net_total,
+                    $order->vat_total,
+                    $order->total_price,
+                ]);
+            }
+
+            $path = "exports/oss/{$year}-{$month}/{$vendorId}.csv";
+            Storage::put($path, $csv->toString());
         }
 
-        $path = "oss-reports/{$year}-{$month}.csv";
-        Storage::put($path, $csv->toString());
-
-        $this->info('Report saved to storage/'.$path);
+        $this->info('Reports generated in storage/exports/oss');
 
         return Command::SUCCESS;
     }
