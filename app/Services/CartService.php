@@ -170,6 +170,20 @@ class CartService
         return $this->getTotalGross() - $this->getTotalPrice();
     }
 
+    /**
+     * Returns an array with net, vat and gross totals for the cart.
+     *
+     * @return array{net_total: float, vat_total: float, gross_total: float}
+     */
+    public function getTotals(): array
+    {
+        return [
+            'net_total' => $this->getTotalPrice(),
+            'vat_total' => $this->getTotalVat(),
+            'gross_total' => $this->getTotalGross(),
+        ];
+    }
+
     protected function updateItemQuantityInDatabase(int $productId, int $quantity, array $optionIds): void
     {
         $userId = Auth::id();
@@ -318,6 +332,7 @@ class CartService
                 'totalQuantity' => $items->sum('quantity'),
                 'totalPrice' => $items->sum(fn ($item) => $item['price'] * $item['quantity']),
                 'totalGross' => $items->sum(fn ($item) => $item['gross_price'] * $item['quantity']),
+                'totalVat' => $items->sum(fn ($item) => $item['gross_price'] * $item['quantity']) - $items->sum(fn ($item) => $item['price'] * $item['quantity']),
             ])
             ->toArray();
     }

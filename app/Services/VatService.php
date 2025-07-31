@@ -35,11 +35,35 @@ class VatService
         }
 
         try {
-            $rate = $this->rates->getRateForCountry($countryCode, $rateType);
+            $rateKeyMap = [
+                'standard_rate' => ['standard'],
+                'reduced_rate' => ['reduced', 'reduced2'],
+                'reduced_rate_alt' => ['reduced1', 'reduced2', 'reduced'],
+                'super_reduced_rate' => ['super_reduced'],
+            ];
+
+            $rateKeys = $rateKeyMap[$rateType] ?? [$rateType];
+            $rate = 0.0;
+
+            foreach ($rateKeys as $key) {
+                try {
+                    $rate = $this->rates->getRateForCountry($countryCode, $key);
+                } catch (\Throwable $e) {
+                    $rate = 0.0;
+                }
+
+                if (is_numeric($rate) && $rate > 0) {
+                    break;
+                }
+            }
 
             // ✅ Fallback la 'standard' dacă rata e invalidă (false, null, 0 etc.)
             if (!is_numeric($rate) || $rate <= 0) {
-                $rate = $this->rates->getRateForCountry($countryCode, 'standard_rate') ?? 0.0;
+                try {
+                    $rate = $this->rates->getRateForCountry($countryCode, 'standard');
+                } catch (\Throwable $e) {
+                    $rate = 0.0;
+                }
             }
         } catch (\Throwable $e) {
             $rate = 0.0;
