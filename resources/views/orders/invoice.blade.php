@@ -228,15 +228,13 @@
 
         <table class="totals-table">
             <tr>
-                <th>Subtotal:</th>
-                <td>{{ number_format($order->subtotal, 2) }} {{ config('app.currency') }}</td>
+                <th>Net Total:</th>
+                <td>{{ number_format($order->net_total, 2) }} {{ config('app.currency') }}</td>
             </tr>
-            @if($order->tax_amount > 0)
             <tr>
-                <th>Tax:</th>
-                <td>{{ number_format($order->tax_amount, 2) }} {{ config('app.currency') }}</td>
+                <th>VAT:</th>
+                <td>{{ number_format($order->vat_total, 2) }} {{ config('app.currency') }}</td>
             </tr>
-            @endif
             @if($order->shipping_amount > 0)
             <tr>
                 <th>Shipping:</th>

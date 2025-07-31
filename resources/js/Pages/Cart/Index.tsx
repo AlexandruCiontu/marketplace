@@ -16,6 +16,7 @@ function Index(
       totalQuantity,
       totalPrice,
       totalGross,
+      totalVat,
       shippingAddress,
       addresses,
       countryCode: initialCountryCode,
@@ -25,6 +26,7 @@ function Index(
       addresses: Address[],
       countryCode: string,
       totalGross: number
+      totalVat: number
     }>) {
 
   const [countryCode, setCountryCode] = useState(initialCountryCode);
@@ -139,7 +141,7 @@ function Index(
               </div>
               <div className="flex justify-between">
                 <span>Tax</span>
-                <CurrencyFormatter amount={totalGross - totalPrice}/>
+                <CurrencyFormatter amount={totalVat}/>
               </div>
               <div className="flex justify-between font-bold text-xl">
                 <span>Order Total</span>

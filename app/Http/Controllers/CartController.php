@@ -144,15 +144,22 @@ class CartController extends Controller
             }
             $orders = [];
             $lineItems = [];
+            $countryCode = session('country_code', 'RO');
             foreach ($checkoutCartItems as $item) {
                 $user = $item['user'];
                 $cartItems = $item['items'];
 
+                $orderNet = 0;
+                $orderVat = 0;
+                $orderGross = 0;
                 $order = Order::create([
                     'stripe_session_id' => null,
                     'user_id' => $authUser->id,
                     'vendor_user_id' => $user['id'],
-                    'total_price' => $item['totalGross'],
+                    'total_price' => 0,
+                    'net_total' => 0,
+                    'vat_total' => 0,
+                    'vat_country_code' => $countryCode,
                     'status' => OrderStatusEnum::Draft->value,
                 ]);
                 $tmpAddressData = $defaultAddress->toArray();
@@ -163,13 +170,23 @@ class CartController extends Controller
                 $orders[] = $order;
 
                 foreach ($cartItems as $cartItem) {
+                    $calc = app(\App\Services\VatService::class)
+                        ->calculate($cartItem['price'], $cartItem['vat_rate_type'], $countryCode);
+
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $cartItem['product_id'],
                         'quantity' => $cartItem['quantity'],
                         'price' => $cartItem['price'],
+                        'vat_rate' => $calc['rate'],
+                        'vat_amount' => $calc['vat'],
+                        'gross_price' => $calc['gross'],
                         'variation_type_option_ids' => $cartItem['option_ids'],
                     ]);
+
+                    $orderNet += $cartItem['price'] * $cartItem['quantity'];
+                    $orderGross += $calc['gross'] * $cartItem['quantity'];
+                    $orderVat += $calc['vat'] * $cartItem['quantity'];
 
                     $description = collect($cartItem['options'])->map(function ($item) {
                         return "{$item['type']['name']}: {$item['name']}";
@@ -182,7 +199,7 @@ class CartController extends Controller
                                 'name' => $cartItem['title'],
                                 'images' => [$cartItem['image']],
                             ],
-                            'unit_amount' => $cartItem['gross_price'] * 100,
+                            'unit_amount' => $calc['gross'] * 100,
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
@@ -191,6 +208,12 @@ class CartController extends Controller
                     }
                     $lineItems[] = $lineItem;
                 }
+
+                $order->update([
+                    'total_price' => $orderGross,
+                    'net_total' => $orderNet,
+                    'vat_total' => $orderVat,
+                ]);
             }
             $session = \Stripe\Checkout\Session::create([
                 'customer_email' => $authUser->email,

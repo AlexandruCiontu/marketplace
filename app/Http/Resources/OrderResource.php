@@ -13,6 +13,7 @@ class OrderResource extends JsonResource
      * @var string|null
      */
     public static $wrap = null;
+
     /**
      * Transform the resource into an array.
      *
@@ -31,6 +32,8 @@ class OrderResource extends JsonResource
             'status' => $this->status,
             'total_price' => $this->total_price,
             'gross_price' => $this->total_price,
+            'net_total' => $this->net_total,
+            'vat_total' => $this->vat_total,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'tracking_code' => $this->tracking_code,
@@ -40,7 +43,7 @@ class OrderResource extends JsonResource
             'vendor_subtotal' => $this->vendor_subtotal,
             'payment_intent' => $this->payment_intent,
             'subtotal' => $subtotal,
-            
+
             // Include relations
             'orderItems' => OrderItemResource::collection($this->whenLoaded('orderItems')),
             'user' => new UserResource($this->whenLoaded('user')),

@@ -21,8 +21,11 @@ class Order extends Model
         'website_commission',
         'vendor_subtotal',
         'payment_intent',
+        'vat_country_code',
+        'net_total',
+        'vat_total',
     ];
-    
+
     protected $casts = [
         'tracking_code_added_at' => 'datetime',
     ];
