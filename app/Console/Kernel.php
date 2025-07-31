@@ -22,8 +22,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Programare automată dacă dorești:
-        // $schedule->command('vat:update')->monthly();
+        $schedule->command('export:oss-report')->monthlyOn(1, '01:00');
     }
 
     /**

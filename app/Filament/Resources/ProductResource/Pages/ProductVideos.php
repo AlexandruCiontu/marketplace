@@ -22,13 +22,28 @@ class ProductVideos extends EditRecord
             ->schema([
                 SpatieMediaLibraryFileUpload::make('videos')
                     ->label(false)
-                    ->multiple()
                     ->openable()
                     ->panelLayout('grid')
                     ->collection('videos')
-                    ->reorderable()
-                    ->appendFiles()
-                    ->preserveFilenames()
+                    ->acceptedFileTypes([
+                        'video/mp4',
+                        'video/webm',
+                        'video/quicktime',
+                    ])
+                    ->maxFiles(1)
+                    ->rules([
+                        function (string $attribute, $value, \Closure $fail) {
+                            $file = is_array($value) ? $value[0] : $value;
+                            if ($file instanceof \Illuminate\Http\UploadedFile) {
+                                $getID3 = new \getID3();
+                                $info = $getID3->analyze($file->getRealPath());
+                                if (($info['playtime_seconds'] ?? 0) > 60) {
+                                    $fail('Video must be max 60 seconds long.');
+                                }
+                            }
+                        },
+                    ])
+                    ->hidden(fn ($livewire) => $livewire->record?->hasMedia('videos'))
                     ->columnSpan(2),
             ]);
     }
