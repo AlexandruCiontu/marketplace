@@ -49,8 +49,8 @@ function CustomHits({ countryCode }: { countryCode: string }) {
               { label: "Relevance", value: "products_index" },
               { label: "Title Ascending", value: "products_index/sort/title:asc" },
               { label: "Title Descending", value: "products_index/sort/title:desc" },
-              { label: "Price Ascending", value: "products_index/sort/gross_price:asc" }, // ✅ modificat
-              { label: "Price Descending", value: "products_index/sort/gross_price:desc" }, // ✅ modificat
+              { label: "Price Ascending", value: "products_index/sort/price:asc" },
+              { label: "Price Descending", value: "products_index/sort/price:desc" },
             ]}
           />
         </div>
