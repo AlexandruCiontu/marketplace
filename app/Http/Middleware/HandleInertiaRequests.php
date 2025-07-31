@@ -34,6 +34,11 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $countryCode = session('country_code', 'RO');
+        if (! session()->has('country_code')) {
+            session(['country_code' => $countryCode]);
+        }
+
         $cartService = app(CartService::class);
         $totalQuantity = $cartService->getTotalQuantity();
         $totalPrice = $cartService->getTotalPrice();
@@ -74,7 +79,7 @@ class HandleInertiaRequests extends Middleware
             'miniCartItems' => $cartItems,
             'departments' => DepartmentResource::collection($departments)->collection->toArray(),
             'keyword' => $request->query('keyword'),
-            'countryCode' => session('country_code'),
+            'countryCode' => $countryCode,
         ];
     }
 }

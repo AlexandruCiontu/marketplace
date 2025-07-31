@@ -24,7 +24,7 @@ class VatService
      */
     public function calculate(float $netAmount, string $rateType, ?string $countryCode = null): array
     {
-        $countryCode = $countryCode ?: session('country_code');
+        $countryCode = $countryCode ?: session('country_code', 'RO');
 
         if (! $countryCode) {
             return [
