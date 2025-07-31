@@ -22,13 +22,15 @@ class ProductVideos extends EditRecord
             ->schema([
                 SpatieMediaLibraryFileUpload::make('videos')
                     ->label(false)
-                    ->multiple()
                     ->openable()
                     ->panelLayout('grid')
                     ->collection('videos')
-                    ->reorderable()
-                    ->appendFiles()
-                    ->preserveFilenames()
+                    ->acceptedFileTypes([
+                        'video/mp4',
+                        'video/webm',
+                        'video/quicktime',
+                    ])
+                    ->maxFiles(1)
                     ->columnSpan(2),
             ]);
     }
