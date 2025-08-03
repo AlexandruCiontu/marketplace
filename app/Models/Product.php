@@ -22,17 +22,6 @@ class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
 
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('videos')
-            ->singleFile()
-            ->acceptsMimeTypes([
-                'video/mp4',
-                'video/webm',
-                'video/quicktime',
-            ]);
-    }
-
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')->width(100)->nonQueued();
@@ -181,11 +170,6 @@ class Product extends Model implements HasMedia
             }
         }
         return $this->getMedia('images');
-    }
-
-    public function getVideos(): MediaCollection
-    {
-        return $this->getMedia('videos');
     }
 
     public function getFirstOptionsMap(): array
