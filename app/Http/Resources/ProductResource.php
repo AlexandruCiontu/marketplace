@@ -22,6 +22,10 @@ class ProductResource extends JsonResource
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'price' => $this->price,
+            'weight' => $this->weight,
+            'length' => $this->length,
+            'width' => $this->width,
+            'height' => $this->height,
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
             'images' => $images->map(function ($image) {

@@ -53,6 +53,10 @@ export type Product = {
   title: string;
   slug: string;
   price: number;
+  weight: number | null;
+  length: number | null;
+  width: number | null;
+  height: number | null;
   quantity: number;
   vat_rate_type?: string;
   net_price?: number;

@@ -220,9 +220,21 @@ function Show({
               </div>
             }
 
-            {renderAddToCartButton()}
+              {renderAddToCartButton()}
 
-            <b className="text-xl">About the Item</b>
+              {product.weight && (
+                <div className="mb-8">
+                  <h2 className="font-semibold text-gray-700 text-lg">Product Details</h2>
+                  <ul className="text-gray-600 list-disc list-inside space-y-1">
+                    <li>Weight: {product.weight} kg</li>
+                    <li>Length: {product.length} cm</li>
+                    <li>Width: {product.width} cm</li>
+                    <li>Height: {product.height} cm</li>
+                  </ul>
+                </div>
+              )}
+
+              <b className="text-xl">About the Item</b>
             <div className="wysiwyg-output" dangerouslySetInnerHTML={{__html: product.description}}/>
           </div>
         </div>
