@@ -34,13 +34,6 @@ export type Image = {
   large: string;
 };
 
-export type Video = {
-  id: number;
-  url: string;
-};
-
-export type Media = Image | Video;
-
 export type VariationTypeOption = {
   id: number;
   name: string;
@@ -60,6 +53,10 @@ export type Product = {
   title: string;
   slug: string;
   price: number;
+  weight: number | null;
+  length: number | null;
+  width: number | null;
+  height: number | null;
   quantity: number;
   vat_rate_type?: string;
   net_price?: number;
@@ -67,7 +64,6 @@ export type Product = {
   vat_amount?: number;
   image: string;
   images: Image[];
-  videos: Video[];
   short_description: string;
   description: string;
   meta_title: string;

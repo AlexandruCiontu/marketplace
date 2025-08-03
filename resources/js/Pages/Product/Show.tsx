@@ -1,4 +1,4 @@
-import {PageProps, Product, VariationTypeOption, Media} from "@/types";
+import {PageProps, Product, VariationTypeOption, Image} from "@/types";
 import {Head, Link, router, useForm, usePage} from "@inertiajs/react";
 import {useEffect, useMemo, useState} from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -27,12 +27,12 @@ function Show({
   const [selectedOptions, setSelectedOptions] =
     useState<Record<number, VariationTypeOption>>([]);
 
-  const media = useMemo<Media[]>(() => {
+  const images = useMemo<Image[]>(() => {
     for (let typeId in selectedOptions) {
       const option = selectedOptions[typeId];
-      if (option.images.length > 0) return [...option.images, ...product.videos];
+      if (option.images.length > 0) return [...option.images];
     }
-    return [...product.images, ...product.videos];
+    return [...product.images];
   }, [product, selectedOptions]);
 
   const { countryCode } = usePage<PageProps>().props as PageProps;
@@ -183,7 +183,7 @@ function Show({
         <link rel="canonical" href={route('product.show', product.slug)}/>
         <meta property="og:title" content={product.title}/>
         <meta property="og:description" content={product.meta_description}/>
-        <meta property="og:image" content={media.find(m => 'small' in m)?.small}/>
+        <meta property="og:image" content={images[0]?.small}/>
         <meta property="og:url" content={route('product.show', product.slug)}/>
         <meta property="og:type" content="product"/>
         <meta property="og:site_name" content={appName}/>
@@ -192,7 +192,7 @@ function Show({
       <div className="container mx-auto p-8">
         <div className="grid gap-4 sm:gap-8 grid-cols-1 lg:grid-cols-12">
           <div className="col-span-12 md:col-span-7">
-            <Carousel media={media}/>
+            <Carousel images={images}/>
           </div>
           <div className="col-span-12 md:col-span-5">
             <h1 className="text-2xl">{product.title}</h1>
@@ -220,9 +220,21 @@ function Show({
               </div>
             }
 
-            {renderAddToCartButton()}
+              {renderAddToCartButton()}
 
-            <b className="text-xl">About the Item</b>
+              {product.weight && (
+                <div className="mb-8">
+                  <h2 className="font-semibold text-gray-700 text-lg">Product Details</h2>
+                  <ul className="text-gray-600 list-disc list-inside space-y-1">
+                    <li>Weight: {product.weight} kg</li>
+                    <li>Length: {product.length} cm</li>
+                    <li>Width: {product.width} cm</li>
+                    <li>Height: {product.height} cm</li>
+                  </ul>
+                </div>
+              )}
+
+              <b className="text-xl">About the Item</b>
             <div className="wysiwyg-output" dangerouslySetInnerHTML={{__html: product.description}}/>
           </div>
         </div>

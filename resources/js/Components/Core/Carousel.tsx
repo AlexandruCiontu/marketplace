@@ -1,4 +1,4 @@
-import {Media} from "@/types";
+import {Image} from "@/types";
 import {useEffect, useState} from "react";
 import {
   ChevronLeftIcon,
@@ -7,8 +7,8 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
-function Carousel({media}: { media: Media[] }) {
-  const [selectedMedia, setSelectedMedia] = useState<Media>(media[0]);
+function Carousel({images}: { images: Image[] }) {
+  const [selectedImage, setSelectedImage] = useState<Image>(images[0]);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [thumbnailsPerView, setThumbnailsPerView] = useState(3); // default for small screens
@@ -37,14 +37,14 @@ function Carousel({media}: { media: Media[] }) {
   }, []);
 
   useEffect(() => {
-    setSelectedMedia(media[0]);
+    setSelectedImage(images[0]);
     setThumbnailStartIndex(0);
-  }, [media]);
+  }, [images]);
 
   const canGoPrev = thumbnailStartIndex > 0;
-  const canGoNext = thumbnailStartIndex + thumbnailsPerView < media.length;
+  const canGoNext = thumbnailStartIndex + thumbnailsPerView < images.length;
 
-  const visibleThumbnails = media.slice(
+  const visibleThumbnails = images.slice(
     thumbnailStartIndex,
     thumbnailStartIndex + thumbnailsPerView
   );
@@ -58,7 +58,7 @@ function Carousel({media}: { media: Media[] }) {
   const goNext = () => {
     if (canGoNext) {
       setThumbnailStartIndex((prev) =>
-        Math.min(prev + 1, media.length - thumbnailsPerView)
+        Math.min(prev + 1, images.length - thumbnailsPerView)
       );
     }
   };
@@ -102,27 +102,19 @@ function Carousel({media}: { media: Media[] }) {
           {visibleThumbnails.map((item) => (
             <button
               key={item.id}
-              onClick={() => setSelectedMedia(item)}
+              onClick={() => setSelectedImage(item)}
               className={
                 "border-2 p-1 " +
-                (selectedMedia.id === item.id
+                (selectedImage.id === item.id
                   ? "border-blue-500"
                   : "hover:border-blue-500")
               }
             >
-              {"thumb" in item ? (
-                <img
-                  src={item.thumb}
-                  alt=""
-                  className="w-[64px] h-[64px] min-w-[64px] object-contain"
-                />
-              ) : (
-                <video
-                  src={item.url}
-                  className="w-[64px] h-[64px] min-w-[64px] object-cover"
-                  muted
-                />
-              )}
+              <img
+                src={item.thumb}
+                alt=""
+                className="w-[64px] h-[64px] min-w-[64px] object-contain"
+              />
             </button>
           ))}
         </div>
@@ -142,19 +134,11 @@ function Carousel({media}: { media: Media[] }) {
       {/* Selected Image Section */}
       <div className="order-1 sm:order-2 carousel w-full">
         <div className="carousel-item w-full">
-          {"thumb" in selectedMedia ? (
-            <img
-              src={selectedMedia.large}
-              className="max-w-full h-auto md:h-[600px] mx-auto object-contain"
-              alt="Selected"
-            />
-          ) : (
-            <video
-              src={selectedMedia.url}
-              className="max-w-full h-auto md:h-[600px] mx-auto"
-              controls
-            />
-          )}
+          <img
+            src={selectedImage.large}
+            className="max-w-full h-auto md:h-[600px] mx-auto object-contain"
+            alt="Selected"
+          />
         </div>
       </div>
     </div>

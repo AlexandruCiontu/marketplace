@@ -13,7 +13,6 @@ class ProductResource extends JsonResource
     {
         $options = $request->input('options') ?: [];
         $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
-        $videos = $this->getVideos();
 
         return [
             'id' => $this->id,
@@ -23,6 +22,10 @@ class ProductResource extends JsonResource
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
             'price' => $this->price,
+            'weight' => $this->weight,
+            'length' => $this->length,
+            'width' => $this->width,
+            'height' => $this->height,
             'quantity' => $this->quantity,
             'image' => $this->getFirstImageUrl(),
             'images' => $images->map(function ($image) {
@@ -31,12 +34,6 @@ class ProductResource extends JsonResource
                     'thumb' => $image->getUrl('thumb'),
                     'small' => $image->getUrl('small'),
                     'large' => $image->getUrl('large'),
-                ];
-            }),
-            'videos' => $videos->map(function ($video) {
-                return [
-                    'id' => $video->id,
-                    'url' => $video->getUrl(),
                 ];
             }),
             'user' => [

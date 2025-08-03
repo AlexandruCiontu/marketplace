@@ -5,6 +5,7 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Console\Commands\UpdateVatRates;
+use App\Console\Commands\ExportOssReport;
 
 class Kernel extends ConsoleKernel
 {
@@ -15,6 +16,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         UpdateVatRates::class,
+        ExportOssReport::class,
     ];
 
     /**
@@ -22,8 +24,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Programare automată dacă dorești:
-        // $schedule->command('vat:update')->monthly();
+        $schedule->command('export:oss-report')->monthlyOn(1, '01:00');
     }
 
     /**
