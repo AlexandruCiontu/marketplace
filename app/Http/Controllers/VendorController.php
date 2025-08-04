@@ -49,7 +49,7 @@ class VendorController extends Controller
             'store_address' => 'nullable',
             'country_code' => 'required|string|in:RO,HU,BG',
             'phone' => 'required|string|max:20',
-            'anaf_pfx' => 'nullable|required_if:country_code,RO|file|mimetypes:application/x-pkcs12|max:2048',
+            'anaf_pfx' => 'nullable|required_if:country_code,RO|file|mimetypes:application/x-pkcs12|mimes:pfx|max:2048',
             'nav_user_id' => 'nullable|required_if:country_code,HU|string|max:255',
             'nav_exchange_key' => 'nullable|required_if:country_code,HU|string|max:255',
         ], [
