@@ -25,6 +25,7 @@ class Vendor extends Model
         'commission_rate',
         'nav_user_id',
         'nav_exchange_key',
+        'anaf_pfx_path',
     ];
 
     protected $casts = [

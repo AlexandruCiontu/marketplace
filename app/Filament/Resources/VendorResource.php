@@ -49,11 +49,21 @@ class VendorResource extends Resource
                                 'HU' => 'Ungaria',
                                 'BG' => 'Bulgaria',
                             ])
-                            ->required(),
+                            ->required()
+                            ->reactive(),
                         Forms\Components\TextInput::make('commission_rate')
                             ->numeric()
                             ->required()
                             ->label('Commission %'),
+                        Forms\Components\TextInput::make('anaf_pfx_path')
+                            ->label('ANAF PFX Path')
+                            ->visible(fn (callable $get) => $get('country_code') === 'RO'),
+                        Forms\Components\TextInput::make('nav_user_id')
+                            ->label('NAV User ID')
+                            ->visible(fn (callable $get) => $get('country_code') === 'HU'),
+                        Forms\Components\TextInput::make('nav_exchange_key')
+                            ->label('NAV Exchange Key')
+                            ->visible(fn (callable $get) => $get('country_code') === 'HU'),
                         Forms\Components\Textarea::make('store_address')
                             ->columnSpan(2),
                     ])

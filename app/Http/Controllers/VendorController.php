@@ -71,8 +71,7 @@ class VendorController extends Controller
 
         if ($request->hasFile('anaf_pfx') && $request->country_code === 'RO') {
             $path = $request->file('anaf_pfx')->store('pfx_certificates', 'private');
-            // You might want to save the path to the vendor model if needed
-            // $vendor->pfx_path = $path;
+            $vendor->anaf_pfx_path = $path;
         }
 
         if ($isNewVendor) {

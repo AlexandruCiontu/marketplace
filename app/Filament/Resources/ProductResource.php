@@ -15,6 +15,7 @@ use App\Models\Product;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Facades\Gate;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Pages\SubNavigationPosition;
@@ -37,8 +38,7 @@ class ProductResource extends Resource
 
     public static function canCreate(): bool
     {
-        // Only allow creating products if the user is a vendor and is approved.
-        return auth()->user()->vendor?->status === 'approved';
+        return Gate::allows('create', Product::class);
     }
 
     public static function getEloquentQuery(): Builder
