@@ -108,7 +108,7 @@ return [
     |
     */
 
-    'admin_email' => env('MAIL_ADMIN_EMAIL', 'admin@example.com'),
+    'admin' => env('MAIL_ADMIN_ADDRESS', 'admin@local.test'),
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),

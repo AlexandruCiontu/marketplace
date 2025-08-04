@@ -82,7 +82,7 @@ class VendorController extends Controller
 
         if ($isNewVendor) {
             $user->assignRole(RolesEnum::Vendor);
-            Mail::to(config('mail.admin_email'))->send(new NewVendorRequest($vendor));
+            Mail::to(config('mail.admin'))->send(new NewVendorRequest($vendor));
             return back()->with('success', 'Your vendor request has been submitted and is pending approval.');
         }
 
