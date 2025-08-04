@@ -32,7 +32,9 @@ export default function VendorDetails(
     store_address: user.vendor?.store_address,
     country_code: user.vendor?.country_code || 'RO',
     phone: user.vendor?.phone || user.phone,
+    cif: user.vendor?.cif || '',
     anaf_pfx: null,
+    anaf_certificate_password: '',
     nav_user_id: user.vendor?.nav_user_id || '',
     nav_exchange_key: user.vendor?.nav_exchange_key || '',
   });
@@ -149,16 +151,31 @@ export default function VendorDetails(
               </div>
 
             {data.country_code === 'RO' && (
-                <div className="mb-4">
-                    <InputLabel htmlFor="anaf_pfx" value="Certificat e-Factura (.pfx)"/>
-                    <input
-                        type="file"
-                        id="anaf_pfx"
-                        className="file-input file-input-bordered w-full mt-1"
-                        onChange={(e) => setData('anaf_pfx', e.target.files ? e.target.files[0] : null)}
-                    />
-                    <InputError className="mt-2" message={errors.anaf_pfx}/>
-                </div>
+                <>
+                    <div className="mb-4">
+                        <InputLabel htmlFor="cif" value="CIF"/>
+                        <TextInput id="cif" className="mt-1 block w-full" value={data.cif}
+                                      onChange={(e) => setData('cif', e.target.value)}/>
+                        <InputError className="mt-2" message={errors.cif}/>
+                    </div>
+                    <div className="mb-4">
+                        <InputLabel htmlFor="anaf_pfx" value="Certificat e-Factura (.pfx)"/>
+                        <input
+                            type="file"
+                            id="anaf_pfx"
+                            className="file-input file-input-bordered w-full mt-1"
+                            onChange={(e) => setData('anaf_pfx', e.target.files ? e.target.files[0] : null)}
+                        />
+                        <InputError className="mt-2" message={errors.anaf_pfx}/>
+                    </div>
+                    <div className="mb-4">
+                        <InputLabel htmlFor="anaf_certificate_password" value="Parola Certificat"/>
+                        <TextInput id="anaf_certificate_password" type="password" className="mt-1 block w-full"
+                                      value={data.anaf_certificate_password}
+                                      onChange={(e) => setData('anaf_certificate_password', e.target.value)}/>
+                        <InputError className="mt-2" message={errors.anaf_certificate_password}/>
+                    </div>
+                </>
             )}
 
             {data.country_code === 'HU' && (
