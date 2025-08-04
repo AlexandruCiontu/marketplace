@@ -19,7 +19,7 @@ class NewVendorRequest extends Mailable
      */
     public function __construct(public Vendor $vendor)
     {
-        $this->vendor->load('user');
+        $this->vendor->loadMissing('user');
     }
 
     /**

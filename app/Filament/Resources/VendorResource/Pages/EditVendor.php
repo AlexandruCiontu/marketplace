@@ -23,8 +23,16 @@ class EditVendor extends EditRecord
         $record->update($data);
 
         // Trimite email dacă statusul s-a schimbat
-        if ($oldStatus !== $record->status && $record->user && $record->user->email) {
+        if ($oldStatus !== $data['status'] && $record->user && $record->user->email) {
             Mail::to($record->user->email)->send(new VendorStatusChanged($record));
+
+            // Dacă statusul este schimbat în 'rejected', șterge vendor-ul și rolul
+            if ($data['status'] === 'rejected') {
+                $record->user->removeRole('Vendor');
+                $record->delete();
+                // Poți adăuga un redirect sau un mesaj de notificare aici dacă dorești
+                return new \App\Models\Vendor(); // Returnează un model gol pentru a evita erorile ulterioare
+            }
         }
 
         return $record;

@@ -119,6 +119,9 @@ export default function VendorDetails(
                   <InputLabel htmlFor="name" value="Store Name"/>
                   <TextInput id="name" className="mt-1 block w-full" value={data.store_name}
                              onChange={onStoreNameChange} required isFocused autoComplete="name"/>
+                  <small className="text-gray-500 mt-1">
+                      Tip: Choose a name different from your user name.
+                  </small>
                   <InputError className="mt-2" message={errors.store_name}/>
               </div>
 

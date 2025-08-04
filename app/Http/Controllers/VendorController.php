@@ -44,7 +44,8 @@ class VendorController extends Controller
                 'required',
                 'regex:/^[a-z0-9-]+$/',
                 Rule::unique('vendors', 'store_name')
-                    ->ignore($user->id, 'user_id')
+                    ->ignore($user->id, 'user_id'),
+                Rule::notIn([$user->name]),
             ],
             'store_address' => 'nullable',
             'country_code' => 'required|string|in:RO,HU,BG',
@@ -54,6 +55,7 @@ class VendorController extends Controller
             'nav_exchange_key' => 'nullable|required_if:country_code,HU|string|max:255',
         ], [
             'store_name.regex' => 'Store Name must only contain lowercase alphanumeric characters and dashes.',
+            'store_name.not_in' => 'Store name must be different from your account name.',
         ]);
         $isNewVendor = !$user->vendor;
 
