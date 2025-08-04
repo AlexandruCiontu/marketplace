@@ -15,6 +15,7 @@ use App\Models\Product;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Facades\Gate;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Pages\SubNavigationPosition;
@@ -34,6 +35,11 @@ class ProductResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-s-queue-list';
 
     protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
+
+    public static function canCreate(): bool
+    {
+        return Gate::allows('create', Product::class);
+    }
 
     public static function getEloquentQuery(): Builder
     {

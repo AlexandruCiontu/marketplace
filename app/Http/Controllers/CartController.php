@@ -8,7 +8,10 @@ use App\Models\Address;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Vendor;
 use App\Services\CartService;
+use App\Services\TransactionClassifierService;
+use App\Services\VatRateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -131,8 +134,12 @@ class CartController extends Controller
         return back()->with('successToast', 'Product was removed from cart.');
     }
 
-    public function checkout(Request $request, CartService $cartService)
-    {
+    public function checkout(
+        Request $request,
+        CartService $cartService,
+        TransactionClassifierService $classifier,
+        VatRateService $vatRateService
+    ) {
         \Stripe\Stripe::setApiKey(config('app.stripe_secret_key'));
 
         $vendorId = $request->input('vendor_id');
@@ -149,10 +156,15 @@ class CartController extends Controller
             }
             $orders = [];
             $lineItems = [];
-            $countryCode = session('country_code', 'RO');
+            $clientCountryCode = $defaultAddress->country_code;
+
             foreach ($checkoutCartItems as $item) {
-                $user = $item['user'];
+                $vendorUser = $item['user'];
                 $cartItems = $item['items'];
+                /** @var Vendor $vendor */
+                $vendor = Vendor::find($vendorUser['id']);
+
+                $transactionType = $classifier->classify($vendor, $authUser);
 
                 $orderNet = 0;
                 $orderVat = 0;
@@ -160,11 +172,12 @@ class CartController extends Controller
                 $order = Order::create([
                     'stripe_session_id' => null,
                     'user_id' => $authUser->id,
-                    'vendor_user_id' => $user['id'],
+                    'vendor_user_id' => $vendorUser['id'],
                     'total_price' => 0,
                     'net_total' => 0,
                     'vat_total' => 0,
-                    'vat_country_code' => $countryCode,
+                    'vat_country_code' => $clientCountryCode,
+                    'transaction_type' => $transactionType,
                     'status' => OrderStatusEnum::Draft->value,
                 ]);
                 $tmpAddressData = $defaultAddress->toArray();
@@ -175,8 +188,9 @@ class CartController extends Controller
                 $orders[] = $order;
 
                 foreach ($cartItems as $cartItem) {
-                    $calc = app(\App\Services\VatService::class)
-                        ->calculate($cartItem['price'], $cartItem['vat_rate_type'], $countryCode);
+                    $vatCountry = $transactionType === 'OSS' ? $clientCountryCode : $vendor->country_code;
+
+                    $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_rate_type'], $vatCountry);
 
                     OrderItem::create([
                         'order_id' => $order->id,

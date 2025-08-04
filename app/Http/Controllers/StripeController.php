@@ -9,6 +9,7 @@ use App\Mail\NewOrderMail;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\VendorCountry\InvoiceServiceFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -107,9 +108,11 @@ class StripeController extends Controller
                 $session = $event->data->object;
                 $pi = $session['payment_intent'];
 
+                $invoiceServiceFactory = app(InvoiceServiceFactory::class);
+
                 // Find orders by session ID and set payment intent
                 $orders = Order::query()
-                    ->with(['orderItems'])
+                    ->with(['orderItems', 'vendor'])
                     ->where(['stripe_session_id' => $session['id']])
                     ->get();
 
@@ -118,6 +121,14 @@ class StripeController extends Controller
                     $order->payment_intent = $pi;
                     $order->status = OrderStatusEnum::Paid;
                     $order->save();
+
+                    // Generate country-specific invoice
+                    try {
+                        $invoiceService = $invoiceServiceFactory->make($order->vendor);
+                        $invoiceService->generate($order);
+                    } catch (\Exception $e) {
+                        Log::error("Failed to generate invoice for order {$order->id}: ".$e->getMessage());
+                    }
 
                     $productsToDeletedFromCart =
                         [

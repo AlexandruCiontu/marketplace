@@ -1,16 +1,14 @@
 @component('mail::message')
-    # Vendor Account Status Updated
+# Account Status Update
 
-    Hello {{ $vendor->name }},
+Hello {{ $vendor->user->name }},
 
-    We wanted to inform you that the status of your vendor account has changed.
+Your vendor account status has been updated to: **{{ ucfirst($vendor->status) }}**.
 
-    **New Status:** {{ ucfirst($vendor->status) }}
-
-    If you have any questions, feel free to contact our support team.
-
-    Thanks,<br>
-    {{ config('app.name') }}
+@component('mail::button', ['url' => url('/vendor/dashboard')])
+Go to Dashboard
 @endcomponent
 
-
+Thanks,<br>
+{{ config('app.name') }}
+@endcomponent

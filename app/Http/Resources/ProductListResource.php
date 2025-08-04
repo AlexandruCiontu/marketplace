@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Services\VatService;
+use App\Services\VatRateService;
 
 class ProductListResource extends JsonResource
 {
@@ -20,7 +20,7 @@ class ProductListResource extends JsonResource
         $net = $this->getPriceForFirstOptions();
 
         // 2. Calculăm TVA și prețul brut (gross)
-        $vatResult = app(VatService::class)->calculate($net, $this->vat_rate_type);
+        $vatResult = app(VatRateService::class)->calculate($net, $this->vat_rate_type);
 
         // 3. Formatare pentru frontend
         $netFormatted   = number_format($net, 2, '.', '');
