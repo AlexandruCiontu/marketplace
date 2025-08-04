@@ -50,15 +50,10 @@ class VendorResource extends Resource
                                 'BG' => 'Bulgaria',
                             ])
                             ->required(),
-                        Forms\Components\Select::make('commission_rate')
-                            ->options([
-                                5 => '5%',
-                                10 => '10%',
-                                15 => '15%',
-                                20 => '20%',
-                                25 => '25%',
-                            ])
-                            ->required(),
+                        Forms\Components\TextInput::make('commission_rate')
+                            ->numeric()
+                            ->required()
+                            ->label('Commission %'),
                         Forms\Components\Textarea::make('store_address')
                             ->columnSpan(2),
                     ])

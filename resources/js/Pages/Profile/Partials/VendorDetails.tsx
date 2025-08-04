@@ -32,7 +32,10 @@ export default function VendorDetails(
     store_name: user.vendor?.store_name || user.name.toLowerCase().replace(/\s+/g, '-'),
     store_address: user.vendor?.store_address,
     country_code: user.vendor?.country_code || 'RO',
-    phone: user.vendor?.phone || user.phone
+    phone: user.vendor?.phone || user.phone,
+    anaf_pfx: null,
+    nav_user_id: user.vendor?.nav_user_id || '',
+    nav_exchange_key: user.vendor?.nav_exchange_key || '',
   });
 
   const onStoreNameChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,6 +150,44 @@ export default function VendorDetails(
 
                 <InputError className="mt-2" message={errors.country_code}/>
               </div>
+
+              {data.country_code === 'RO' && (
+                <div className="mb-4">
+                  <InputLabel htmlFor="anaf_pfx" value="Certificat e-Factura (.pfx)"/>
+                  <input
+                    type="file"
+                    id="anaf_pfx"
+                    className="file-input file-input-bordered w-full mt-1"
+                    onChange={(e) => setData('anaf_pfx', e.target.files ? e.target.files[0] : null)}
+                  />
+                  <InputError className="mt-2" message={errors.anaf_pfx}/>
+                </div>
+              )}
+
+              {data.country_code === 'HU' && (
+                <>
+                  <div className="mb-4">
+                    <InputLabel htmlFor="nav_user_id" value="NAV User ID"/>
+                    <TextInput
+                      id="nav_user_id"
+                      className="mt-1 block w-full"
+                      value={data.nav_user_id}
+                      onChange={(e) => setData('nav_user_id', e.target.value)}
+                    />
+                    <InputError className="mt-2" message={errors.nav_user_id}/>
+                  </div>
+                  <div className="mb-4">
+                    <InputLabel htmlFor="nav_exchange_key" value="NAV Exchange Key"/>
+                    <TextInput
+                      id="nav_exchange_key"
+                      className="mt-1 block w-full"
+                      value={data.nav_exchange_key}
+                      onChange={(e) => setData('nav_exchange_key', e.target.value)}
+                    />
+                    <InputError className="mt-2" message={errors.nav_exchange_key}/>
+                  </div>
+                </>
+              )}
 
               <div className="mb-4">
                 <InputLabel htmlFor="phone" value="Phone"/>

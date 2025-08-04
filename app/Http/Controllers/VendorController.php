@@ -47,8 +47,11 @@ class VendorController extends Controller
                     ->ignore($user->id, 'user_id')
             ],
             'store_address' => 'nullable',
-            'country_code' => 'required|string|max:5',
+            'country_code' => 'required|string|in:RO,HU,BG',
             'phone' => 'required|string|max:20',
+            'anaf_pfx' => 'nullable|required_if:country_code,RO|file|mimes:pfx|max:2048',
+            'nav_user_id' => 'nullable|required_if:country_code,HU|string|max:255',
+            'nav_exchange_key' => 'nullable|required_if:country_code,HU|string|max:255',
         ], [
             'store_name.regex' => 'Store Name must only contain lowercase alphanumeric characters and dashes.',
         ]);
@@ -60,6 +63,17 @@ class VendorController extends Controller
         $vendor->store_address = $request->store_address;
         $vendor->country_code = $request->country_code;
         $vendor->phone = $request->phone;
+
+        if ($request->country_code === 'HU') {
+            $vendor->nav_user_id = $request->nav_user_id;
+            $vendor->nav_exchange_key = $request->nav_exchange_key;
+        }
+
+        if ($request->hasFile('anaf_pfx') && $request->country_code === 'RO') {
+            $path = $request->file('anaf_pfx')->store('pfx_certificates', 'private');
+            // You might want to save the path to the vendor model if needed
+            // $vendor->pfx_path = $path;
+        }
 
         if ($isNewVendor) {
             $vendor->status = VendorStatusEnum::Pending->value;

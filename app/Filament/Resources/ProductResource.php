@@ -35,6 +35,12 @@ class ProductResource extends Resource
 
     protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
 
+    public static function canCreate(): bool
+    {
+        // Only allow creating products if the user is a vendor and is approved.
+        return auth()->user()->vendor?->status === 'approved';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->forVendor();
