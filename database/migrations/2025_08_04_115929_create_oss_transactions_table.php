@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('oss_transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('vendor_id')->constrained('vendors');
+            $table->foreignId('vendor_id')->constrained('vendors', 'user_id')->onDelete('cascade');
             $table->foreignId('order_id')->constrained('orders');
             $table->string('client_country_code');
             $table->decimal('vat_rate', 5, 2);
