@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class VendorStatusChanged extends Mailable
+class NewVendorRequest extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -27,7 +27,7 @@ class VendorStatusChanged extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: __('emails.vendor_status_changed.subject'),
+            subject: 'New Vendor Request',
         );
     }
 
@@ -37,10 +37,17 @@ class VendorStatusChanged extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.vendor_status_changed',
-            with: [
-                'vendor' => $this->vendor,
-            ]
+            markdown: 'emails.new_vendor_request',
         );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
     }
 }
