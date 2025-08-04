@@ -109,7 +109,7 @@ class CartService
                         'slug' => $product->slug,
                         'price' => $cartItem['price'],
                         'vat_rate_type' => $product->vat_rate_type ?? 'standard_rate',
-                        'gross_price' => app(\App\Services\VatService::class)->calculate($cartItem['price'], $product->vat_rate_type)['gross'],
+                        'gross_price' => app(\App\Services\VatRateService::class)->calculate($cartItem['price'], $product->vat_rate_type)['gross'],
                         'quantity' => $cartItem['quantity'],
                         'option_ids' => $cartItem['option_ids'],
                         'options' => $optionInfo,
