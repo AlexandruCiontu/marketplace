@@ -4,7 +4,7 @@ namespace App\Services;
 
 use Ibericode\Vat\Rates;
 
-class VatService
+class VatRateService
 {
     protected Rates $rates;
 

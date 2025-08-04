@@ -10,21 +10,29 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Order extends Model
 {
-    protected $fillable = [
-        'stripe_session_id',
-        'user_id',
-        'total_price',
-        'status',
-        'tracking_code',
-        'tracking_code_added_at',
-        'online_payment_commission',
-        'website_commission',
-        'vendor_subtotal',
-        'payment_intent',
-        'vat_country_code',
-        'net_total',
-        'vat_total',
-    ];
+    protected $guarded = [];
+
+    // protected $fillable = [
+    //     'stripe_session_id',
+    //     'user_id',
+    //     'vendor_user_id',
+    //     'total_price',
+    //     'status',
+    //     'tracking_code',
+    //     'tracking_code_added_at',
+    //     'online_payment_commission',
+    //     'website_commission',
+    //     'vendor_subtotal',
+    //     'payment_intent',
+    //     'vat_country_code',
+    //     'net_total',
+    //     'vat_total',
+    //     'transaction_type',
+    //     'invoice_type',
+    //     'invoice_storage_path',
+    //     'included_in_oss',
+    //     'refund_id',
+    // ];
 
     protected $casts = [
         'tracking_code_added_at' => 'datetime',

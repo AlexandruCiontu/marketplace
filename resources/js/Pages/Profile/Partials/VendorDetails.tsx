@@ -6,7 +6,12 @@ import Modal from "@/Components/Core/Modal";
 import InputLabel from "@/Components/Core/InputLabel";
 import TextInput from "@/Components/Core/TextInput";
 import InputError from "@/Components/Core/InputError";
-import {countryCodes} from '@/data/countryCodes';
+
+const fiscalCountries = [
+  {name: 'România', code: 'RO'},
+  {name: 'Ungaria', code: 'HU'},
+  {name: 'Bulgaria', code: 'BG'},
+];
 
 export default function VendorDetails(
   {className = '',}: { className?: string; }
@@ -26,7 +31,7 @@ export default function VendorDetails(
   } = useForm({
     store_name: user.vendor?.store_name || user.name.toLowerCase().replace(/\s+/g, '-'),
     store_address: user.vendor?.store_address,
-    country_code: user.vendor?.country_code || user.country_code,
+    country_code: user.vendor?.country_code || 'RO',
     phone: user.vendor?.phone || user.phone
   });
 
@@ -124,7 +129,7 @@ export default function VendorDetails(
               </div>
 
               <div className="mb-4">
-                <InputLabel htmlFor="country_code" value="Country Code"/>
+                <InputLabel htmlFor="country_code" value="Țara"/>
 
                 <select
                   id="country_code"
@@ -133,9 +138,9 @@ export default function VendorDetails(
                   className="select select-bordered w-full mt-1"
                   onChange={(e) => setData('country_code', e.target.value)}
                   required>
-                  {countryCodes.map(c => (
+                  {fiscalCountries.map(c => (
                     <option key={c.code} value={c.code}>
-                      {c.name} ({c.code})
+                      {c.name}
                     </option>
                   ))}
                 </select>

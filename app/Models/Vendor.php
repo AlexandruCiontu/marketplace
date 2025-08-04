@@ -23,6 +23,13 @@ class Vendor extends Model
         'phone',
         'cover_image',
         'commission_rate',
+        'nav_user_id',
+        'nav_exchange_key',
+    ];
+
+    protected $casts = [
+        'nav_user_id' => 'encrypted',
+        'nav_exchange_key' => 'encrypted',
     ];
 
     public function scopeEligibleForPayout(Builder $query): Builder

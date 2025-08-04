@@ -43,6 +43,13 @@ class VendorResource extends Resource
                         Forms\Components\Select::make('status')
                             ->options(VendorStatusEnum::labels())
                             ->required(),
+                        Forms\Components\Select::make('country_code')
+                            ->options([
+                                'RO' => 'România',
+                                'HU' => 'Ungaria',
+                                'BG' => 'Bulgaria',
+                            ])
+                            ->required(),
                         Forms\Components\Select::make('commission_rate')
                             ->options([
                                 5 => '5%',
@@ -72,6 +79,9 @@ class VendorResource extends Resource
                     ->sortable(),
                 TextColumn::make('store_name')
                     ->searchable()
+                    ->sortable(),
+                TextColumn::make('country_code')
+                    ->label('Country')
                     ->sortable(),
                 TextColumn::make('commission_rate')
                     ->label('Commission %')
