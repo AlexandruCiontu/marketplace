@@ -9,8 +9,8 @@ use InvalidArgumentException;
 class InvoiceServiceFactory
 {
     protected $countryServiceMap = [
-        'RO' => \App\Services\VendorCountry\RO\InvoiceService::class,
-        'HU' => \App\Services\VendorCountry\HU\InvoiceService::class,
+        'RO' => \App\Services\Romania\ANAFService::class,
+        'HU' => \App\Services\Hungary\NAVService::class,
         'BG' => \App\Services\VendorCountry\BG\InvoiceService::class,
     ];
 

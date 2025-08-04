@@ -50,7 +50,9 @@ class VendorController extends Controller
             'store_address' => 'nullable',
             'country_code' => 'required|string|in:RO,HU,BG',
             'phone' => 'required|string|max:20',
-            'anaf_pfx' => ['nullable', 'required_if:country_code,RO', 'file', 'mimetypes:application/x-pkcs12', 'mimes:pfx', 'max:2048'],
+            'cif' => 'nullable|required_if:country_code,RO|string',
+            'anaf_pfx' => ['nullable', 'required_if:country_code,RO', 'file', 'mimetypes:application/x-pkcs12,application/octet-stream', 'mimes:pfx', 'max:2048'],
+            'anaf_certificate_password' => 'nullable|required_with:anaf_pfx|string',
             'nav_user_id' => 'nullable|required_if:country_code,HU|string|max:255',
             'nav_exchange_key' => 'nullable|required_if:country_code,HU|string|max:255',
         ], [
@@ -71,9 +73,15 @@ class VendorController extends Controller
             $vendor->nav_exchange_key = $request->nav_exchange_key;
         }
 
-        if ($request->hasFile('anaf_pfx') && $request->country_code === 'RO') {
-            $path = $request->file('anaf_pfx')->store('anaf-certificates', 'private');
-            $vendor->anaf_pfx_path = $path;
+        if ($request->country_code === 'RO') {
+            $vendor->cif = $request->cif;
+            if ($request->hasFile('anaf_pfx')) {
+                $path = $request->file('anaf_pfx')->store('anaf-certificates', 'private');
+                $vendor->anaf_pfx_path = $path;
+            }
+            if ($request->filled('anaf_certificate_password')) {
+                $vendor->anaf_certificate_password = $request->anaf_certificate_password;
+            }
         }
 
         if ($isNewVendor) {

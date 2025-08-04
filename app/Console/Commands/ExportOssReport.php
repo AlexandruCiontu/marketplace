@@ -2,49 +2,55 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Order;
+use App\Models\OssTransaction;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
-use League\Csv\Writer;
 
 class ExportOssReport extends Command
 {
-    protected $signature = 'export:oss-report {month?} {year?}';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'export:oss-report {--month=}';
 
-    protected $description = 'Export monthly VAT OSS report per vendor as CSV';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Export the OSS report for a given month';
 
-    public function handle(): int
+    /**
+     * Execute the console command.
+     */
+    public function handle()
     {
-        $month = $this->argument('month') ?: now()->subMonth()->format('m');
-        $year = $this->argument('year') ?: now()->format('Y');
+        $month = $this->option('month') ?: now()->format('Y-m');
 
-        $orders = Order::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->where('transaction_type', 'OSS') // Filter for OSS transactions
-            ->get(['vendor_user_id', 'vat_country_code', 'net_total', 'vat_total', 'total_price', 'created_at'])
-            ->groupBy('vendor_user_id');
+        $transactions = OssTransaction::whereYear('created_at', substr($month, 0, 4))
+            ->whereMonth('created_at', substr($month, 5, 2))
+            ->get();
 
-        foreach ($orders as $vendorId => $vendorOrders) {
-            $csv = Writer::createFromString('');
-            $csv->insertOne(['vendor_id', 'client_country', 'month', 'vat_amount', 'net_amount', 'gross_amount']);
-
-            foreach ($vendorOrders as $order) {
-                $csv->insertOne([
-                    $vendorId,
-                    $order->vat_country_code,
-                    $order->created_at->format('Y-m'),
-                    $order->vat_total,
-                    $order->net_total,
-                    $order->total_price,
-                ]);
-            }
-
-            $path = "exports/oss/{$year}-{$month}/{$vendorId}.csv";
-            Storage::put($path, $csv->toString());
+        if ($transactions->isEmpty()) {
+            $this->info('No OSS transactions found for the selected month.');
+            return;
         }
 
-        $this->info('Reports generated in storage/exports/oss');
+        $vendors = $transactions->groupBy('vendor_id');
 
-        return Command::SUCCESS;
+        foreach ($vendors as $vendorId => $vendorTransactions) {
+            $csvData = "Țară client,Total net,TVA,Total brut\n";
+
+            foreach ($vendorTransactions as $transaction) {
+                $csvData .= "{$transaction->client_country_code},{$transaction->net_amount},{$transaction->vat_amount},{$transaction->gross_amount}\n";
+            }
+
+            $fileName = "oss_reports/vendor_{$vendorId}/{$month}.csv";
+            Storage::disk('private')->put($fileName, $csvData);
+        }
+
+        $this->info('OSS report exported successfully.');
     }
 }
