@@ -250,9 +250,19 @@ class CartController extends Controller
                 ]);
             }
 
-            $session = \Stripe\Checkout\Session::create([
-                'customer_details' => [
-                    'email' => $authUser->email,
+            $customer = \Stripe\Customer::create([
+                'email' => $authUser->email,
+                'name' => $defaultAddress->first_name . ' ' . $defaultAddress->last_name,
+                'phone' => $defaultAddress->phone,
+                'address' => [
+                    'line1' => $defaultAddress->address_line_1,
+                    'line2' => $defaultAddress->address_line_2,
+                    'city' => $defaultAddress->city,
+                    'state' => $defaultAddress->state,
+                    'postal_code' => $defaultAddress->postal_code,
+                    'country' => $defaultAddress->country_code,
+                ],
+                'shipping' => [
                     'name' => $defaultAddress->first_name . ' ' . $defaultAddress->last_name,
                     'phone' => $defaultAddress->phone,
                     'address' => [
@@ -263,19 +273,11 @@ class CartController extends Controller
                         'postal_code' => $defaultAddress->postal_code,
                         'country' => $defaultAddress->country_code,
                     ],
-                    'shipping' => [
-                        'name' => $defaultAddress->first_name . ' ' . $defaultAddress->last_name,
-                        'phone' => $defaultAddress->phone,
-                        'address' => [
-                            'line1' => $defaultAddress->address_line_1,
-                            'line2' => $defaultAddress->address_line_2,
-                            'city' => $defaultAddress->city,
-                            'state' => $defaultAddress->state,
-                            'postal_code' => $defaultAddress->postal_code,
-                            'country' => $defaultAddress->country_code,
-                        ],
-                    ]
-                ],
+                ]
+            ]);
+
+            $session = \Stripe\Checkout\Session::create([
+                'customer' => $customer->id,
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
