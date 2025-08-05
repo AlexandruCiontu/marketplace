@@ -21,7 +21,6 @@
         "league/csv": "^9.24",
         "mpociot/vat-calculator": "^3.22",
         "php-http/curl-client": "^2.3",
-        "simplito/ubl-invoice": "^1.0",
         "simonhamp/laravel-stripe-connect": "^0.5.0",
         "spatie/laravel-permission": "^6.10",
         "stevebauman/location": "^7.5",

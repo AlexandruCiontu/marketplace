@@ -207,6 +207,16 @@ class CartController extends Controller
                     $orderGross += $calc['gross'] * $cartItem['quantity'];
                     $orderVat += $calc['vat'] * $cartItem['quantity'];
 
+                    $taxRate = null;
+                    if ($calc['rate'] > 0) {
+                        $taxRate = \Stripe\TaxRate::create([
+                            'display_name' => 'TVA',
+                            'percentage' => $calc['rate'],
+                            'inclusive' => true,
+                            'country' => $vatCountry,
+                        ]);
+                    }
+
                     $description = collect($cartItem['options'])->map(function ($item) {
                         return "{$item['type']['name']}: {$item['name']}";
                     })->implode(', ');
@@ -222,6 +232,11 @@ class CartController extends Controller
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
+
+                    if ($taxRate) {
+                        $lineItem['tax_rates'] = [$taxRate->id];
+                    }
+
                     if ($description) {
                         $lineItem['price_data']['product_data']['description'] = $description;
                     }
@@ -234,12 +249,38 @@ class CartController extends Controller
                     'vat_total' => $orderVat,
                 ]);
             }
+
             $session = \Stripe\Checkout\Session::create([
-                'customer_email' => $authUser->email,
+                'customer_details' => [
+                    'email' => $authUser->email,
+                    'name' => $defaultAddress->first_name . ' ' . $defaultAddress->last_name,
+                    'phone' => $defaultAddress->phone,
+                    'address' => [
+                        'line1' => $defaultAddress->address_line_1,
+                        'line2' => $defaultAddress->address_line_2,
+                        'city' => $defaultAddress->city,
+                        'state' => $defaultAddress->state,
+                        'postal_code' => $defaultAddress->postal_code,
+                        'country' => $defaultAddress->country_code,
+                    ],
+                    'shipping' => [
+                        'name' => $defaultAddress->first_name . ' ' . $defaultAddress->last_name,
+                        'phone' => $defaultAddress->phone,
+                        'address' => [
+                            'line1' => $defaultAddress->address_line_1,
+                            'line2' => $defaultAddress->address_line_2,
+                            'city' => $defaultAddress->city,
+                            'state' => $defaultAddress->state,
+                            'postal_code' => $defaultAddress->postal_code,
+                            'country' => $defaultAddress->country_code,
+                        ],
+                    ]
+                ],
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('stripe.failure', []),
+                'tax_id_collection' => ['enabled' => true],
             ]);
 
             foreach ($orders as $order) {
