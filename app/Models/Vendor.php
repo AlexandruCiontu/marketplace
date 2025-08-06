@@ -26,11 +26,13 @@ class Vendor extends Model
         'nav_user_id',
         'nav_exchange_key',
         'anaf_pfx_path',
+        'anaf_certificate_password',
     ];
 
     protected $casts = [
         'nav_user_id' => 'encrypted',
         'nav_exchange_key' => 'encrypted',
+        'anaf_certificate_password' => 'encrypted',
     ];
 
     public function scopeEligibleForPayout(Builder $query): Builder

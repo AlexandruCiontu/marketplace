@@ -240,6 +240,8 @@ class CartController extends Controller
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('stripe.failure', []),
+                'customer_update' => ['name' => 'auto'],
+                'tax_id_collection' => ['enabled' => true],
             ]);
 
             foreach ($orders as $order) {
@@ -252,7 +254,7 @@ class CartController extends Controller
             return redirect($session->url);
         } catch (\Exception $e) {
             Log::error($e);
-            Db::rollBack();
+            DB::rollBack();
 
             return back()->with('error', $e->getMessage() ?: 'Something went wrong');
         }

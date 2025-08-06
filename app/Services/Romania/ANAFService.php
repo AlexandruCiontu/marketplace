@@ -3,6 +3,7 @@
 namespace App\Services\Romania;
 
 use App\Models\Order;
+use App\Models\Vendor;
 use App\Services\VendorCountry\InvoiceServiceInterface;
 
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +18,13 @@ class ANAFService implements InvoiceServiceInterface
         $xml = $this->generateXML($order);
         $signedXml = $this->signWithCertificate($xml, $vendor);
         $response = $this->uploadToANAF($signedXml, $vendor);
+
+        $storageDir = "invoices/ro/{$order->id}";
+        Storage::disk('private')->put("{$storageDir}/invoice.xml", $signedXml);
+        Storage::disk('private')->put("{$storageDir}/response.xml", is_string($response) ? $response : json_encode($response));
+        $order->invoice_type = 'anaf';
+        $order->invoice_storage_path = "{$storageDir}/invoice.xml";
+        $order->save();
 
         $this->handleANAFResponse($response, $order);
     }
@@ -103,7 +111,7 @@ class ANAFService implements InvoiceServiceInterface
         fwrite($xmlFile, $xml);
         $xmlPath = stream_get_meta_data($xmlFile)['uri'];
 
-        $command = "openssl smime -sign -in {$xmlPath} -out {$signedXmlPath} -signer {$certPath} -inkey {$keyPath} -passin pass:'' -outform DER";
+        $command = "openssl smime -sign -binary -in {$xmlPath} -signer {$certPath} -inkey {$keyPath} -out {$signedXmlPath} -outform DER";
         shell_exec($command);
 
         fclose($xmlFile);
@@ -113,22 +121,22 @@ class ANAFService implements InvoiceServiceInterface
 
     public function uploadToANAF($xml, Vendor $vendor)
     {
-        $anafWsdl = 'https://webservicesp.anaf.ro/PlatitorTvaRest/services/PlatitorTvaRest?wsdl';
-
-        $client = new \SoapClient($anafWsdl, [
+        $client = new \SoapClient(null, [
+            'location' => 'https://efactura.anaf.ro:8443/ServiceUploadInvoice/upload',
+            'uri' => 'https://efactura.anaf.ro/ServiceUploadInvoice',
+            'trace' => true,
             'stream_context' => stream_context_create([
                 'ssl' => [
                     'local_cert' => Storage::disk('private')->path("vendors/{$vendor->user_id}/cert.pem"),
                     'local_pk' => Storage::disk('private')->path("vendors/{$vendor->user_id}/key.pem"),
-                    'passphrase' => '',
                 ],
             ]),
         ]);
 
-        $response = $client->upload([
-            'file' => base64_encode($xml),
-            'cif' => $vendor->cif,
-        ]);
+        $response = $client->__soapCall('uploadInvoice', [[
+            'fileName' => 'invoice.xml',
+            'content' => base64_encode($xml),
+        ]]);
 
         return $response;
     }
