@@ -218,9 +218,9 @@ class CartController extends Controller
                                 'name' => $cartItem['title'],
                                 'images' => [$cartItem['image']],
                             ],
-                            // send gross amount so Stripe collects VAT as part of the price
-                            'unit_amount' => (int) round($calc['gross'] * 100),
-                            'tax_behavior' => 'inclusive',
+                            // send net price and let Stripe compute VAT automatically
+                            'unit_amount' => (int) round($cartItem['price'] * 100),
+                            'tax_behavior' => 'exclusive',
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
@@ -267,6 +267,15 @@ class CartController extends Controller
                 'cancel_url' => route('stripe.failure', []),
                 'customer_update' => ['name' => 'auto', 'address' => 'auto'],
                 'tax_id_collection' => ['enabled' => true],
+                'billing_address_collection' => 'required',
+                'shipping_address_collection' => [
+                    'allowed_countries' => [
+                        'RO', 'HU', 'BG', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'CZ',
+                        'DK', 'EE', 'FI', 'GR', 'HR', 'IE', 'LT', 'LU', 'LV', 'MT',
+                        'PL', 'PT', 'SE', 'SI', 'SK', 'AT', 'CY',
+                    ],
+                ],
+                'automatic_tax' => ['enabled' => true],
             ]);
 
             foreach ($orders as $order) {
