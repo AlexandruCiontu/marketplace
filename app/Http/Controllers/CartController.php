@@ -218,9 +218,7 @@ class CartController extends Controller
                                 'name' => $cartItem['title'],
                                 'images' => [$cartItem['image']],
                             ],
-                            // send net price and let Stripe compute VAT automatically
-                            'unit_amount' => (int) round($cartItem['price'] * 100),
-                            'tax_behavior' => 'exclusive',
+                            'unit_amount' => (int) round($calc['gross'] * 100),
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
@@ -236,6 +234,11 @@ class CartController extends Controller
                     'vat_total' => $orderVat,
                 ]);
             }
+            $firstOrder = $orders[0];
+            $vendorStripeAccountId = $firstOrder->vendorUser->getStripeAccountId();
+            $commissionRate = $firstOrder->vendor->commission_rate ?? 0;
+            $commission = (int) round($firstOrder->total_price * $commissionRate / 100 * 100);
+
             $customerId = $authUser->stripe_customer_id;
             $address = array_filter([
                 'line1' => $defaultAddress->address1,
@@ -278,12 +281,16 @@ class CartController extends Controller
                 'customer_update' => [
                     'shipping' => 'auto',
                 ],
-                'tax_id_collection' => ['enabled' => true],
                 'billing_address_collection' => 'required',
                 'shipping_address_collection' => [
                     'allowed_countries' => ['RO', 'HU', 'BG'],
                 ],
-                'automatic_tax' => ['enabled' => true],
+                'payment_intent_data' => [
+                    'application_fee_amount' => $commission,
+                    'transfer_data' => [
+                        'destination' => $vendorStripeAccountId,
+                    ],
+                ],
             ]);
 
             foreach ($orders as $order) {

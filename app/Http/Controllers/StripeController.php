@@ -58,9 +58,9 @@ class StripeController extends Controller
         return Inertia::render('Stripe/Success', [
             'orders' => OrderViewResource::collection($orders)->collection->toArray(),
             'sessionTotals' => [
-                'subtotal' => $session->amount_subtotal / 100,
-                'tax' => $session->total_details->amount_tax / 100,
-                'total' => $session->amount_total / 100,
+                'subtotal' => $orders->sum('net_total'),
+                'tax' => $orders->sum('vat_total'),
+                'total' => $orders->sum('total_price'),
             ],
         ]);
     }
