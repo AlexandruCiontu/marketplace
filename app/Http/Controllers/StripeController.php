@@ -21,16 +21,20 @@ class StripeController extends Controller
     {
         $user = auth()->user();
         $session_id = $request->get('session_id');
+
         $orders = Order::where('stripe_session_id', $session_id)
+            ->where('user_id', $user->id)
             ->get();
 
-        if ($orders->count() === 0) {
+        if ($orders->isEmpty()) {
             abort(404);
         }
 
+        // in case webhooks haven't yet updated the status, mark the orders as paid
         foreach ($orders as $order) {
-            if ($order->user_id !== $user->id) {
-                abort(403);
+            if ($order->status === OrderStatusEnum::Draft->value) {
+                $order->status = OrderStatusEnum::Paid;
+                $order->save();
             }
         }
 
@@ -103,6 +107,7 @@ class StripeController extends Controller
 
                 Mail::to($orders[0]->user)->send(new CheckoutCompleted($orders));
 
+                break;
 
             case 'checkout.session.completed':
                 $session = $event->data->object;
@@ -159,13 +164,16 @@ class StripeController extends Controller
                 }
 
                 CartItem::query()
-                    ->where('user_id', $order->user_id)
+                    ->where('user_id', $orders->first()->user_id)
                     ->whereIn('product_id', $productsToDeletedFromCart)
                     ->where('saved_for_later', false)
                     ->delete();
 
+                break;
+
             default:
                 echo 'Received unknown event type ' . $event->type;
+                break;
         }
 
         return response('', 200);

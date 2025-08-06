@@ -171,7 +171,7 @@ class CartController extends Controller
                 $orderGross = 0;
                 $order = Order::create([
                     'stripe_session_id' => null,
-                    'user_id' => $authUser->id,
+                    'user_id' => $authUser->id ?? auth()->id(),
                     'vendor_user_id' => $vendorUser['id'],
                     'total_price' => 0,
                     'net_total' => 0,
@@ -218,7 +218,9 @@ class CartController extends Controller
                                 'name' => $cartItem['title'],
                                 'images' => [$cartItem['image']],
                             ],
-                            'unit_amount' => $calc['gross'] * 100,
+                            // send gross amount so Stripe collects VAT as part of the price
+                            'unit_amount' => (int) round($calc['gross'] * 100),
+                            'tax_behavior' => 'inclusive',
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
