@@ -26,22 +26,22 @@ class StripeController extends Controller
             return redirect()->route('dashboard')->with('error', 'Missing checkout session.');
         }
 
+        $stripe = new \Stripe\StripeClient(config('app.stripe_secret_key'));
+        try {
+            $session = $stripe->checkout->sessions->retrieve($sessionId);
+        } catch (\Exception $e) {
+            Log::warning('Failed to retrieve Stripe session '.$sessionId.': '.$e->getMessage());
+            return redirect()->route('dashboard')->with('error', 'Checkout session not found or expired.');
+        }
+
         $orders = Order::where('stripe_session_id', $sessionId)
             ->where('user_id', $user->id)
             ->get();
 
-        if ($orders->isEmpty()) {
-            try {
-                $stripe = new \Stripe\StripeClient(config('app.stripe_secret_key'));
-                $session = $stripe->checkout->sessions->retrieve($sessionId);
-                if ($session && $session->payment_intent) {
-                    $orders = Order::where('payment_intent', $session->payment_intent)
-                        ->where('user_id', $user->id)
-                        ->get();
-                }
-            } catch (\Exception $e) {
-                Log::warning('Failed to retrieve Stripe session '.$sessionId.': '.$e->getMessage());
-            }
+        if ($orders->isEmpty() && $session->payment_intent) {
+            $orders = Order::where('payment_intent', $session->payment_intent)
+                ->where('user_id', $user->id)
+                ->get();
         }
 
         if ($orders->isEmpty()) {
@@ -57,6 +57,11 @@ class StripeController extends Controller
 
         return Inertia::render('Stripe/Success', [
             'orders' => OrderViewResource::collection($orders)->collection->toArray(),
+            'sessionTotals' => [
+                'subtotal' => $session->amount_subtotal / 100,
+                'tax' => $session->total_details->amount_tax / 100,
+                'total' => $session->amount_total / 100,
+            ],
         ]);
     }
 

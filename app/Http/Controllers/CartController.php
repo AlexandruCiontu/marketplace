@@ -277,7 +277,6 @@ class CartController extends Controller
                 'cancel_url' => route('stripe.failure', []),
                 'customer_update' => [
                     'shipping' => 'auto',
-                    'address' => 'auto',
                 ],
                 'tax_id_collection' => ['enabled' => true],
                 'billing_address_collection' => 'required',
