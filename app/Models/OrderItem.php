@@ -14,7 +14,7 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'quantity',
-        'price',
+        'net_price',
         'variation_type_option_ids',
         'vat_rate',
         'vat_amount',

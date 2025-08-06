@@ -23,7 +23,10 @@ interface OrderItem {
     slug: string;
     featured_image_url?: string;
   };
-  price: number;
+  net_price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   quantity: number;
   variationOptions: VariationOption[];
 }
@@ -79,7 +82,7 @@ const getStatusBadgeClass = (status: string): string => {
 export default function Show({ order }: { order: Order }) {
   // Calculate subtotal
   const subtotal = (order.orderItems || []).reduce(
-    (acc, item) => acc + item.price * item.quantity,
+    (acc, item) => acc + item.net_price * item.quantity,
     0
   );
 
@@ -207,13 +210,13 @@ export default function Show({ order }: { order: Order }) {
                         )}
                       </td>
                       <td className="text-right">
-                        {formatPrice(item.price)}
+                        {formatPrice(item.net_price)}
                       </td>
                       <td className="text-right">
                         {item.quantity}
                       </td>
                       <td className="text-right font-medium">
-                        {formatPrice(item.price * item.quantity)}
+                        {formatPrice(item.net_price * item.quantity)}
                       </td>
                     </tr>
                   ))}

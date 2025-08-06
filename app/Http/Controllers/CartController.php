@@ -171,7 +171,7 @@ class CartController extends Controller
                 $orderGross = 0;
                 $order = Order::create([
                     'stripe_session_id' => null,
-                    'user_id' => $authUser->id,
+                    'user_id' => $authUser->id ?? auth()->id(),
                     'vendor_user_id' => $vendorUser['id'],
                     'total_price' => 0,
                     'net_total' => 0,
@@ -196,7 +196,7 @@ class CartController extends Controller
                         'order_id' => $order->id,
                         'product_id' => $cartItem['product_id'],
                         'quantity' => $cartItem['quantity'],
-                        'price' => $cartItem['price'],
+                        'net_price' => $cartItem['price'],
                         'vat_rate' => $calc['rate'],
                         'vat_amount' => $calc['vat'],
                         'gross_price' => $calc['gross'],
@@ -218,7 +218,7 @@ class CartController extends Controller
                                 'name' => $cartItem['title'],
                                 'images' => [$cartItem['image']],
                             ],
-                            'unit_amount' => $calc['gross'] * 100,
+                            'unit_amount' => (int) round($calc['gross'] * 100),
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
@@ -234,12 +234,63 @@ class CartController extends Controller
                     'vat_total' => $orderVat,
                 ]);
             }
+            $firstOrder = $orders[0];
+            $vendorStripeAccountId = $firstOrder->vendorUser->getStripeAccountId();
+            $commissionRate = $firstOrder->vendor->commission_rate ?? 0;
+            $commission = (int) round($firstOrder->total_price * $commissionRate / 100 * 100);
+
+            $customerId = $authUser->stripe_customer_id;
+            $address = array_filter([
+                'line1' => $defaultAddress->address1,
+                'line2' => $defaultAddress->address2,
+                'city' => $defaultAddress->city,
+                'state' => $defaultAddress->state,
+                'postal_code' => $defaultAddress->zipcode,
+                'country' => $defaultAddress->country_code,
+            ]);
+
+            if (! $customerId) {
+                $customer = \Stripe\Customer::create([
+                    'email' => $authUser->email,
+                    'name' => $authUser->name,
+                    'address' => $address,
+                    'shipping' => [
+                        'name' => $authUser->name,
+                        'address' => $address,
+                    ],
+                ]);
+                $customerId = $customer->id;
+                $authUser->stripe_customer_id = $customerId;
+                $authUser->save();
+            } else {
+                \Stripe\Customer::update($customerId, [
+                    'address' => $address,
+                    'shipping' => [
+                        'name' => $authUser->name,
+                        'address' => $address,
+                    ],
+                ]);
+            }
+
             $session = \Stripe\Checkout\Session::create([
-                'customer_email' => $authUser->email,
+                'customer' => $customerId,
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('stripe.failure', []),
+                'customer_update' => [
+                    'shipping' => 'auto',
+                ],
+                'billing_address_collection' => 'required',
+                'shipping_address_collection' => [
+                    'allowed_countries' => ['RO', 'HU', 'BG'],
+                ],
+                'payment_intent_data' => [
+                    'application_fee_amount' => $commission,
+                    'transfer_data' => [
+                        'destination' => $vendorStripeAccountId,
+                    ],
+                ],
             ]);
 
             foreach ($orders as $order) {
@@ -252,7 +303,7 @@ class CartController extends Controller
             return redirect($session->url);
         } catch (\Exception $e) {
             Log::error($e);
-            Db::rollBack();
+            DB::rollBack();
 
             return back()->with('error', $e->getMessage() ?: 'Something went wrong');
         }

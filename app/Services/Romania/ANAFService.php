@@ -3,9 +3,14 @@
 namespace App\Services\Romania;
 
 use App\Models\Order;
+use App\Models\Vendor;
+use App\Services\Fiscal\UblGeneratorService;
 use App\Services\VendorCountry\InvoiceServiceInterface;
 
 use Illuminate\Support\Facades\Storage;
+use SoapClient;
+use SoapHeader;
+use SoapVar;
 
 class ANAFService implements InvoiceServiceInterface
 {
@@ -16,9 +21,25 @@ class ANAFService implements InvoiceServiceInterface
 
         $xml = $this->generateXML($order);
         $signedXml = $this->signWithCertificate($xml, $vendor);
-        $response = $this->uploadToANAF($signedXml, $vendor);
 
-        $this->handleANAFResponse($response, $order);
+        try {
+            $response = $this->uploadToANAF($signedXml, $vendor);
+
+            $storageDir = "invoices/ro/{$order->id}";
+            Storage::disk('private')->put("{$storageDir}/invoice.xml", $signedXml);
+            Storage::disk('private')->put("{$storageDir}/response.xml", is_string($response) ? $response : json_encode($response));
+            $order->invoice_type = 'anaf';
+            $order->invoice_storage_path = "{$storageDir}/invoice.xml";
+            $order->save();
+
+            $this->handleANAFResponse($response, $order);
+        } catch (\Throwable $e) {
+            $failedPath = "invoices/failed/order_{$order->id}.xml";
+            Storage::disk('private')->put($failedPath, $signedXml);
+            $order->invoice_type = 'failed';
+            $order->invoice_storage_path = $failedPath;
+            $order->save();
+        }
     }
 
     private function handleANAFResponse($response, Order $order)
@@ -58,38 +79,8 @@ class ANAFService implements InvoiceServiceInterface
 
     public function generateXML(Order $order)
     {
-        $vendor = $order->vendor;
-        $customer = $order->user;
-
-        $supplier = (new \Simplito\UblInvoice\Party())
-            ->setName($vendor->store_name)
-            ->setCity($vendor->store_address)
-            ->setCountry($vendor->country_code)
-            ->setCompanyId($vendor->cif);
-
-        $client = (new \Simplito\UblInvoice\Party())
-            ->setName($customer->name)
-            ->setCity($order->shippingAddress->city)
-            ->setCountry($order->shippingAddress->country->code)
-            ->setCompanyId($customer->cif ?? '');
-
-        $invoiceLines = [];
-        foreach ($order->orderItems as $item) {
-            $invoiceLines[] = (new \Simplito\UblInvoice\InvoiceLine())
-                ->setId($item->id)
-                ->setName($item->product->title)
-                ->setPrice($item->price)
-                ->setQuantity($item->quantity)
-                ->setUnit('buc')
-                ->setVatRate($item->product->vat_rate);
-        }
-
-        $invoice = (new \Simplito\UblInvoice\Invoice())
-            ->setSupplier($supplier)
-            ->setClient($client)
-            ->setInvoiceLines($invoiceLines);
-
-        return $invoice->asXML();
+        $generator = new UblGeneratorService();
+        return $generator->generateInvoice($order);
     }
 
     public function signWithCertificate($xml, Vendor $vendor)
@@ -103,7 +94,7 @@ class ANAFService implements InvoiceServiceInterface
         fwrite($xmlFile, $xml);
         $xmlPath = stream_get_meta_data($xmlFile)['uri'];
 
-        $command = "openssl smime -sign -in {$xmlPath} -out {$signedXmlPath} -signer {$certPath} -inkey {$keyPath} -passin pass:'' -outform DER";
+        $command = "openssl smime -sign -binary -in {$xmlPath} -signer {$certPath} -inkey {$keyPath} -out {$signedXmlPath} -outform DER";
         shell_exec($command);
 
         fclose($xmlFile);
@@ -113,23 +104,36 @@ class ANAFService implements InvoiceServiceInterface
 
     public function uploadToANAF($xml, Vendor $vendor)
     {
-        $anafWsdl = 'https://webservicesp.anaf.ro/PlatitorTvaRest/services/PlatitorTvaRest?wsdl';
+        $nonce = random_bytes(16);
+        $created = gmdate('Y-m-d\TH:i:s\Z');
+        $passwordDigest = base64_encode(sha1($nonce . $created . $vendor->anaf_password, true));
 
-        $client = new \SoapClient($anafWsdl, [
-            'stream_context' => stream_context_create([
-                'ssl' => [
-                    'local_cert' => Storage::disk('private')->path("vendors/{$vendor->user_id}/cert.pem"),
-                    'local_pk' => Storage::disk('private')->path("vendors/{$vendor->user_id}/key.pem"),
-                    'passphrase' => '',
-                ],
-            ]),
+        $wsse = '<wsse:Security SOAP-ENV:mustUnderstand="1" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+            <wsse:UsernameToken>
+                <wsse:Username>' . $vendor->anaf_username . '</wsse:Username>
+                <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">' . $passwordDigest . '</wsse:Password>
+                <wsse:Nonce>' . base64_encode($nonce) . '</wsse:Nonce>
+                <wsu:Created>' . $created . '</wsu:Created>
+            </wsse:UsernameToken>
+        </wsse:Security>';
+
+        $client = new SoapClient('https://efactura.anaf.ro/FacturareService-v3/ws/FacturareService?wsdl', [
+            'trace' => true,
+            'local_cert' => Storage::disk('private')->path("vendors/{$vendor->user_id}/cert.pem"),
+            'local_pk' => Storage::disk('private')->path("vendors/{$vendor->user_id}/key.pem"),
         ]);
 
-        $response = $client->upload([
-            'file' => base64_encode($xml),
-            'cif' => $vendor->cif,
-        ]);
+        $header = new SoapHeader(
+            'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd',
+            'Security',
+            new SoapVar($wsse, XSD_ANYXML),
+            true
+        );
+        $client->__setSoapHeaders([$header]);
 
-        return $response;
+        return $client->__soapCall('uploadInvoice', [[
+            'fileName' => 'invoice.xml',
+            'content' => base64_encode($xml),
+        ]]);
     }
 }

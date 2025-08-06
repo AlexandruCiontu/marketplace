@@ -3,7 +3,9 @@
 namespace App\Services\Hungary;
 
 use App\Models\Order;
+use App\Models\Vendor;
 use App\Services\VendorCountry\InvoiceServiceInterface;
+use Illuminate\Support\Facades\Storage;
 
 class NAVService implements InvoiceServiceInterface
 {
@@ -13,6 +15,13 @@ class NAVService implements InvoiceServiceInterface
         $token = $this->generateRequestToken($vendor);
         $xml = $this->generateXML($order);
         $response = $this->uploadInvoiceXML($xml, $vendor, $token);
+
+        $storageDir = "invoices/hu/{$order->id}";
+        Storage::disk('private')->put("{$storageDir}/invoice.xml", $xml);
+        Storage::disk('private')->put("{$storageDir}/response.json", json_encode($response));
+        $order->invoice_type = 'nav';
+        $order->invoice_storage_path = "{$storageDir}/invoice.xml";
+        $order->save();
 
         $this->handleNAVResponse($response, $order);
     }
@@ -50,18 +59,29 @@ class NAVService implements InvoiceServiceInterface
             'password' => $vendor->nav_exchange_key,
         ];
 
+        $body = json_encode($payload);
+        $signature = $this->requestSignature($body);
+
         $ch = curl_init('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/tokenExchange');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Request-Signature: ' . $signature,
+        ]);
 
         $response = curl_exec($ch);
         curl_close($ch);
 
         $data = json_decode($response, true);
 
-        return $data['encodedExchangeToken'];
+        return $data['encodedExchangeToken'] ?? '';
+    }
+
+    private function requestSignature(string $payload): string
+    {
+        return base64_encode(hash('sha3-512', $payload, true));
     }
 
     public function uploadInvoiceXML($xml, Vendor $vendor, $token)
@@ -72,13 +92,17 @@ class NAVService implements InvoiceServiceInterface
             'invoice' => base64_encode($xml),
         ];
 
+        $body = json_encode($payload);
+        $signature = $this->requestSignature($body);
+
         $ch = curl_init('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/manageInvoice');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Content-Type: application/json',
             'Authorization: Bearer ' . $token,
+            'Request-Signature: ' . $signature,
         ]);
 
         $response = curl_exec($ch);

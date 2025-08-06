@@ -24,7 +24,7 @@ class OrderResource extends JsonResource
         // Calculate subtotal
         $subtotal = 0;
         foreach ($this->orderItems as $item) {
-            $subtotal += $item->price * $item->quantity;
+            $subtotal += $item->net_price * $item->quantity;
         }
 
         return [

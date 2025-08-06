@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Services\VatRateService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,8 +28,10 @@ class OrderViewResource extends JsonResource
             'orderItems' => $this->orderItems->map(fn ($item) => [
                 'id' => $item->id,
                 'quantity' => $item->quantity,
-                'price' => $item->price,
-                'gross_price' => app(VatRateService::class)->calculate($item->price, $item->product->vat_rate_type)['gross'],
+                'net_price' => $item->net_price,
+                'vat_rate' => $item->vat_rate,
+                'vat_amount' => $item->vat_amount,
+                'gross_price' => $item->gross_price,
                 'variation_type_option_ids' => $item->variation_type_option_ids,
                 'product' => [
                     'id' => $item->product->id,

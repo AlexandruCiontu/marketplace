@@ -195,7 +195,7 @@ class ViewOrder extends ViewRecord
                                                 ->state(function ($record) {
                                                     $subtotal = 0;
                                                     foreach ($record->orderItems as $item) {
-                                                        $subtotal += $item->price * $item->quantity;
+                                                        $subtotal += $item->net_price * $item->quantity;
                                                     }
                                                     return $subtotal;
                                                 })
@@ -278,7 +278,7 @@ class ViewOrder extends ViewRecord
                                                 Group::make([
                                                     Grid::make(3)
                                                         ->schema([
-                                                            TextEntry::make('price')
+                                                            TextEntry::make('net_price')
                                                                 ->label('Unit Price')
                                                                 ->formatStateUsing(fn ($state) => Number::currency($state, config('app.currency')))
                                                                 ->size('sm'),
@@ -289,8 +289,8 @@ class ViewOrder extends ViewRecord
 
                                                             TextEntry::make('itemTotal')
                                                                 ->label('Total')
-                                                                ->formatStateUsing(fn ($record) => Number::currency($record->price * $record->quantity, config('app.currency')))
-                                                                ->getStateUsing(fn ($record) => $record->price * $record->quantity)
+                                                                ->formatStateUsing(fn ($record) => Number::currency($record->net_price * $record->quantity, config('app.currency')))
+                                                                ->getStateUsing(fn ($record) => $record->net_price * $record->quantity)
                                                                 ->weight('medium')
                                                                 ->size('sm')
                                                                 ->color('success'),

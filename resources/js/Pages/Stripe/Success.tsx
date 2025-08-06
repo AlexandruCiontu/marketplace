@@ -4,9 +4,7 @@ import {CheckCircleIcon} from "@heroicons/react/24/outline";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import {PageProps, Order} from "@/types";
 
-function Success({orders}: PageProps<{ orders: Order[] }>) {
-
-  console.log(orders)
+function Success({orders, sessionTotals}: PageProps<{ orders: Order[], sessionTotals: { subtotal: number, tax: number, total: number } }>) {
   return (
     <AuthenticatedLayout>
       <Head title="Payment was Completed"/>
@@ -23,6 +21,21 @@ function Success({orders}: PageProps<{ orders: Order[] }>) {
         </div>
         <div className="my-6 text-lg">
           Thanks for your purchase. Your payment was completed successfully.
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4">
+          <h3 className="text-3xl mb-3">Payment Summary</h3>
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-400">Subtotal</span>
+            <CurrencyFormatter amount={sessionTotals.subtotal}/>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-400">VAT</span>
+            <CurrencyFormatter amount={sessionTotals.tax}/>
+          </div>
+          <div className="flex justify-between mb-3 font-bold">
+            <span className="text-gray-400">Total</span>
+            <CurrencyFormatter amount={sessionTotals.total}/>
+          </div>
         </div>
         {orders.map(order => (
           <div key={order.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-4">
