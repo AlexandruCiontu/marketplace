@@ -204,7 +204,12 @@ class StripeController extends Controller
     public function connect()
     {
         if (!auth()->user()->getStripeAccountId()) {
-            auth()->user()->createStripeAccount(['type' => 'express']);
+            auth()->user()->createStripeAccount([
+                'type' => 'express',
+                'capabilities' => [
+                    'transfers' => ['requested' => true],
+                ],
+            ]);
         }
 
         if (!auth()->user()->isStripeAccountActive()) {
