@@ -218,9 +218,9 @@
                             @endforeach
                         @endif
                     </td>
-                    <td class="text-right">{{ number_format($item->price, 2) }} {{ config('app.currency') }}</td>
+                    <td class="text-right">{{ number_format($item->net_price, 2) }} {{ config('app.currency') }}</td>
                     <td class="text-right">{{ $item->quantity }}</td>
-                    <td class="text-right">{{ number_format($item->price * $item->quantity, 2) }} {{ config('app.currency') }}</td>
+                    <td class="text-right">{{ number_format($item->net_price * $item->quantity, 2) }} {{ config('app.currency') }}</td>
                 </tr>
                 @endforeach
             </tbody>

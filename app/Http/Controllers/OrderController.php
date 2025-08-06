@@ -66,7 +66,7 @@ class OrderController extends Controller
         // Calculate subtotal
         $subtotal = 0;
         foreach ($order->orderItems as $item) {
-            $subtotal += $item->price * $item->quantity;
+            $subtotal += $item->net_price * $item->quantity;
         }
         $order->subtotal = $subtotal;
 

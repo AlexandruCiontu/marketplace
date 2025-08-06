@@ -20,17 +20,34 @@ class StripeController extends Controller
     public function success(Request $request)
     {
         $user = auth()->user();
-        $session_id = $request->get('session_id');
+        $sessionId = $request->get('session_id');
 
-        $orders = Order::where('stripe_session_id', $session_id)
+        if (! $sessionId) {
+            return redirect()->route('dashboard')->with('error', 'Missing checkout session.');
+        }
+
+        $orders = Order::where('stripe_session_id', $sessionId)
             ->where('user_id', $user->id)
             ->get();
 
         if ($orders->isEmpty()) {
-            abort(404);
+            try {
+                $stripe = new \Stripe\StripeClient(config('app.stripe_secret_key'));
+                $session = $stripe->checkout->sessions->retrieve($sessionId);
+                if ($session && $session->payment_intent) {
+                    $orders = Order::where('payment_intent', $session->payment_intent)
+                        ->where('user_id', $user->id)
+                        ->get();
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to retrieve Stripe session '.$sessionId.': '.$e->getMessage());
+            }
         }
 
-        // in case webhooks haven't yet updated the status, mark the orders as paid
+        if ($orders->isEmpty()) {
+            return redirect()->route('dashboard')->with('error', 'Checkout session not found or expired.');
+        }
+
         foreach ($orders as $order) {
             if ($order->status === OrderStatusEnum::Draft->value) {
                 $order->status = OrderStatusEnum::Paid;

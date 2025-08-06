@@ -196,7 +196,7 @@ class CartController extends Controller
                         'order_id' => $order->id,
                         'product_id' => $cartItem['product_id'],
                         'quantity' => $cartItem['quantity'],
-                        'price' => $cartItem['price'],
+                        'net_price' => $cartItem['price'],
                         'vat_rate' => $calc['rate'],
                         'vat_amount' => $calc['vat'],
                         'gross_price' => $calc['gross'],

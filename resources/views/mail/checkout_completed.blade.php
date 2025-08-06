@@ -59,7 +59,7 @@
                     {{ $orderItem->quantity }}
                 </td>
                 <td>
-                    {{ \Illuminate\Support\Number::currency($orderItem->price) }}
+                    {{ \Illuminate\Support\Number::currency($orderItem->net_price) }}
                 </td>
             </tr>
         @endforeach
