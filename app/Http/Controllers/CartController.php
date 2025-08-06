@@ -234,8 +234,19 @@ class CartController extends Controller
                     'vat_total' => $orderVat,
                 ]);
             }
+            $customerId = $authUser->stripe_customer_id;
+            if (! $customerId) {
+                $customer = \Stripe\Customer::create([
+                    'email' => $authUser->email,
+                    'name' => $authUser->name,
+                ]);
+                $customerId = $customer->id;
+                $authUser->stripe_customer_id = $customerId;
+                $authUser->save();
+            }
+
             $session = \Stripe\Checkout\Session::create([
-                'customer_email' => $authUser->email,
+                'customer' => $customerId,
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
