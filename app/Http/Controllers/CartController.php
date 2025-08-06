@@ -251,21 +251,32 @@ class CartController extends Controller
                     'email' => $authUser->email,
                     'name' => $authUser->name,
                     'address' => $address,
+                    'shipping' => [
+                        'name' => $authUser->name,
+                        'address' => $address,
+                    ],
                 ]);
                 $customerId = $customer->id;
                 $authUser->stripe_customer_id = $customerId;
                 $authUser->save();
             } else {
-                \Stripe\Customer::update($customerId, ['address' => $address]);
+                \Stripe\Customer::update($customerId, [
+                    'address' => $address,
+                    'shipping' => [
+                        'name' => $authUser->name,
+                        'address' => $address,
+                    ],
+                ]);
             }
 
             $session = \Stripe\Checkout\Session::create([
                 'customer' => $customerId,
+                'customer_email' => $authUser->email,
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('stripe.failure', []),
-                'customer_update' => ['name' => 'auto', 'address' => 'auto'],
+                'customer_update' => ['name' => 'auto', 'address' => 'auto', 'shipping' => 'auto'],
                 'tax_id_collection' => ['enabled' => true],
                 'billing_address_collection' => 'required',
                 'shipping_address_collection' => [
