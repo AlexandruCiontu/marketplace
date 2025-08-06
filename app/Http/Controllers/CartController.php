@@ -235,14 +235,26 @@ class CartController extends Controller
                 ]);
             }
             $customerId = $authUser->stripe_customer_id;
+            $address = array_filter([
+                'line1' => $defaultAddress->address1,
+                'line2' => $defaultAddress->address2,
+                'city' => $defaultAddress->city,
+                'state' => $defaultAddress->state,
+                'postal_code' => $defaultAddress->zipcode,
+                'country' => $defaultAddress->country_code,
+            ]);
+
             if (! $customerId) {
                 $customer = \Stripe\Customer::create([
                     'email' => $authUser->email,
                     'name' => $authUser->name,
+                    'address' => $address,
                 ]);
                 $customerId = $customer->id;
                 $authUser->stripe_customer_id = $customerId;
                 $authUser->save();
+            } else {
+                \Stripe\Customer::update($customerId, ['address' => $address]);
             }
 
             $session = \Stripe\Checkout\Session::create([
@@ -251,7 +263,7 @@ class CartController extends Controller
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('stripe.failure', []),
-                'customer_update' => ['name' => 'auto'],
+                'customer_update' => ['name' => 'auto', 'address' => 'auto'],
                 'tax_id_collection' => ['enabled' => true],
             ]);
 
