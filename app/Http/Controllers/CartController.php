@@ -271,20 +271,18 @@ class CartController extends Controller
 
             $session = \Stripe\Checkout\Session::create([
                 'customer' => $customerId,
-                'customer_email' => $authUser->email,
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', []).'?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('stripe.failure', []),
-                'customer_update' => ['name' => 'auto', 'address' => 'auto', 'shipping' => 'auto'],
+                'customer_update' => [
+                    'shipping' => 'auto',
+                    'address' => 'auto',
+                ],
                 'tax_id_collection' => ['enabled' => true],
                 'billing_address_collection' => 'required',
                 'shipping_address_collection' => [
-                    'allowed_countries' => [
-                        'RO', 'HU', 'BG', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'CZ',
-                        'DK', 'EE', 'FI', 'GR', 'HR', 'IE', 'LT', 'LU', 'LV', 'MT',
-                        'PL', 'PT', 'SE', 'SI', 'SK', 'AT', 'CY',
-                    ],
+                    'allowed_countries' => ['RO', 'HU', 'BG'],
                 ],
                 'automatic_tax' => ['enabled' => true],
             ]);
