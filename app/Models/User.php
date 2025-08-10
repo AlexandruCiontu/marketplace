@@ -33,6 +33,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'name',
         'email',
         'password',
+        'stripe_customer_id',
     ];
 
     /**

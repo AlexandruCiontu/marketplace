@@ -20,22 +20,48 @@ class StripeController extends Controller
     public function success(Request $request)
     {
         $user = auth()->user();
-        $session_id = $request->get('session_id');
-        $orders = Order::where('stripe_session_id', $session_id)
+        $sessionId = $request->get('session_id');
+
+        if (! $sessionId) {
+            return redirect()->route('dashboard')->with('error', 'Missing checkout session.');
+        }
+
+        $stripe = new \Stripe\StripeClient(config('app.stripe_secret_key'));
+        try {
+            $session = $stripe->checkout->sessions->retrieve($sessionId);
+        } catch (\Exception $e) {
+            Log::warning('Failed to retrieve Stripe session '.$sessionId.': '.$e->getMessage());
+            return redirect()->route('dashboard')->with('error', 'Checkout session not found or expired.');
+        }
+
+        $orders = Order::where('stripe_session_id', $sessionId)
+            ->where('user_id', $user->id)
             ->get();
 
-        if ($orders->count() === 0) {
-            abort(404);
+        if ($orders->isEmpty() && $session->payment_intent) {
+            $orders = Order::where('payment_intent', $session->payment_intent)
+                ->where('user_id', $user->id)
+                ->get();
+        }
+
+        if ($orders->isEmpty()) {
+            return redirect()->route('dashboard')->with('error', 'Checkout session not found or expired.');
         }
 
         foreach ($orders as $order) {
-            if ($order->user_id !== $user->id) {
-                abort(403);
+            if ($order->status === OrderStatusEnum::Draft->value) {
+                $order->status = OrderStatusEnum::Paid;
+                $order->save();
             }
         }
 
         return Inertia::render('Stripe/Success', [
             'orders' => OrderViewResource::collection($orders)->collection->toArray(),
+            'sessionTotals' => [
+                'subtotal' => $orders->sum('net_total'),
+                'tax' => $orders->sum('vat_total'),
+                'total' => $orders->sum('total_price'),
+            ],
         ]);
     }
 
@@ -103,6 +129,7 @@ class StripeController extends Controller
 
                 Mail::to($orders[0]->user)->send(new CheckoutCompleted($orders));
 
+                break;
 
             case 'checkout.session.completed':
                 $session = $event->data->object;
@@ -159,13 +186,16 @@ class StripeController extends Controller
                 }
 
                 CartItem::query()
-                    ->where('user_id', $order->user_id)
+                    ->where('user_id', $orders->first()->user_id)
                     ->whereIn('product_id', $productsToDeletedFromCart)
                     ->where('saved_for_later', false)
                     ->delete();
 
+                break;
+
             default:
                 echo 'Received unknown event type ' . $event->type;
+                break;
         }
 
         return response('', 200);
@@ -174,7 +204,12 @@ class StripeController extends Controller
     public function connect()
     {
         if (!auth()->user()->getStripeAccountId()) {
-            auth()->user()->createStripeAccount(['type' => 'express']);
+            auth()->user()->createStripeAccount([
+                'type' => 'express',
+                'capabilities' => [
+                    'transfers' => ['requested' => true],
+                ],
+            ]);
         }
 
         if (!auth()->user()->isStripeAccountActive()) {

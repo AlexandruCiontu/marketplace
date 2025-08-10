@@ -1,8 +1,8 @@
 import {PageProps, Product, VariationTypeOption, Image} from "@/types";
-import {Head, Link, router, useForm, usePage} from "@inertiajs/react";
+import {Head, router, useForm, usePage} from "@inertiajs/react";
 import {useEffect, useMemo, useState} from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import Carousel from "@/Components/Core/Carousel";
+import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
 import { getVatRate, calculateVatIncludedPrice, calculateVatAmount } from '@/utils/vat';
@@ -167,6 +167,32 @@ function Show({
     );
   }
 
+  const ProductDetails = () => (
+    <div>
+      {renderProductVariationTypes()}
+
+      {computedProduct.quantity != undefined && computedProduct.quantity < 10 && (
+        <div className="text-error my-4">
+          <span>Only {computedProduct.quantity} left</span>
+        </div>
+      )}
+
+      {renderAddToCartButton()}
+
+      {product.weight && (
+        <div className="mb-8">
+          <h2 className="font-semibold text-gray-700 text-lg">Product Details</h2>
+          <ul className="text-gray-600 list-disc list-inside space-y-1">
+            <li>Weight: {product.weight} kg</li>
+            <li>Length: {product.length} cm</li>
+            <li>Width: {product.width} cm</li>
+            <li>Height: {product.height} cm</li>
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+
   useEffect(() => {
     const idsMap = Object.fromEntries(
       Object.entries(selectedOptions).map(([typeId, option]: [string, VariationTypeOption]) => [typeId, option.id])
@@ -190,52 +216,29 @@ function Show({
       </Head>
 
       <div className="container mx-auto p-8">
-        <div className="grid gap-4 sm:gap-8 grid-cols-1 lg:grid-cols-12">
-          <div className="col-span-12 md:col-span-7">
-            <Carousel images={images}/>
-          </div>
-          <div className="col-span-12 md:col-span-5">
-            <h1 className="text-2xl">{product.title}</h1>
-            <p className={'mb-8'}>
-              by <Link href={route('vendor.profile', product.user.store_name)} className="hover:underline">{product.user.name}</Link>&nbsp;
-              in <Link href={route('product.byDepartment', product.department.slug)} className="hover:underline">{product.department.name}</Link>
-            </p>
-
-            <div className="mb-4">
-              <div className="text-3xl font-semibold">
-                <CurrencyFormatter amount={computedProduct.gross_price ?? 0}/>
-              </div>
+        <div className="space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <ProductGallery images={images} />
+            <div>
+              <h1 className="text-2xl font-bold">{product.title}</h1>
+              <p className="text-gray-600">
+                {product.user.name} in {product.department.name}
+              </p>
+              <p className="text-3xl font-semibold mt-4">
+                <CurrencyFormatter amount={computedProduct.gross_price ?? 0} />
+              </p>
               {computedProduct.vat_amount && computedProduct.vat_amount > 0 && (
                 <p className="text-sm text-gray-500">
-                  Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount ?? 0}/>
+                  Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount ?? 0} />
                 </p>
               )}
+              <ProductDetails />
             </div>
+          </div>
 
-            {renderProductVariationTypes()}
-
-            {computedProduct.quantity != undefined && computedProduct.quantity < 10 &&
-              <div className="text-error my-4">
-                <span>Only {computedProduct.quantity} left</span>
-              </div>
-            }
-
-              {renderAddToCartButton()}
-
-              {product.weight && (
-                <div className="mb-8">
-                  <h2 className="font-semibold text-gray-700 text-lg">Product Details</h2>
-                  <ul className="text-gray-600 list-disc list-inside space-y-1">
-                    <li>Weight: {product.weight} kg</li>
-                    <li>Length: {product.length} cm</li>
-                    <li>Width: {product.width} cm</li>
-                    <li>Height: {product.height} cm</li>
-                  </ul>
-                </div>
-              )}
-
-              <b className="text-xl">About the Item</b>
-            <div className="wysiwyg-output" dangerouslySetInnerHTML={{__html: product.description}}/>
+          <div className="prose max-w-none">
+            <h2>About the Item</h2>
+            <div dangerouslySetInnerHTML={{ __html: product.description }} />
           </div>
         </div>
       </div>

@@ -173,7 +173,10 @@ export type PageProps<
 export type OrderItem = {
   id: number;
   quantity: number;
-  price: number;
+  net_price: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_price: number;
   variation_type_option_ids: number[];
   product: {
     id: number;
