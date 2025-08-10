@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '@/i18n/t';
 
 interface Review {
   id: number;
@@ -10,7 +11,7 @@ interface Review {
 
 export default function ReviewList({ reviews }: { reviews: Review[] }) {
   if (!reviews?.length) {
-    return <p className="text-sm opacity-70">Încă nu există recenzii.</p>;
+    return <p className="text-sm opacity-70">{t('noReviews')}</p>;
   }
 
   return (
@@ -18,7 +19,7 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
       {reviews.map((r) => (
         <li key={r.id} className="p-4 rounded-2xl border">
           <div className="flex items-center justify-between mb-2">
-            <div className="font-medium">{r.user?.name ?? 'Utilizator'}</div>
+            <div className="font-medium">{r.user?.name ?? 'User'}</div>
             <div className="text-sm">⭐ {r.rating}/5</div>
           </div>
           {r.comment && <p className="text-sm">{r.comment}</p>}

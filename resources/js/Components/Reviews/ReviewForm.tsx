@@ -1,5 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import React from 'react';
+import { t } from '@/i18n/t';
 
 interface Props {
   productId: number;
@@ -21,7 +22,7 @@ export default function ReviewForm({ productId }: Props) {
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label className="block text-sm mb-1">Rating</label>
+        <label className="block text-sm mb-1">{t('rating')}</label>
         <select
           className="select select-bordered w-full"
           value={data.rating}
@@ -39,13 +40,13 @@ export default function ReviewForm({ productId }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm mb-1">Comentariu (opțional)</label>
+        <label className="block text-sm mb-1">{t('commentOptional')}</label>
         <textarea
           className="textarea textarea-bordered w-full"
           rows={4}
           value={data.comment}
           onChange={(e) => setData('comment', e.target.value)}
-          placeholder="Spune-ne cum ți s-a părut produsul…"
+          placeholder="Tell us what you thought about the product..."
         />
         {errors.comment && (
           <p className="text-error text-sm mt-1">{errors.comment}</p>
@@ -53,11 +54,11 @@ export default function ReviewForm({ productId }: Props) {
       </div>
 
       {(errors as any).review && (
-        <p className="text-error text-sm">{(errors as any).review}</p>
+        <p className="text-error text-sm">{t('buyersOnly')}</p>
       )}
 
       <button className="btn btn-primary" disabled={processing}>
-        Trimite recenzia
+        {t('submitReview')}
       </button>
     </form>
   );

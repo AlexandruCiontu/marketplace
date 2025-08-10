@@ -16,11 +16,11 @@ class UpdateVatRates extends Command
     {
         $cachePath = storage_path('framework/cache/vat_rates.cache');
 
-        // ✅ Inițializăm clientul și fetch-uim datele
+        // Initialize client and fetch data
         $client = new Client();
         $fetchedRates = $client->getRates();
 
-        // ✅ Salvăm în cache
+        // Save to cache
         $rates = new Rates($cachePath);
         $rates->saveRates($fetchedRates);
 

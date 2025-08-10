@@ -28,6 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->defaultLocale('en')
             ->sidebarWidth('14rem')
             ->login()
             ->colors([

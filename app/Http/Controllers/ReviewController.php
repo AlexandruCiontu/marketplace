@@ -22,7 +22,7 @@ class ReviewController extends Controller
         ]);
 
         if (! $user->hasVerifiedEmail()) {
-            return back()->withErrors(['review' => 'Trebuie să ai emailul verificat.']);
+            return back()->withErrors(['review' => 'You must verify your email.']);
         }
 
         $hasPurchased = OrderItem::query()
@@ -34,7 +34,7 @@ class ReviewController extends Controller
             ->exists();
 
         if (! $hasPurchased) {
-            return back()->withErrors(['review' => 'Doar cumpărătorii pot lăsa recenzii.']);
+            return back()->withErrors(['review' => 'Only buyers can leave reviews.']);
         }
 
         $already = Review::query()
@@ -43,7 +43,7 @@ class ReviewController extends Controller
             ->exists();
 
         if ($already) {
-            return back()->withErrors(['review' => 'Ai trimis deja o recenzie pentru acest produs.']);
+            return back()->withErrors(['review' => 'You have already reviewed this product.']);
         }
 
         $review = Review::create([
@@ -54,7 +54,7 @@ class ReviewController extends Controller
         ]);
 
         return back()
-            ->with('success', 'Mulțumim pentru recenzie!')
+            ->with('success', 'Thanks for your review!')
             ->with('newReview', ReviewResource::make($review));
     }
 }

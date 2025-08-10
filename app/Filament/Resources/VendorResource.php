@@ -45,7 +45,7 @@ class VendorResource extends Resource
                             ->required(),
                         Forms\Components\Select::make('country_code')
                             ->options([
-                                'RO' => 'România',
+                                'RO' => 'Romania',
                                 'HU' => 'Ungaria',
                                 'BG' => 'Bulgaria',
                             ])

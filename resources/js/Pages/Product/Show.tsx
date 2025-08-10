@@ -9,6 +9,7 @@ import { getVatRate, calculateVatIncludedPrice, calculateVatAmount } from '@/uti
 import ReviewForm from '@/Components/Reviews/ReviewForm';
 import ReviewList from '@/Components/Reviews/ReviewList';
 import StarRating from '@/Components/Core/StarRating';
+import { t } from '@/i18n/t';
 
 function Show({
                 appName, product, variationOptions
@@ -250,14 +251,14 @@ function Show({
 
           <section className="grid gap-4">
             <h2 className="text-xl font-semibold">
-              Recenzii ({product.reviews_count}) · Medie {product.average_rating}/5
+              {t('reviews')} ({product.reviews_count}) · {t('average')} {product.average_rating}/5
             </h2>
             <ReviewList reviews={product.reviews ?? []} />
           </section>
 
           {(auth as any).user && (
             <section className="grid gap-4">
-              <h3 className="text-lg font-medium">Lasă o recenzie</h3>
+              <h3 className="text-lg font-medium">{t('leaveReview')}</h3>
               <ReviewForm productId={product.id} />
             </section>
           )}
