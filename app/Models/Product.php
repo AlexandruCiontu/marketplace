@@ -234,7 +234,8 @@ class Product extends Model implements HasMedia
 
     public function reviews()
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Review::class)
+            ->latest();
     }
 
     // ✅ TVA calculat dinamic pe baza codului de țară

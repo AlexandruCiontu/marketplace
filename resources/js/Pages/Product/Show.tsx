@@ -6,6 +6,8 @@ import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
 import { getVatRate, calculateVatIncludedPrice, calculateVatAmount } from '@/utils/vat';
+import ReviewForm from '@/Components/Reviews/ReviewForm';
+import ReviewList from '@/Components/Reviews/ReviewList';
 
 function Show({
                 appName, product, variationOptions
@@ -240,6 +242,18 @@ function Show({
             <h2>About the Item</h2>
             <div dangerouslySetInnerHTML={{ __html: product.description }} />
           </div>
+
+          <section className="grid gap-4">
+            <h2 className="text-xl font-semibold">
+              Recenzii ({product.reviews_count}) · Medie {product.average_rating}/5
+            </h2>
+            <ReviewList reviews={product.reviews ?? []} />
+          </section>
+
+          <section className="grid gap-4">
+            <h3 className="text-lg font-medium">Lasă o recenzie</h3>
+            <ReviewForm productId={product.id} />
+          </section>
         </div>
       </div>
     </AuthenticatedLayout>

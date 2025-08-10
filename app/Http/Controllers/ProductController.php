@@ -34,7 +34,9 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product->load(['reviews.user']);
+        $product->load([
+            'reviews.user:id,name',
+        ]);
 
         $hasPurchased = false;
         if (auth()->check()) {
@@ -51,7 +53,7 @@ class ProductController extends Controller
             ->get();
 
         return Inertia::render('Product/Show', [
-            'product' => new ProductResource($product),
+            'product' => ProductResource::make($product),
             'variationOptions' => request('options', []),
             'hasPurchased' => $hasPurchased,
             'relatedProducts' => ProductListResource::collection($relatedProducts),
