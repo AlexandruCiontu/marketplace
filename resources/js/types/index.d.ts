@@ -34,6 +34,14 @@ export type Image = {
   large: string;
 };
 
+export type Review = {
+  id: number;
+  rating: number;
+  comment?: string | null;
+  user: { id: number; name: string };
+  created_at?: string;
+};
+
 export type VariationTypeOption = {
   id: number;
   name: string;
@@ -85,6 +93,9 @@ export type Product = {
     quantity: number;
     price: number;
   }>
+  average_rating?: number;
+  reviews_count?: number;
+  reviews?: Review[];
 }
 
 export type ProductListItem = {
