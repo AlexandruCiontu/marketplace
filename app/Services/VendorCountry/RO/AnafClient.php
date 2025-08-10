@@ -20,7 +20,7 @@ class AnafClient
         return [
             'success' => true,
             'upload_id' => 'UPLOAD_'.uniqid(),
-            'message' => 'Factura a fost trimisă cu succes.',
+            'message' => 'Invoice was sent successfully.',
         ];
     }
 }

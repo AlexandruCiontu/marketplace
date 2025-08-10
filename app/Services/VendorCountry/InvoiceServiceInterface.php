@@ -7,18 +7,18 @@ use App\Models\Order;
 interface InvoiceServiceInterface
 {
     /**
-     * Generează o factură pentru o comandă specifică.
+     * Generates an invoice for a specific order.
      *
-     * @param Order $order Comanda pentru care se generează factura.
-     * @return mixed Poate returna calea către fișier, un obiect de răspuns, etc.
+     * @param Order $order The order for which the invoice is generated.
+     * @return mixed May return a file path, a response object, etc.
      */
     public function generate(Order $order);
 
     /**
-     * Generează o factură de stornare pentru o comandă.
+     * Generates a credit note for an order.
      *
-     * @param Order $order Comanda originală.
-     * @param Order $refundOrder Comanda de stornare.
+     * @param Order $order The original order.
+     * @param Order $refundOrder The refund order.
      * @return mixed
      */
     public function generateStorno(Order $order, Order $refundOrder);

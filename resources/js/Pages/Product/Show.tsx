@@ -6,6 +6,10 @@ import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
 import { getVatRate, calculateVatIncludedPrice, calculateVatAmount } from '@/utils/vat';
+import ReviewForm from '@/Components/Reviews/ReviewForm';
+import ReviewList from '@/Components/Reviews/ReviewList';
+import StarRating from '@/Components/Core/StarRating';
+import { t } from '@/i18n/t';
 
 function Show({
                 appName, product, variationOptions
@@ -35,7 +39,7 @@ function Show({
     return [...product.images];
   }, [product, selectedOptions]);
 
-  const { countryCode } = usePage<PageProps>().props as PageProps;
+  const { countryCode, auth } = usePage<PageProps>().props as PageProps;
 
   const computedProduct = useMemo(() => {
     const selectedOptionIds = Object.values(selectedOptions)
@@ -221,6 +225,10 @@ function Show({
             <ProductGallery images={images} />
             <div>
               <h1 className="text-2xl font-bold">{product.title}</h1>
+              <div className="mt-2 flex items-center gap-2">
+                <StarRating rating={product.average_rating} />
+                <span className="text-sm text-gray-600">({product.reviews_count})</span>
+              </div>
               <p className="text-gray-600">
                 {product.user.name} in {product.department.name}
               </p>
@@ -240,6 +248,20 @@ function Show({
             <h2>About the Item</h2>
             <div dangerouslySetInnerHTML={{ __html: product.description }} />
           </div>
+
+          <section className="grid gap-4">
+            <h2 className="text-xl font-semibold">
+              {t('reviews')} ({product.reviews_count}) · {t('average')} {product.average_rating}/5
+            </h2>
+            <ReviewList reviews={product.reviews ?? []} />
+          </section>
+
+          {(auth as any).user && (
+            <section className="grid gap-4">
+              <h3 className="text-lg font-medium">{t('leaveReview')}</h3>
+              <ReviewForm productId={product.id} />
+            </section>
+          )}
         </div>
       </div>
     </AuthenticatedLayout>

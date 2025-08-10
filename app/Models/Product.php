@@ -234,13 +234,14 @@ class Product extends Model implements HasMedia
 
     public function reviews()
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Review::class)
+            ->latest();
     }
 
-    // ✅ TVA calculat dinamic pe baza codului de țară
+    // VAT calculated dynamically based on country code
     public function getVatAmountAttribute(): float
     {
-        $country = session('country_code', 'RO'); // fallback dacă nu e setată
+        $country = session('country_code', 'RO'); // fallback if not set
         $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
 
         return round($this->price * ($rate / 100), 2);

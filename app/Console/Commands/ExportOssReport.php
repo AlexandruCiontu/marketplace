@@ -41,7 +41,7 @@ class ExportOssReport extends Command
         $vendors = $transactions->groupBy('vendor_id');
 
         foreach ($vendors as $vendorId => $vendorTransactions) {
-            $csvData = "Țară client,Total net,TVA,Total brut\n";
+            $csvData = "Customer country,Net total,VAT,Gross total\n";
 
             foreach ($vendorTransactions as $transaction) {
                 $csvData .= "{$transaction->client_country_code},{$transaction->net_amount},{$transaction->vat_amount},{$transaction->gross_amount}\n";

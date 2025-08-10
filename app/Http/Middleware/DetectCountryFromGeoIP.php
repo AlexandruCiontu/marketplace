@@ -14,7 +14,7 @@ class DetectCountryFromGeoIP
             $reader = new Reader(storage_path('app/GeoLite2-Country.mmdb'));
             $ip = $request->ip();
             $record = $reader->country($ip);
-            $countryCode = $record->country->isoCode ?? 'RO'; // fallback la RO dacă nu reușește
+            $countryCode = $record->country->isoCode ?? 'RO'; // fallback to RO if it fails
 
             session(['country_code' => $countryCode]);
         } catch (\Exception $e) {

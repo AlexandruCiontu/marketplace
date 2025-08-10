@@ -101,7 +101,7 @@ function Index(
                              onChange={onAddressChange}
                              buttonLabel="Change Address"/>
 
-              {/* 🌍 Selector țară pentru TVA */}
+              {/* 🌍 Country selector for VAT */}
               <form method="POST" action={route('set.vat.country')} className="mt-6">
                 <input type="hidden" name="_token" value={csrf_token}/>
                 <label htmlFor="vat_country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

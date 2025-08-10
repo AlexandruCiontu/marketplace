@@ -7,12 +7,12 @@ use Illuminate\Foundation\Http\Kernel as HttpKernel;
 class Kernel extends HttpKernel
 {
     protected $middleware = [
-        // Middleware global (dacă vrei aici)
+        // Global middleware (add here if needed)
     ];
 
     protected $middlewareGroups = [
         'web' => [
-            \App\Http\Middleware\DetectCountryFromGeoIP::class, // adăugat aici!
+            \App\Http\Middleware\DetectCountryFromGeoIP::class, // added here!
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
@@ -29,6 +29,6 @@ class Kernel extends HttpKernel
 
     protected $routeMiddleware = [
         'auth' => \App\Http\Middleware\Authenticate::class,
-        'country' => \App\Http\Middleware\DetectCountryFromGeoIP::class, // opțional pentru rute
+        'country' => \App\Http\Middleware\DetectCountryFromGeoIP::class, // optional for routes
     ];
 }

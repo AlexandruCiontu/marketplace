@@ -5,24 +5,24 @@ namespace App\Helpers;
 class VatHelper
 {
     /**
-     * Cache local pentru ratele TVA.
+     * Local cache for VAT rates.
      */
     protected static array $rates = [];
 
     /**
-     * Returnează rata TVA pentru o țară și un tip specificat.
+     * Returns the VAT rate for a country and specified type.
      *
-     * Dacă tipul ales de vendor nu este disponibil pentru acea țară,
-     * se folosește automat fallback la rata standard.
+     * If the vendor's chosen type isn't available for that country,
+     * it automatically falls back to the standard rate.
      *
-     * @param string $countryCode Ex: 'RO', 'DE'
-     * @param string $type Ex: 'standard_rate', 'reduced_rate', 'reduced_rate_alt', 'super_reduced_rate'
+     * @param string $countryCode e.g., 'RO', 'DE'
+     * @param string $type e.g., 'standard_rate', 'reduced_rate', 'reduced_rate_alt', 'super_reduced_rate'
      * @return float
      */
     public static function getRate(string $countryCode, string $type = 'standard_rate'): float
     {
         try {
-            // Încarcă datele o singură dată
+            // Load data only once
             if (empty(self::$rates)) {
                 $file = storage_path('app/vat/rates.json');
 
@@ -58,7 +58,7 @@ class VatHelper
     }
 
     /**
-     * Verifică dacă țara are o rată validă pentru un tip de TVA.
+     * Checks if the country has a valid rate for a VAT type.
      *
      * @param string $countryCode
      * @param string $type
@@ -66,7 +66,7 @@ class VatHelper
      */
     public static function hasRateFor(string $countryCode, string $type): bool
     {
-        self::getRate($countryCode); // Încarcă ratele dacă nu sunt deja
+        self::getRate($countryCode); // Load rates if not already
 
         $rate = self::$rates[$countryCode][$type] ?? null;
 
