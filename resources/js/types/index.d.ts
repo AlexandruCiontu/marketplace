@@ -68,6 +68,15 @@ export type Product = {
   description: string;
   meta_title: string;
   meta_description: string;
+  average_rating: number;
+  reviews_count: number;
+  reviews?: Array<{
+    id: number;
+    rating: number;
+    comment?: string | null;
+    user: { id: number; name: string };
+    created_at?: string;
+  }>;
   user: {
     id: number;
     name: string;

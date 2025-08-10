@@ -2,35 +2,57 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
+use App\Http\Resources\ReviewResource;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ReviewController extends Controller
 {
     public function store(Request $request, Product $product)
     {
-        $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string',
+        $user = $request->user();
+
+        $data = $request->validate([
+            'rating'   => ['required', 'integer', Rule::in([1, 2, 3, 4, 5])],
+            'comment'  => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $hasPurchased = Order::where('user_id', auth()->id())
-            ->whereHas('orderItems', fn ($q) => $q->where('product_id', $product->id))
-            ->exists();
-
-        if (! $hasPurchased || ! auth()->user()->hasVerifiedEmail()) {
-            abort(403, 'Only verified buyers can leave a review.');
+        if (! $user->hasVerifiedEmail()) {
+            return back()->withErrors(['review' => 'Trebuie să ai emailul verificat.']);
         }
 
-        Review::create([
-            'user_id' => auth()->id(),
+        $hasPurchased = OrderItem::query()
+            ->where('product_id', $product->id)
+            ->whereHas('order', fn ($q) => $q
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['paid', 'completed'])
+            )
+            ->exists();
+
+        if (! $hasPurchased) {
+            return back()->withErrors(['review' => 'Doar cumpărătorii pot lăsa recenzii.']);
+        }
+
+        $already = Review::query()
+            ->where('user_id', $user->id)
+            ->where('product_id', $product->id)
+            ->exists();
+
+        if ($already) {
+            return back()->withErrors(['review' => 'Ai trimis deja o recenzie pentru acest produs.']);
+        }
+
+        $review = Review::create([
+            'user_id'    => $user->id,
             'product_id' => $product->id,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
+            'rating'     => $data['rating'],
+            'comment'    => $data['comment'] ?? null,
         ]);
 
-        return redirect()->back();
+        return back()->with('success', 'Mulțumim pentru recenzie!')
+                     ->with('newReview', ReviewResource::make($review));
     }
 }
