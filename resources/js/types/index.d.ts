@@ -112,6 +112,8 @@ export type CartItem = {
   slug: string;
   price: number;
   vat_rate_type: string;
+  vat_rate: number;
+  vat_amount: number;
   gross_price: number;
   quantity: number;
   image: string;
@@ -123,6 +125,8 @@ export type GroupedCartItems = {
   user: User;
   items: CartItem[];
   totalPrice: number;
+  totalGross: number;
+  totalVat: number;
   totalQuantity: number;
 }
 

@@ -102,6 +102,10 @@ class CartService
                         ];
                     }
 
+                    $vatCountry = data_get($product, 'user.vendor.country_code');
+                    $vatResult = app(\App\Services\VatRateService::class)
+                        ->calculate($cartItem['price'], $product->vat_rate_type, $vatCountry);
+
                     $cartItemData[] = [
                         'id' => $cartItem['id'],
                         'product_id' => $product->id,
@@ -109,7 +113,9 @@ class CartService
                         'slug' => $product->slug,
                         'price' => $cartItem['price'],
                         'vat_rate_type' => $product->vat_rate_type ?? 'standard_rate',
-                        'gross_price' => app(\App\Services\VatRateService::class)->calculate($cartItem['price'], $product->vat_rate_type)['gross'],
+                        'vat_rate' => $vatResult['rate'],
+                        'vat_amount' => $vatResult['vat'],
+                        'gross_price' => $vatResult['gross'],
                         'quantity' => $cartItem['quantity'],
                         'option_ids' => $cartItem['option_ids'],
                         'options' => $optionInfo,
@@ -167,7 +173,13 @@ class CartService
 
     public function getTotalVat(): float
     {
-        return $this->getTotalGross() - $this->getTotalPrice();
+        $total = 0;
+
+        foreach ($this->getCartItems() as $item) {
+            $total += $item['quantity'] * $item['vat_amount'];
+        }
+
+        return $total;
     }
 
     /**
@@ -332,7 +344,7 @@ class CartService
                 'totalQuantity' => $items->sum('quantity'),
                 'totalPrice' => $items->sum(fn ($item) => $item['price'] * $item['quantity']),
                 'totalGross' => $items->sum(fn ($item) => $item['gross_price'] * $item['quantity']),
-                'totalVat' => $items->sum(fn ($item) => $item['gross_price'] * $item['quantity']) - $items->sum(fn ($item) => $item['price'] * $item['quantity']),
+                'totalVat' => $items->sum(fn ($item) => $item['vat_amount'] * $item['quantity']),
             ])
             ->toArray();
     }

@@ -13,7 +13,7 @@ function CartItem({item}: { item: CartItemType }) {
   const [quantity, setQuantity] = useState(item.quantity)
   const [error, setError] = useState('')
   const grossPrice = item.gross_price
-  const vatAmount = grossPrice - item.price
+  const vatAmount = item.vat_amount
 
   const onDeleteClick = () => {
     deleteForm.delete(route('cart.destroy', item.product_id), {
