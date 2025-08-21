@@ -4,7 +4,8 @@ import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
 import { productRoute } from '@/helpers';
 
 function MiniCartDropdown() {
-  const { totalQuantity, totalGross, miniCartItems } = usePage().props;
+  
+  const { totalQuantity, totalGross, totalVat, miniCartItems } = usePage().props;
 
   return (
     <details className="dropdown dropdown-end static sm:relative ">
@@ -59,10 +60,16 @@ function MiniCartDropdown() {
             ))}
           </div>
 
-          <span className="text-lg">
-            Subtotal:{' '}
-            <CurrencyFormatter amount={totalGross} />
-          </span>
+
+          <div>
+            <div className="text-lg">
+              Subtotal: <CurrencyFormatter amount={totalGross} />
+            </div>
+            <div className="text-xs text-gray-500">
+              Includes VAT: <CurrencyFormatter amount={totalVat} />
+            </div>
+          </div>
+
           <div className="card-actions">
             <Link href={route('cart.index')}
                   className="btn btn-primary btn-block">
