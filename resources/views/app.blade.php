@@ -21,23 +21,5 @@
 <body class="font-sans antialiased">
 @inertia
 
-<script>
-    window.vatService = {
-        rates: {
-            RO: { standard_rate: 19, reduced_rate: 9, reduced_rate_alt: 5, super_reduced_rate: 0 },
-            BG: { standard_rate: 20, reduced_rate: 9, reduced_rate_alt: 0, super_reduced_rate: 0 },
-            HU: { standard_rate: 27, reduced_rate: 18, reduced_rate_alt: 5, super_reduced_rate: 0 },
-        },
-        calculate(basePrice, rateType = 'standard_rate', country = 'RO') {
-            const countryRates = this.rates[country] || this.rates['RO'];
-            const rate = countryRates[rateType] ?? 0;
-            const vat = basePrice * rate;
-            const gross = basePrice + vat;
-            return { gross, vat };
-        }
-    };
-
-    window.countryCode = '{{ session('country_code', 'RO') }}';
-</script>
 </body>
 </html>
