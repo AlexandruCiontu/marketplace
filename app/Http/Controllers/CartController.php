@@ -192,6 +192,9 @@ class CartController extends Controller
 
                     $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_rate_type'], $vatCountry);
 
+                    $taxRates = config('app.stripe_tax_rates');
+                    $stripeTaxRate = $taxRates[$vatCountry] ?? null;
+
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $cartItem['product_id'],
@@ -219,9 +222,13 @@ class CartController extends Controller
                                 'images' => [$cartItem['image']],
                             ],
                             'unit_amount' => (int) round($calc['gross'] * 100),
+                            'tax_behavior' => 'inclusive',
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
+                    if ($stripeTaxRate) {
+                        $lineItem['tax_rates'] = [$stripeTaxRate];
+                    }
                     if ($description) {
                         $lineItem['price_data']['product_data']['description'] = $description;
                     }
