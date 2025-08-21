@@ -3,9 +3,11 @@
 namespace App\Services\Common;
 
 use App\Models\Order;
+use App\Models\OssTransaction;
 use App\Services\VendorCountry\InvoiceServiceFactory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Stripe\StripeClient;
 
 class RefundService
 {
@@ -36,6 +38,10 @@ class RefundService
                 'refund_id' => $originalOrder->id,
                 'transaction_type' => $originalOrder->transaction_type,
                 'vat_country_code' => $originalOrder->vat_country_code,
+                'online_payment_commission' => -$originalOrder->online_payment_commission,
+                'website_commission' => -$originalOrder->website_commission,
+                'vendor_subtotal' => -$originalOrder->vendor_subtotal,
+                'included_in_oss' => $originalOrder->included_in_oss,
             ]);
             $refundOrder->save();
 
@@ -47,12 +53,31 @@ class RefundService
                 $refundItem->save();
             }
 
-            // 3. Generate the storno invoice
+            // 3. Interact with Stripe for the actual refund
+            if ($originalOrder->payment_intent) {
+                $stripe = new StripeClient(config('app.stripe_secret_key'));
+                $stripe->refunds->create([
+                    'payment_intent' => $originalOrder->payment_intent,
+                    'amount' => (int) round($originalOrder->total_price * 100),
+                ]);
+            }
+
+            // 4. Generate the storno invoice
             $invoiceService = $this->invoiceServiceFactory->make($originalOrder->vendor);
             $invoiceService->generateStorno($originalOrder, $refundOrder);
 
-            // 4. Potentially interact with Stripe for the actual refund
-            // (Out of scope for this plan, but would be needed in a real app)
+            // 5. Ledger adjustment
+            if ($originalOrder->included_in_oss) {
+                OssTransaction::create([
+                    'vendor_id' => $originalOrder->vendor_user_id,
+                    'order_id' => $refundOrder->id,
+                    'client_country_code' => $originalOrder->vat_country_code,
+                    'vat_rate' => $originalOrder->net_total != 0 ? $originalOrder->vat_total / $originalOrder->net_total * 100 : 0,
+                    'net_amount' => -$originalOrder->net_total,
+                    'vat_amount' => -$originalOrder->vat_total,
+                    'gross_amount' => -$originalOrder->total_price,
+                ]);
+            }
 
             DB::commit();
 
