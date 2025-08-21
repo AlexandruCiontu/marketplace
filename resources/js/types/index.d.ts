@@ -111,6 +111,7 @@ export type CartItem = {
   slug: string;
   price: number;
   vat_rate_type: string;
+  gross_price: number;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;
@@ -163,6 +164,8 @@ export type PageProps<
   ziggy: Config & { location: string };
   totalQuantity: number;
   totalPrice: number;
+  totalGross: number;
+  totalVat: number;
   miniCartItems: CartItem[];
   departments: Department[];
   keyword: string;
