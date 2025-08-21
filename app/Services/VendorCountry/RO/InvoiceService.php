@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Services\Fiscal\UblGeneratorService;
 use App\Services\VendorCountry\InvoiceServiceInterface;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class InvoiceService implements InvoiceServiceInterface
 {
@@ -59,8 +60,46 @@ class InvoiceService implements InvoiceServiceInterface
 
     private function signXml(string $xml, \App\Models\Vendor $vendor): string
     {
-        // Placeholder for XML signing logic using the vendor's .pfx certificate
-        // This would involve retrieving the certificate path and password from the vendor's settings
-        return '<Signed-UBL-Invoice>...</Signed-UBL-Invoice>';
+        $pfxPath = Storage::disk('private')->path($vendor->anaf_pfx_path);
+        $password = $vendor->anaf_certificate_password;
+
+        $pkcs12 = file_get_contents($pfxPath);
+        $certs = [];
+        if (!openssl_pkcs12_read($pkcs12, $certs, $password)) {
+            throw new \RuntimeException('Unable to read PKCS#12 certificate.');
+        }
+
+        $in = tmpfile();
+        fwrite($in, $xml);
+        $inPath = stream_get_meta_data($in)['uri'];
+        $out = tmpfile();
+        $outPath = stream_get_meta_data($out)['uri'];
+
+        $result = openssl_pkcs7_sign(
+            $inPath,
+            $outPath,
+            $certs['cert'],
+            $certs['pkey'],
+            [],
+            PKCS7_BINARY | PKCS7_DETACHED
+        );
+
+        if (!$result) {
+            fclose($in);
+            fclose($out);
+            throw new \RuntimeException('Failed to sign XML.');
+        }
+
+        $signed = file_get_contents($outPath);
+
+        fclose($in);
+        fclose($out);
+
+        $matches = [];
+        if (preg_match('/-----BEGIN PKCS7-----(.*)-----END PKCS7-----/s', $signed, $matches)) {
+            return base64_decode($matches[1]);
+        }
+
+        return $signed;
     }
 }

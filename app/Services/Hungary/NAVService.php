@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Vendor;
 use App\Services\VendorCountry\InvoiceServiceInterface;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class NAVService implements InvoiceServiceInterface
 {
@@ -98,32 +99,21 @@ class NAVService implements InvoiceServiceInterface
         $body = json_encode($payload);
         $signature = $this->requestSignature($body);
 
-        $ch = curl_init('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/tokenExchange');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Request-Signature: ' . $signature,
-        ]);
+        try {
+            $response = Http::retry(3, 1000)->withHeaders([
+                'Content-Type' => 'application/json',
+                'Request-Signature' => $signature,
+            ])->post('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/tokenExchange', $payload);
 
-        $response = false;
-        for ($i = 0; $i < 3; $i++) {
-            $response = curl_exec($ch);
-            if ($response !== false) {
-                break;
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['encodedExchangeToken'] ?? '';
             }
-            usleep(500000);
-        }
-        curl_close($ch);
-
-        if ($response === false) {
-            return '';
+        } catch (\Throwable $e) {
+            // Ignore and return empty string
         }
 
-        $data = json_decode($response, true);
-
-        return $data['encodedExchangeToken'] ?? '';
+        return '';
     }
 
     private function requestSignature(string $payload): string
@@ -142,30 +132,20 @@ class NAVService implements InvoiceServiceInterface
         $body = json_encode($payload);
         $signature = $this->requestSignature($body);
 
-        $ch = curl_init('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/manageInvoice');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $token,
-            'Request-Signature: ' . $signature,
-        ]);
+        try {
+            $response = Http::retry(3, 1000)->withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $token,
+                'Request-Signature' => $signature,
+            ])->post('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/manageInvoice', $payload);
 
-        $response = false;
-        for ($i = 0; $i < 3; $i++) {
-            $response = curl_exec($ch);
-            if ($response !== false) {
-                break;
+            if ($response->successful()) {
+                return $response->json();
             }
-            usleep(500000);
-        }
-        curl_close($ch);
 
-        if ($response === false) {
-            return ['success' => false, 'message' => 'NAV request failed'];
+            return ['success' => false, 'message' => $response->body()];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
         }
-
-        return json_decode($response, true);
     }
 }
