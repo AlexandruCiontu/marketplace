@@ -126,6 +126,16 @@ APP_URL=http://localhost:8000
 ...
 ```
 
+##### Stripe tax rate IDs
+
+Stripe tax rates for each supported country must be configured:
+
+```env
+STRIPE_TAX_RATE_RO=txr_...
+STRIPE_TAX_RATE_BG=txr_...
+STRIPE_TAX_RATE_HU=txr_...
+```
+
 #### 7. Run Migrations
 
 ```bash
