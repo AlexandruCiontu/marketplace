@@ -102,9 +102,8 @@ class CartService
                         ];
                     }
 
-                    $vatCountry = data_get($product, 'user.vendor.country_code');
-                    $vatResult = app(\App\Services\VatRateService::class)
-                        ->calculate($cartItem['price'], $product->vat_rate_type, $vatCountry);
+
+                    $calc = app(\App\Services\VatRateService::class)->calculate($cartItem['price'], $product->vat_rate_type);
 
                     $cartItemData[] = [
                         'id' => $cartItem['id'],
@@ -113,9 +112,10 @@ class CartService
                         'slug' => $product->slug,
                         'price' => $cartItem['price'],
                         'vat_rate_type' => $product->vat_rate_type ?? 'standard_rate',
-                        'vat_rate' => $vatResult['rate'],
-                        'vat_amount' => $vatResult['vat'],
-                        'gross_price' => $vatResult['gross'],
+
+                        'gross_price' => $calc['gross'],
+                        'vat_amount' => $calc['vat'],
+
                         'quantity' => $cartItem['quantity'],
                         'option_ids' => $cartItem['option_ids'],
                         'options' => $optionInfo,
@@ -176,7 +176,8 @@ class CartService
         $total = 0;
 
         foreach ($this->getCartItems() as $item) {
-            $total += $item['quantity'] * $item['vat_amount'];
+            $total += $item['quantity'] * ($item['vat_amount'] ?? ($item['gross_price'] - $item['price']));
+
         }
 
         return $total;

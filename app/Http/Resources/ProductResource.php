@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Services\VatRateService;
 
 class ProductResource extends JsonResource
 {
@@ -68,11 +69,14 @@ class ProductResource extends JsonResource
                 ];
             }),
             'variations' => $this->variations->map(function ($variation) {
+                $calc = app(VatRateService::class)->calculate($variation->price, $this->vat_rate_type);
                 return [
                     'id' => $variation->id,
                     'variation_type_option_ids' => $variation->variation_type_option_ids,
                     'quantity' => $variation->quantity,
                     'price' => $variation->price,
+                    'gross_price' => $calc['gross'],
+                    'vat_amount' => $calc['vat'],
                 ];
             }),
 
