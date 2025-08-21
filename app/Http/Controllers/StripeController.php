@@ -22,8 +22,30 @@ class StripeController extends Controller
         $user = auth()->user();
         $sessionId = $request->get('session_id');
 
+        // If no session_id is provided, attempt to read the order ids from the session
         if (! $sessionId) {
-            return redirect()->route('dashboard')->with('error', 'Missing checkout session.');
+            $orderIds = $request->session()->get('stripe_order_ids');
+
+            if (! $orderIds) {
+                return redirect()->route('dashboard')->with('error', 'Missing checkout session.');
+            }
+
+            $orders = Order::whereIn('id', $orderIds)
+                ->where('user_id', $user->id)
+                ->get();
+
+            if ($orders->isEmpty()) {
+                return redirect()->route('dashboard')->with('error', 'Checkout session not found or expired.');
+            }
+
+            return Inertia::render('Stripe/Success', [
+                'orders' => OrderViewResource::collection($orders)->collection->toArray(),
+                'sessionTotals' => [
+                    'subtotal' => $orders->sum('net_total'),
+                    'tax' => $orders->sum('vat_total'),
+                    'total' => $orders->sum('total_price'),
+                ],
+            ]);
         }
 
         $stripe = new \Stripe\StripeClient(config('app.stripe_secret_key'));
@@ -55,14 +77,11 @@ class StripeController extends Controller
             }
         }
 
-        return Inertia::render('Stripe/Success', [
-            'orders' => OrderViewResource::collection($orders)->collection->toArray(),
-            'sessionTotals' => [
-                'subtotal' => $orders->sum('net_total'),
-                'tax' => $orders->sum('vat_total'),
-                'total' => $orders->sum('total_price'),
-            ],
-        ]);
+        // Store the order ids in the session for later retrieval
+        $request->session()->put('stripe_order_ids', $orders->pluck('id')->toArray());
+
+        // Redirect to the success page without the session id
+        return redirect()->route('stripe.success');
     }
 
     public function failure()

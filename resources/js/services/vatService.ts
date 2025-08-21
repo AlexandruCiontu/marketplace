@@ -1,29 +1,32 @@
-const vatRates: Record<string, number> = {
-  RO: 19,
-  default: 20,
-};
+const cache: Record<string, number> = {};
 
-const vatService = {
-  calculate(
-    price: number,
-    rateType: string = 'standard_rate',
-    countryCode: string = 'RO'
-  ) {
-    let vatRate = vatRates[countryCode] ?? vatRates.default;
-    if (rateType === 'super_reduced_rate') {
-      vatRate = 0;
-    }
-    const vat = price * vatRate;
-    return {
-      gross: price + vat,
-      vat,
-    };
-  },
-};
-
-if (typeof window !== 'undefined') {
-  // @ts-ignore - extend global object
-  window.vatService = vatService;
+async function getRate(
+  countryCode: string,
+  rateType: string = 'standard_rate'
+): Promise<number> {
+  const key = `${countryCode}_${rateType}`;
+  if (cache[key] !== undefined) {
+    return cache[key];
+  }
+  const response = await fetch(
+    `/api/vat-rate?country_code=${countryCode}&rate_type=${rateType}`
+  );
+  if (!response.ok) {
+    cache[key] = 0;
+    return 0;
+  }
+  const data = await response.json();
+  const rate = data.rate ?? 0;
+  cache[key] = rate;
+  return rate;
 }
 
-export default vatService;
+function calculateVatIncludedPrice(net: number, rate: number): number {
+  return +(net * (1 + rate / 100)).toFixed(2);
+}
+
+function calculateVatAmount(net: number, rate: number): number {
+  return +(net * (rate / 100)).toFixed(2);
+}
+
+export default { getRate, calculateVatIncludedPrice, calculateVatAmount };

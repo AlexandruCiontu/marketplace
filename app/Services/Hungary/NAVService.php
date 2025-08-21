@@ -30,6 +30,7 @@ class NAVService implements InvoiceServiceInterface
     {
         $vendor = $order->vendor;
         $token = $this->generateRequestToken($vendor);
+
         $xml = $this->generateXML($refundOrder, $order);
         $response = $this->uploadInvoiceXML($xml, $vendor, $token);
 
@@ -38,6 +39,7 @@ class NAVService implements InvoiceServiceInterface
         Storage::disk('private')->put("{$storageDir}/response.json", json_encode($response));
         $refundOrder->invoice_type = 'nav';
         $refundOrder->invoice_storage_path = "{$storageDir}/invoice.xml";
+
         $refundOrder->save();
 
         $this->handleNAVResponse($response, $refundOrder);

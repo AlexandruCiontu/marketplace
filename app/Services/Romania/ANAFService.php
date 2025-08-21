@@ -60,22 +60,28 @@ class ANAFService implements InvoiceServiceInterface
         $vendor = $order->vendor;
         $this->convertPfxToPem($vendor);
 
+
         $xml = (new UblGeneratorService())->generateCreditNote($order, $refundOrder);
+
         $signedXml = $this->signWithCertificate($xml, $vendor);
 
         try {
             $response = $this->uploadToANAF($signedXml, $vendor);
 
             $storageDir = "invoices/ro/{$refundOrder->id}";
+
             Storage::disk('private')->put("{$storageDir}/invoice.xml", $signedXml);
             Storage::disk('private')->put("{$storageDir}/response.xml", is_string($response) ? $response : json_encode($response));
             $refundOrder->invoice_type = 'anaf';
             $refundOrder->invoice_storage_path = "{$storageDir}/invoice.xml";
+
             $refundOrder->save();
 
             $this->handleANAFResponse($response, $refundOrder);
         } catch (\Throwable $e) {
+
             $failedPath = "invoices/failed/order_{$refundOrder->id}.xml";
+
             Storage::disk('private')->put($failedPath, $signedXml);
             $refundOrder->invoice_type = 'failed';
             $refundOrder->invoice_storage_path = $failedPath;
