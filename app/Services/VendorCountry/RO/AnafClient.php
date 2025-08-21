@@ -2,6 +2,8 @@
 
 namespace App\Services\VendorCountry\RO;
 
+use Illuminate\Support\Facades\Http;
+
 class AnafClient
 {
     /**
@@ -12,15 +14,30 @@ class AnafClient
      */
     public function send(string $signedXml): array
     {
-        // Placeholder for the actual API call to e-Factura
-        // This would involve using an HTTP client like Guzzle.
         $endpoint = 'https://api.anaf.ro/prod/FCTEL/rest/upload';
 
-        // Simulate a successful response
-        return [
-            'success' => true,
-            'upload_id' => 'UPLOAD_'.uniqid(),
-            'message' => 'Factura a fost trimisă cu succes.',
-        ];
+        try {
+            $response = Http::retry(3, 1000)->post($endpoint, [
+                'file' => base64_encode($signedXml),
+            ]);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'upload_id' => $response->json('upload_id'),
+                    'message' => 'Factura a fost trimisă cu succes.',
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => $response->body(),
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 }

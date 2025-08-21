@@ -28,7 +28,19 @@ class NAVService implements InvoiceServiceInterface
 
     public function generateStorno(Order $order, Order $refundOrder)
     {
-        // TODO: Implement this method
+        $vendor = $order->vendor;
+        $token = $this->generateRequestToken($vendor);
+        $xml = $this->generateXML($refundOrder, $order);
+        $response = $this->uploadInvoiceXML($xml, $vendor, $token);
+
+        $storageDir = "invoices/hu/{$refundOrder->id}";
+        Storage::disk('private')->put("{$storageDir}/invoice.xml", $xml);
+        Storage::disk('private')->put("{$storageDir}/response.json", json_encode($response));
+        $refundOrder->invoice_type = 'nav';
+        $refundOrder->invoice_storage_path = "{$storageDir}/invoice.xml";
+        $refundOrder->save();
+
+        $this->handleNAVResponse($response, $refundOrder);
     }
 
     private function handleNAVResponse($response, Order $order)
@@ -44,11 +56,33 @@ class NAVService implements InvoiceServiceInterface
         $order->save();
     }
 
-    public function generateXML(Order $order)
+    public function generateXML(Order $order, ?Order $originalOrder = null)
     {
-        // This is a placeholder. A real implementation would use a library to generate the NAV-specific XML.
-        $xml = new \SimpleXMLElement('<Invoice/>');
+        $xml = new \SimpleXMLElement('<Invoice/>' );
         $xml->addChild('order_id', $order->id);
+        if ($originalOrder) {
+            $xml->addChild('original_order_id', $originalOrder->id);
+            $xml->addChild('invoice_type', 'STORNO');
+        } else {
+            $xml->addChild('invoice_type', 'ORIGINAL');
+        }
+
+        $supplier = $xml->addChild('supplier');
+        $supplier->addChild('name', $order->vendor->store_name);
+
+        $customer = $xml->addChild('customer');
+        $customer->addChild('name', $order->user->name);
+
+        $items = $xml->addChild('items');
+        foreach ($order->orderItems as $item) {
+            $line = $items->addChild('item');
+            $line->addChild('description', $item->product->name ?? 'Item');
+            $line->addChild('quantity', $item->quantity);
+            $line->addChild('unit_price', $item->gross_price);
+        }
+
+        $xml->addChild('total', $order->total_price);
+
         return $xml->asXML();
     }
 
@@ -71,8 +105,19 @@ class NAVService implements InvoiceServiceInterface
             'Request-Signature: ' . $signature,
         ]);
 
-        $response = curl_exec($ch);
+        $response = false;
+        for ($i = 0; $i < 3; $i++) {
+            $response = curl_exec($ch);
+            if ($response !== false) {
+                break;
+            }
+            usleep(500000);
+        }
         curl_close($ch);
+
+        if ($response === false) {
+            return '';
+        }
 
         $data = json_decode($response, true);
 
@@ -105,8 +150,19 @@ class NAVService implements InvoiceServiceInterface
             'Request-Signature: ' . $signature,
         ]);
 
-        $response = curl_exec($ch);
+        $response = false;
+        for ($i = 0; $i < 3; $i++) {
+            $response = curl_exec($ch);
+            if ($response !== false) {
+                break;
+            }
+            usleep(500000);
+        }
         curl_close($ch);
+
+        if ($response === false) {
+            return ['success' => false, 'message' => 'NAV request failed'];
+        }
 
         return json_decode($response, true);
     }

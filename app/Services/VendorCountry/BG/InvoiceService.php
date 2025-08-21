@@ -25,6 +25,11 @@ class InvoiceService implements InvoiceServiceInterface
 
     public function generateStorno(Order $order, Order $refundOrder)
     {
-        Log::info("Generated BG Storno for order {$order->id}");
+        // Generate a PDF credit note for the refund order
+        $pdfPath = $this->pdfService->generate($refundOrder);
+
+        Log::info("Generated BG Storno for order {$order->id} at path: {$pdfPath}");
+
+        return ['success' => true, 'path' => $pdfPath];
     }
 }

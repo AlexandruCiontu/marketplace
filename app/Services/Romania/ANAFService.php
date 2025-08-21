@@ -57,7 +57,30 @@ class ANAFService implements InvoiceServiceInterface
 
     public function generateStorno(Order $order, Order $refundOrder)
     {
-        // TODO: Implement this method
+        $vendor = $order->vendor;
+        $this->convertPfxToPem($vendor);
+
+        $xml = (new UblGeneratorService())->generateCreditNote($order, $refundOrder);
+        $signedXml = $this->signWithCertificate($xml, $vendor);
+
+        try {
+            $response = $this->uploadToANAF($signedXml, $vendor);
+
+            $storageDir = "invoices/ro/{$refundOrder->id}";
+            Storage::disk('private')->put("{$storageDir}/invoice.xml", $signedXml);
+            Storage::disk('private')->put("{$storageDir}/response.xml", is_string($response) ? $response : json_encode($response));
+            $refundOrder->invoice_type = 'anaf';
+            $refundOrder->invoice_storage_path = "{$storageDir}/invoice.xml";
+            $refundOrder->save();
+
+            $this->handleANAFResponse($response, $refundOrder);
+        } catch (\Throwable $e) {
+            $failedPath = "invoices/failed/order_{$refundOrder->id}.xml";
+            Storage::disk('private')->put($failedPath, $signedXml);
+            $refundOrder->invoice_type = 'failed';
+            $refundOrder->invoice_storage_path = $failedPath;
+            $refundOrder->save();
+        }
     }
 
     private function convertPfxToPem(Vendor $vendor)
@@ -131,9 +154,20 @@ class ANAFService implements InvoiceServiceInterface
         );
         $client->__setSoapHeaders([$header]);
 
-        return $client->__soapCall('uploadInvoice', [[
-            'fileName' => 'invoice.xml',
-            'content' => base64_encode($xml),
-        ]]);
+        for ($i = 0; $i < 3; $i++) {
+            try {
+                return $client->__soapCall('uploadInvoice', [[
+                    'fileName' => 'invoice.xml',
+                    'content' => base64_encode($xml),
+                ]]);
+            } catch (\Throwable $e) {
+                if ($i === 2) {
+                    throw $e;
+                }
+                usleep(500000);
+            }
+        }
+
+        throw new \RuntimeException('Failed to contact ANAF.');
     }
 }
