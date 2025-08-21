@@ -3,6 +3,7 @@
 namespace App\Services\VendorCountry\RO;
 
 use App\Models\Order;
+use App\Services\Fiscal\UblGeneratorService;
 use App\Services\VendorCountry\InvoiceServiceInterface;
 use Illuminate\Support\Facades\Log;
 
@@ -32,14 +33,28 @@ class InvoiceService implements InvoiceServiceInterface
 
     public function generateStorno(Order $order, Order $refundOrder)
     {
-        // Logic to generate a credit note (storno) for Romania
-        Log::info("Generated RO Storno for order {$order->id}");
+        // 1. Generate credit note XML referencing the original order
+        $xml = $this->generateCreditNoteXml($order, $refundOrder);
+
+        // 2. Sign and send to ANAF
+        $signedXml = $this->signXml($xml, $order->vendor);
+        $response = $this->anafClient->send($signedXml);
+
+        Log::info("Generated RO Storno for order {$order->id}", ['response' => $response]);
+
+        return $response;
     }
 
     private function generateUblXml(Order $order): string
     {
-        // Placeholder for UBL XML generation logic
-        return '<UBL-Invoice>...</UBL-Invoice>';
+        $generator = new UblGeneratorService();
+        return $generator->generateInvoice($order);
+    }
+
+    private function generateCreditNoteXml(Order $order, Order $refundOrder): string
+    {
+        $generator = new UblGeneratorService();
+        return $generator->generateCreditNote($order, $refundOrder);
     }
 
     private function signXml(string $xml, \App\Models\Vendor $vendor): string
