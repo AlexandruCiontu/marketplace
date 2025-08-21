@@ -39,11 +39,13 @@ class OrderController extends Controller
 
         $order->load([
             'orderItems.product',
-            'shippingAddress.country'
+            'shippingAddress.country',
+            'vendorUser'
         ]);
 
         return Inertia::render('Orders/Show', [
             'order' => new OrderResource($order),
+            'canRefund' => auth()->user()->isAdmin() || $order->vendor_user_id === auth()->id(),
         ]);
     }
 
