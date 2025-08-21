@@ -8,6 +8,7 @@ use App\Models\Address;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\OssTransaction;
 use App\Models\Vendor;
 use App\Services\CartService;
 use App\Services\TransactionClassifierService;
@@ -233,6 +234,20 @@ class CartController extends Controller
                     'net_total' => $orderNet,
                     'vat_total' => $orderVat,
                 ]);
+
+                if ($transactionType === 'OSS') {
+                    $vatRate = $orderNet > 0 ? round($orderVat / $orderNet * 100, 2) : 0;
+
+                    OssTransaction::create([
+                        'vendor_id' => $vendor->user_id,
+                        'order_id' => $order->id,
+                        'client_country_code' => $clientCountryCode,
+                        'vat_rate' => $vatRate,
+                        'net_amount' => $orderNet,
+                        'vat_amount' => $orderVat,
+                        'gross_amount' => $orderGross,
+                    ]);
+                }
             }
             $firstOrder = $orders[0];
             $vendorStripeAccountId = $firstOrder->vendorUser->getStripeAccountId();
