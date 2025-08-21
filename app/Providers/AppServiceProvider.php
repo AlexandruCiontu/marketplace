@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\CartService;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Torann\GeoIP\Facades\GeoIP;
 
@@ -58,5 +59,14 @@ class AppServiceProvider extends ServiceProvider
 
         // ⚡ Optimizare vite
         Vite::prefetch(concurrency: 3);
+
+        $taxRates = config('app.stripe_tax_rates', []);
+        $missingRates = collect($taxRates)
+            ->filter(fn ($value) => empty($value))
+            ->keys();
+
+        if ($missingRates->isNotEmpty()) {
+            Log::warning('Stripe tax rate IDs missing for countries: ' . $missingRates->implode(', '));
+        }
     }
 }
