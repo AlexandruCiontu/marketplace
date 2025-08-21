@@ -149,6 +149,10 @@ class CartController extends Controller
 
         [$authUser, $defaultAddress] = $this->userShippingAddress();
 
+        if (! $defaultAddress) {
+            abort(422, 'Shipping address is required.');
+        }
+
         DB::beginTransaction();
         try {
             $checkoutCartItems = $allCartItems;
