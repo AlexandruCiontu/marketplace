@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Link, router, useForm } from '@inertiajs/react';
-import { CartItem as CartItemType, VatRateType } from '@/types';
+import { CartItem as CartItemType } from '@/types';
 import TextInput from '@/Components/Core/TextInput';
 import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
 import { productRoute } from '@/helpers';
-import { getVatRate, calculateVatIncludedPrice } from '@/utils/vat';
-import { useVatCountry } from '@/hooks/useVatCountry';
 
 function CartItem({item}: { item: CartItemType }) {
   const deleteForm = useForm({
@@ -14,9 +12,7 @@ function CartItem({item}: { item: CartItemType }) {
 
   const [quantity, setQuantity] = useState(item.quantity)
   const [error, setError] = useState('')
-  const { countryCode } = useVatCountry()
-  const rate = getVatRate(countryCode, (item.vat_rate_type as VatRateType) ?? 'standard_rate')
-  const grossPrice = calculateVatIncludedPrice(item.price, rate)
+  const grossPrice = item.gross_price
   const vatAmount = grossPrice - item.price
 
   const onDeleteClick = () => {
