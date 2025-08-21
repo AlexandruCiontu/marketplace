@@ -64,6 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+    Route::post('/orders/{order}/refund', [OrderController::class, 'refund'])->name('orders.refund');
 
     Route::middleware(['verified'])->group(function () {
         Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');

@@ -28,7 +28,19 @@ class NAVService implements InvoiceServiceInterface
 
     public function generateStorno(Order $order, Order $refundOrder)
     {
-        // TODO: Implement this method
+        $vendor = $order->vendor;
+        $token = $this->generateRequestToken($vendor);
+        $xml = $this->generateXML($refundOrder);
+        $response = $this->uploadInvoiceXML($xml, $vendor, $token);
+
+        $storageDir = "invoices/hu/{$refundOrder->id}";
+        Storage::disk('private')->put("{$storageDir}/storno.xml", $xml);
+        Storage::disk('private')->put("{$storageDir}/response.json", json_encode($response));
+        $refundOrder->invoice_type = 'nav-storno';
+        $refundOrder->invoice_storage_path = "{$storageDir}/storno.xml";
+        $refundOrder->save();
+
+        $this->handleNAVResponse($response, $refundOrder);
     }
 
     private function handleNAVResponse($response, Order $order)
