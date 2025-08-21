@@ -55,10 +55,18 @@ function Show({
     }
 
     const rate = getVatRate(countryCode, (product.vat_rate_type as any) ?? 'standard_rate');
+    const gross_price =
+      price === product.price && product.gross_price !== undefined
+        ? product.gross_price
+        : calculateVatIncludedPrice(price, rate);
+    const vat_amount =
+      price === product.price && product.gross_price !== undefined
+        ? product.gross_price - price
+        : calculateVatAmount(price, rate);
     return {
       price,
-      gross_price: calculateVatIncludedPrice(price, rate),
-      vat_amount: calculateVatAmount(price, rate),
+      gross_price,
+      vat_amount,
       vat_rate_type: product.vat_rate_type,
       quantity,
     };

@@ -24,7 +24,7 @@ export default function ProductItem({ product, countryCode }: { product: Product
   };
 
   const rate = getVatRate(countryCode, (product.vat_rate_type as VatRateType) ?? 'standard_rate');
-  const displayPrice = calculateVatIncludedPrice(
+  const displayPrice = product.gross_price ?? calculateVatIncludedPrice(
     product.net_price ?? product.price,
     rate
   );
