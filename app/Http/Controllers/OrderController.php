@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\OrderStatusEnum;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
+use App\Services\Common\RefundService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -73,5 +74,19 @@ class OrderController extends Controller
         // For the invoice view, we'll still use the raw model with the subtotal added
         // Since this goes to a Blade view, not an Inertia component
         return view('orders.invoice', compact('order'));
+    }
+
+    /**
+     * Refund an order and generate a storno invoice.
+     */
+    public function refund(Order $order, RefundService $refundService)
+    {
+        if (!auth()->user()->isAdmin() && $order->vendor_user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $refundService->createRefund($order);
+
+        return back()->with('success', 'Order refunded successfully.');
     }
 }

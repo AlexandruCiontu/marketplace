@@ -60,7 +60,7 @@ export type Product = {
   quantity: number;
   vat_rate_type?: string;
   net_price?: number;
-  gross_price?: number;
+  gross_price: number;
   vat_amount?: number;
   image: string;
   images: Image[];
@@ -94,6 +94,7 @@ export type ProductListItem = {
   price: number;
   net_price: number;
   vat_rate_type: string;
+  gross_price: number;
   quantity: number;
   image: string;
   user_id: number;

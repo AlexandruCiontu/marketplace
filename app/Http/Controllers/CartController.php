@@ -8,6 +8,7 @@ use App\Models\Address;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\OssTransaction;
 use App\Models\Vendor;
 use App\Services\CartService;
 use App\Services\TransactionClassifierService;
@@ -192,6 +193,9 @@ class CartController extends Controller
 
                     $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_rate_type'], $vatCountry);
 
+                    $taxRates = config('app.stripe_tax_rates');
+                    $stripeTaxRate = $taxRates[$vatCountry] ?? null;
+
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $cartItem['product_id'],
@@ -219,9 +223,13 @@ class CartController extends Controller
                                 'images' => [$cartItem['image']],
                             ],
                             'unit_amount' => (int) round($calc['gross'] * 100),
+                            'tax_behavior' => 'inclusive',
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
+                    if ($stripeTaxRate) {
+                        $lineItem['tax_rates'] = [$stripeTaxRate];
+                    }
                     if ($description) {
                         $lineItem['price_data']['product_data']['description'] = $description;
                     }
@@ -233,6 +241,20 @@ class CartController extends Controller
                     'net_total' => $orderNet,
                     'vat_total' => $orderVat,
                 ]);
+
+                if ($transactionType === 'OSS') {
+                    $vatRate = $orderNet > 0 ? round($orderVat / $orderNet * 100, 2) : 0;
+
+                    OssTransaction::create([
+                        'vendor_id' => $vendor->user_id,
+                        'order_id' => $order->id,
+                        'client_country_code' => $clientCountryCode,
+                        'vat_rate' => $vatRate,
+                        'net_amount' => $orderNet,
+                        'vat_amount' => $orderVat,
+                        'gross_amount' => $orderGross,
+                    ]);
+                }
             }
             $firstOrder = $orders[0];
             $vendorStripeAccountId = $firstOrder->vendorUser->getStripeAccountId();

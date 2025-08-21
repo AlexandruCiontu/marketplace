@@ -57,7 +57,30 @@ class ANAFService implements InvoiceServiceInterface
 
     public function generateStorno(Order $order, Order $refundOrder)
     {
-        // TODO: Implement this method
+        $vendor = $order->vendor;
+        $this->convertPfxToPem($vendor);
+
+        $xml = $this->generateXML($refundOrder);
+        $signedXml = $this->signWithCertificate($xml, $vendor);
+
+        try {
+            $response = $this->uploadToANAF($signedXml, $vendor);
+
+            $storageDir = "invoices/ro/{$refundOrder->id}";
+            Storage::disk('private')->put("{$storageDir}/storno.xml", $signedXml);
+            Storage::disk('private')->put("{$storageDir}/response.xml", is_string($response) ? $response : json_encode($response));
+            $refundOrder->invoice_type = 'anaf-storno';
+            $refundOrder->invoice_storage_path = "{$storageDir}/storno.xml";
+            $refundOrder->save();
+
+            $this->handleANAFResponse($response, $refundOrder);
+        } catch (\Throwable $e) {
+            $failedPath = "invoices/failed/order_{$refundOrder->id}_storno.xml";
+            Storage::disk('private')->put($failedPath, $signedXml);
+            $refundOrder->invoice_type = 'failed';
+            $refundOrder->invoice_storage_path = $failedPath;
+            $refundOrder->save();
+        }
     }
 
     private function convertPfxToPem(Vendor $vendor)
