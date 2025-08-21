@@ -149,6 +149,10 @@ class CartController extends Controller
 
         [$authUser, $defaultAddress] = $this->userShippingAddress();
 
+        if (! $defaultAddress) {
+            abort(422, 'Shipping address is required.');
+        }
+
         DB::beginTransaction();
         try {
             $checkoutCartItems = $allCartItems;
@@ -195,6 +199,9 @@ class CartController extends Controller
 
                     $taxRates = config('app.stripe_tax_rates');
                     $stripeTaxRate = $taxRates[$vatCountry] ?? null;
+                    if (! $stripeTaxRate) {
+                        throw new \RuntimeException("Missing Stripe tax rate ID for {$vatCountry}");
+                    }
 
                     OrderItem::create([
                         'order_id' => $order->id,
@@ -226,10 +233,8 @@ class CartController extends Controller
                             'tax_behavior' => 'inclusive',
                         ],
                         'quantity' => $cartItem['quantity'],
+                        'tax_rates' => [$stripeTaxRate],
                     ];
-                    if ($stripeTaxRate) {
-                        $lineItem['tax_rates'] = [$stripeTaxRate];
-                    }
                     if ($description) {
                         $lineItem['price_data']['product_data']['description'] = $description;
                     }

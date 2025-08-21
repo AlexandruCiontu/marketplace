@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/Fakes/Ibericode/Vat/Rates.php';
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
