@@ -6,10 +6,13 @@ use App\Models\Order;
 use App\Models\OssTransaction;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Notifications\OssReportGenerated;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 it('exports oss report when transactions exist', function () {
     Storage::fake('public');
+    Notification::fake();
 
     $vendorUser = User::factory()->create(['country_code' => 'RO']);
 
@@ -51,5 +54,6 @@ it('exports oss report when transactions exist', function () {
         ->assertExitCode(0);
 
     Storage::disk('public')->assertExists("exports/oss/{$month}/{$vendor->user_id}.csv");
+    Notification::assertSentTo($vendorUser, OssReportGenerated::class);
 });
 
