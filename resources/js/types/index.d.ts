@@ -61,7 +61,7 @@ export type Product = {
   vat_rate_type?: string;
   net_price?: number;
   gross_price: number;
-  vat_amount?: number;
+  vat_amount: number;
   image: string;
   images: Image[];
   short_description: string;
@@ -84,6 +84,8 @@ export type Product = {
     variation_type_option_ids: number[];
     quantity: number;
     price: number;
+    gross_price: number;
+    vat_amount: number;
   }>
 }
 
@@ -95,6 +97,7 @@ export type ProductListItem = {
   net_price: number;
   vat_rate_type: string;
   gross_price: number;
+  vat_amount: number;
   quantity: number;
   image: string;
   user_id: number;
@@ -113,6 +116,7 @@ export type CartItem = {
   price: number;
   vat_rate_type: string;
   gross_price: number;
+  vat_amount: number;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;

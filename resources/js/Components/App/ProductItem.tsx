@@ -1,10 +1,8 @@
-import { ProductListItem, VatRateType } from "@/types";
+import { ProductListItem } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
-import vatService from '@/services/vatService';
-import { useVatRate } from '@/hooks/useVatRate';
 
-export default function ProductItem({ product, countryCode }: { product: ProductListItem; countryCode: string }) {
+export default function ProductItem({ product }: { product: ProductListItem }) {
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -24,11 +22,7 @@ export default function ProductItem({ product, countryCode }: { product: Product
     });
   };
 
-  const rate = useVatRate(countryCode, (product.vat_rate_type as VatRateType) ?? 'standard_rate');
-  const displayPrice = product.gross_price ?? vatService.calculateVatIncludedPrice(
-    product.net_price ?? product.price,
-    rate
-  );
+  const displayPrice = product.gross_price;
 
   return (
     <div className="card bg-base-100 shadow">

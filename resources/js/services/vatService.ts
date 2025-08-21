@@ -21,12 +21,4 @@ async function getRate(
   return rate;
 }
 
-function calculateVatIncludedPrice(net: number, rate: number): number {
-  return +(net * (1 + rate / 100)).toFixed(2);
-}
-
-function calculateVatAmount(net: number, rate: number): number {
-  return +(net * (rate / 100)).toFixed(2);
-}
-
-export default { getRate, calculateVatIncludedPrice, calculateVatAmount };
+export default { getRate };
