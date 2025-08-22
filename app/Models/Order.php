@@ -59,6 +59,16 @@ class Order extends Model
         return $this->belongsTo(User::class, 'vendor_user_id');
     }
 
+    public function sellerDisplayName(): string
+    {
+        return $this->vendorUser?->vendor?->store_name ?: config('app.name');
+    }
+
+    public function sellerVatCountry(): ?string
+    {
+        return $this->vat_country_code;
+    }
+
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'vendor_user_id', 'user_id');

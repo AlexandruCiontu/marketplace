@@ -28,7 +28,7 @@ class CartController extends Controller
     {
         [$user, $defaultAddress] = $this->userShippingAddress();
         $vatCountry = $resolver->resolve($request);
-        session(['country_code' => $vatCountry]);
+        session(['country_code' => $vatCountry, 'vat_country_code' => $vatCountry]);
 
         $totals = $cartService->getTotals();
 
@@ -152,8 +152,13 @@ class CartController extends Controller
         $allCartItems = $cartService->getCartItemsGrouped();
 
         [$authUser, $defaultAddress] = $this->userShippingAddress();
-        $clientCountryCode = CountryCode::toIso2($defaultAddress->country_code);
-        session(['country_code' => $clientCountryCode]);
+
+        $selected = $request->input('vat_country_code')
+            ?? session('vat_country_code')
+            ?? $defaultAddress->country_code
+            ?? 'RO';
+        $clientCountryCode = CountryCode::toIso2($selected);
+        session(['country_code' => $clientCountryCode, 'vat_country_code' => $clientCountryCode]);
 
         DB::beginTransaction();
         try {
@@ -182,7 +187,8 @@ class CartController extends Controller
                     'total_price' => 0,
                     'net_total' => 0,
                     'vat_total' => 0,
-                    'vat_country_code' => CountryCode::toIso2($clientCountryCode),
+                    'vat_country_code' => $clientCountryCode,
+                    'vat_rate' => null,
                     'transaction_type' => $transactionType,
                     'status' => OrderStatusEnum::Draft->value,
                 ]);
@@ -194,11 +200,7 @@ class CartController extends Controller
                 $orders[] = $order;
 
                 foreach ($cartItems as $cartItem) {
-                    $vatCountry = $transactionType === 'OSS'
-                        ? $clientCountryCode
-                        : CountryCode::toIso2($vendor->country_code);
-
-                    $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_rate_type'], $vatCountry);
+                    $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_rate_type'], $clientCountryCode);
 
                     OrderItem::create([
                         'order_id' => $order->id,
@@ -236,10 +238,13 @@ class CartController extends Controller
                     $lineItems[] = $lineItem;
                 }
 
+                $orderRate = $orderNet > 0 ? round(($orderVat / $orderNet) * 100, 2) : 0;
                 $order->update([
                     'total_price' => $orderGross,
                     'net_total' => $orderNet,
                     'vat_total' => $orderVat,
+                    'vat_country_code' => $clientCountryCode,
+                    'vat_rate' => $orderRate,
                 ]);
             }
             $firstOrder = $orders[0];
