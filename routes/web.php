@@ -7,6 +7,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\ShippingAddressController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\Api\CountryController;
+use App\Http\Controllers\Api\ProductPriceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Stevebauman\Location\Facades\Location;
@@ -28,6 +30,10 @@ Route::get('/test-location', function () {
         'cityName' => $position->cityName,
     ]);
 });
+
+Route::post('/api/country/select', [CountryController::class, 'select'])->name('api.country.select');
+Route::get('/api/country/current', [CountryController::class, 'current'])->name('api.country.current');
+Route::get('/api/products/{product}/price', ProductPriceController::class);
 
 // Guest Routes
 Route::get('/', [ProductController::class, 'home'])->name('dashboard');
