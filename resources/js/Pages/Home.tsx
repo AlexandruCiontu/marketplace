@@ -13,8 +13,23 @@ import NumberFormatter from "@/Components/Core/NumberFormatter";
 import ProductListing from "@/Components/App/ProductListing";
 import BannerSlider from "@/Components/App/BannerSlider";
 
-function CustomHits({ countryCode }: { countryCode: string }) {
+function CustomHits() {
   const { hits, results } = useHits();
+  const [priceMap, setPriceMap] = React.useState<Record<string, number>>({});
+
+  React.useEffect(() => {
+    const ids = hits.map((h: any) => h.id);
+    if (ids.length === 0) return;
+    const params = new URLSearchParams();
+    ids.forEach((id: any) => params.append('ids[]', String(id)));
+    fetch(`/api/vat/price-batch?${params.toString()}`, { credentials: 'same-origin' })
+      .then(res => res.json())
+      .then(data => {
+        const map: Record<string, number> = {};
+        data.items.forEach((i: any) => { map[String(i.id)] = i.unit_gross; });
+        setPriceMap(map);
+      });
+  }, [hits]);
 
   if (!results || results.nbHits === 0) {
     return (
@@ -57,7 +72,7 @@ function CustomHits({ countryCode }: { countryCode: string }) {
       </div>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
         {hits.map((hit: any) => (
-          <ProductItem product={hit} key={hit.id} countryCode={countryCode} />
+          <ProductItem product={hit} key={hit.id} priceGross={priceMap[String(hit.id)]} />
         ))}
       </div>
     </>
@@ -93,7 +108,6 @@ const sampleBanners = [
 
 export default function Home({
                                products,
-                               countryCode
                              }: PageProps<{ products: PaginationProps<Product>; countryCode: string }>) {
 
   return (
@@ -107,7 +121,7 @@ export default function Home({
 
           <div className="flex-1">
             <Configure hitsPerPage={24} />
-            <CustomHits countryCode={countryCode} />
+            <CustomHits />
             <Pagination
               classNames={{
                 root: 'hidden justify-center md:flex',

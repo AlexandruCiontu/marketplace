@@ -17,10 +17,7 @@ function Index(
       totals,
       shippingAddress,
       addresses,
-      vatCountry: initialVatCountry,
-    }: PageProps<{ cartItems: Record<number, GroupedCartItems>; shippingAddress: Address; addresses: Address[]; vatCountry: string; totals: { net_total: number; gross_total: number; vat_total: number }; }>) {
-
-  const countryCode = initialVatCountry;
+    }: PageProps<{ cartItems: Record<number, GroupedCartItems>; shippingAddress: Address; addresses: Address[]; totals: { net_total: number; gross_total: number; vat_total: number }; }>) {
 
   const onAddressChange = (address: Address) => {
     router.put(route('cart.shippingAddress', address.id), {}, {
@@ -97,7 +94,7 @@ function Index(
                 <label htmlFor="vat_country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   VAT Country
                 </label>
-                <CountryPicker value={countryCode} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
+                <CountryPicker className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
               </div>
             </div>
           </div>

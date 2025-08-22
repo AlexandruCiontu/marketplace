@@ -9,6 +9,7 @@ use App\Http\Controllers\ShippingAddressController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\ProductPriceController;
+use App\Http\Controllers\Api\VatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Stevebauman\Location\Facades\Location;
@@ -34,6 +35,7 @@ Route::get('/test-location', function () {
 Route::post('/api/country/select', [CountryController::class, 'select'])->name('api.country.select');
 Route::get('/api/country/current', [CountryController::class, 'current'])->name('api.country.current');
 Route::get('/api/products/{product}/price', ProductPriceController::class);
+Route::get('/api/vat/price-batch', [VatController::class, 'priceBatch']);
 
 // Guest Routes
 Route::get('/', [ProductController::class, 'home'])->name('dashboard');

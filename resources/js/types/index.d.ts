@@ -93,6 +93,7 @@ export type ProductListItem = {
   slug: string;
   price: number;
   net_price: number;
+  gross_price?: number;
   vat_rate_type: string;
   quantity: number;
   image: string;
@@ -170,7 +171,6 @@ export type PageProps<
   departments: Department[];
   keyword: string;
   countryCode: string;
-  vatCountry?: string;
 };
 
 

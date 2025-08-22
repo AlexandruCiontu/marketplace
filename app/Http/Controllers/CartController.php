@@ -36,8 +36,6 @@ class CartController extends Controller
             'cartItems' => $cartService->getCartItemsGrouped(),
             'addresses' => $user ? ShippingAddressResource::collection($user->shippingAddresses)->collection->toArray() : [],
             'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null,
-            'vatCountry' => $vatCountry,
-            'countryCode' => $vatCountry,
             'totals' => $totals,
             'totalQuantity' => $cartService->getTotalQuantity(),
         ]);
