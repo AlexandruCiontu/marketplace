@@ -46,7 +46,7 @@ class Product extends Model implements HasMedia
 
     public function scopeSearchable(Builder $query): Builder
     {
-        return $this->scopePublished($query);
+        return $query->published()->vendorApproved();
     }
 
     public function scopeForWebsite(Builder $query): Builder
@@ -217,7 +217,7 @@ class Product extends Model implements HasMedia
 
     public function toSearchableArray()
     {
-        $this->load(['category', 'department', 'user']);
+        $this->load(['category', 'department', 'user.vendor']);
 
         return [
             'id' => (string)$this->id,
@@ -230,7 +230,7 @@ class Product extends Model implements HasMedia
             'image' => $this->getFirstImageUrl(),
             'user_id' => (string)$this->user->id,
             'user_name' => $this->user->name,
-            'user_store_name' => $this->user->vendor->store_name,
+            'user_store_name' => optional($this->user->vendor)->store_name ?? '',
             'department_id' => (string)($this->department->id ?? ''),
             'department_name' => $this->department->name ?? '',
             'department_slug' => $this->department->slug ?? '',
@@ -239,6 +239,12 @@ class Product extends Model implements HasMedia
             'category_slug' => $this->category?->slug ?? '',
             'created_at' => $this->created_at->timestamp,
         ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === ProductStatusEnum::Published
+            && $this->user?->vendor?->status === VendorStatusEnum::Approved->value;
     }
 
 
