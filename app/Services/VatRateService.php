@@ -10,17 +10,17 @@ class VatRateService
 
     public function __construct()
     {
-        // Poți schimba path-ul dacă preferi altă locație pentru cache
+        // You can change the path if you prefer another cache location
         $this->rates = new Rates(storage_path('framework/cache/vat_rates.cache'));
     }
 
     /**
-     * Calculează TVA-ul și totalul brut pentru un preț net.
+     * Calculates VAT and gross total for a net price.
      *
-     * @param  float       $netAmount     Prețul fără TVA
-     * @param  string      $rateType      Tipul TVA ('standard', 'reduced', etc.)
-     * @param  string|null $countryCode   Codul țării (ex: 'RO', 'DE')
-     * @return array<string, float>       ['rate' => TVA%, 'vat' => valoare TVA, 'gross' => total cu TVA]
+     * @param  float       $netAmount     Net price
+     * @param  string      $rateType      VAT type ('standard', 'reduced', etc.)
+     * @param  string|null $countryCode   Country code (e.g., 'RO', 'DE')
+     * @return array<string, float>       ['rate' => VAT%, 'vat' => VAT value, 'gross' => total with VAT]
      */
     public function calculate(float $netAmount, string $rateType, ?string $countryCode = null): array
     {
@@ -57,7 +57,7 @@ class VatRateService
                 }
             }
 
-            // ✅ Fallback la 'standard' dacă rata e invalidă (false, null, 0 etc.)
+            // Fallback to 'standard' if the rate is invalid (false, null, 0 etc.)
             if (!is_numeric($rate) || $rate <= 0) {
                 try {
                     $rate = $this->rates->getRateForCountry($countryCode, 'standard');

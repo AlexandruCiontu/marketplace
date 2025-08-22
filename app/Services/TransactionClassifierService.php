@@ -8,20 +8,20 @@ use App\Models\Vendor;
 class TransactionClassifierService
 {
     /**
-     * Clasifică o tranzacție ca fiind 'Domestic' sau 'OSS'.
+     * Classifies a transaction as 'Domestic' or 'OSS'.
      *
-     * @param Vendor $vendor Vendorul care vinde produsul.
-     * @param User $client Clientul care cumpără produsul.
-     * @return string Tipul tranzacției ('Domestic' sau 'OSS').
+     * @param Vendor $vendor The vendor selling the product.
+     * @param User $client The customer buying the product.
+     * @return string The transaction type ('Domestic' or 'OSS').
      */
     public function classify(Vendor $vendor, User $client): string
     {
-        // Presupunem că clientul are o țară asociată.
-        // În scenariul B2C, țara clientului este determinată la checkout,
-        // posibil pe baza adresei de livrare.
+        // Assume the client has an associated country.
+        // In the B2C scenario, the client's country is determined at checkout,
+        // possibly based on the shipping address.
         if (empty($client->country_code)) {
-            // Aruncă o excepție sau gestionează cazul în care țara clientului nu este cunoscută.
-            // Pentru moment, vom considera tranzacția ca fiind domestică pentru a evita erori.
+            // Throw an exception or handle the case where the client's country is unknown.
+            // For now, treat the transaction as domestic to avoid errors.
             return 'Domestic';
         }
 

@@ -7,11 +7,11 @@ import InputLabel from "@/Components/Core/InputLabel";
 import TextInput from "@/Components/Core/TextInput";
 import InputError from "@/Components/Core/InputError";
 
-const fiscalCountries = [
-  {name: 'România', code: 'RO'},
-  {name: 'Ungaria', code: 'HU'},
-  {name: 'Bulgaria', code: 'BG'},
-];
+  const fiscalCountries = [
+    {name: 'Romania', code: 'RO'},
+    {name: 'Hungary', code: 'HU'},
+    {name: 'Bulgaria', code: 'BG'},
+  ];
 
 export default function VendorDetails(
   {className = '',}: { className?: string; }
@@ -136,7 +136,7 @@ export default function VendorDetails(
               </div>
 
               <div className="mb-4">
-                  <InputLabel htmlFor="country_code" value="Țara"/>
+                  <InputLabel htmlFor="country_code" value="Country"/>
                   <select id="country_code" name="country_code" value={data.country_code}
                           className="select select-bordered w-full mt-1"
                           onChange={(e) => setData('country_code', e.target.value)}

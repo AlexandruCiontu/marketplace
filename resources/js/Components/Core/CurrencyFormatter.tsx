@@ -9,10 +9,10 @@ function CurrencyFormatter({
   currency?: string,
   locale?: string
 }) {
-  // Verificare că amount este un număr valid
+  // Ensure amount is a valid number
   const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
 
-  // Debug log (poți să-l scoți după testare)
+  // Debug log (remove after testing)
   console.log('Amount formatted:', numericAmount);
 
   return (

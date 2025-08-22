@@ -11,7 +11,7 @@ use Torann\GeoIP\Facades\GeoIP;
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Listă de țări din Uniunea Europeană
+     * List of European Union countries
      */
     private const EU_COUNTRIES = [
         'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
@@ -34,29 +34,29 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // ✅ Detectăm țara automat și o salvăm în sesiune
+        // Detect country automatically and store in session
         if (!session()->has('country_code')) {
             try {
                 $location = GeoIP::getLocation();
                 $code = $location->iso_code ?? null;
 
-                // Dacă nu e valid sau nu e țară UE, fallback la RO
+                // If not valid or not an EU country, fallback to RO
                 if (! $code || ! in_array($code, self::EU_COUNTRIES)) {
                     $code = 'RO';
                 }
 
                 session(['country_code' => $code]);
             } catch (\Exception $e) {
-                session(['country_code' => 'RO']); // fallback complet
+                session(['country_code' => 'RO']); // full fallback
             }
         }
 
-        // 🧾 Programare automată pentru payout
+        // Schedule automatic vendor payout
         Schedule::command('payout:vendors')
             ->monthlyOn(1, '00:00')
             ->withoutOverlapping();
 
-        // ⚡ Optimizare vite
+        // Vite optimization
         Vite::prefetch(concurrency: 3);
     }
 }

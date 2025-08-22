@@ -13,25 +13,25 @@ class EditVendor extends EditRecord
     protected static string $resource = VendorResource::class;
 
     /**
-     * Suprascriem metoda pentru a detecta schimbarea statusului și a trimite email.
+     * Override method to detect status changes and send email.
      */
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $oldStatus = $record->status;
 
-        // Updatează datele
+        // Update the data
         $record->update($data);
 
-        // Trimite email dacă statusul s-a schimbat
+        // Send email if status changed
         if ($oldStatus !== $data['status'] && $record->user && $record->user->email) {
             Mail::to($record->user->email)->send(new VendorStatusChanged($record));
 
-            // Dacă statusul este schimbat în 'rejected', șterge vendor-ul și rolul
+            // If status is changed to 'rejected', remove vendor and role
             if ($data['status'] === 'rejected') {
                 $record->user->removeRole('Vendor');
                 $record->delete();
-                // Poți adăuga un redirect sau un mesaj de notificare aici dacă dorești
-                return new \App\Models\Vendor(); // Returnează un model gol pentru a evita erorile ulterioare
+                // You can add a redirect or notification message here if desired
+                return new \App\Models\Vendor(); // Return an empty model to avoid further errors
             }
         }
 

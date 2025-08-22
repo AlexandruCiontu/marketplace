@@ -14,6 +14,9 @@ class ProductResource extends JsonResource
         $options = $request->input('options') ?: [];
         $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
 
+        $avg = round($this->reviews()->avg('rating') ?? 0, 1);
+        $count = $this->reviews()->count();
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -84,6 +87,11 @@ class ProductResource extends JsonResource
             'price_with_vat' => round((float) $this->price_with_vat, 2),
             'vat_amount' => round((float) $this->vat_amount, 2),
             'gross_price' => round((float) $this->gross_price, 2),
+            'average_rating' => $avg,
+            'reviews_count' => $count,
+            'reviews' => ReviewResource::collection(
+                $this->whenLoaded('reviews')
+            ),
         ];
     }
 }

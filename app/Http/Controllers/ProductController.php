@@ -34,7 +34,9 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product->load(['reviews.user']);
+        $product->load([
+            'reviews.user:id,name',
+        ]);
 
         $hasPurchased = false;
         if (auth()->check()) {
