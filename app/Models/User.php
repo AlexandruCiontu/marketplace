@@ -79,9 +79,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function defaultShippingAddress(): MorphOne
     {
-        return $this->morphOne(Address::class, 'addressable')
-            ->where('type', AddressTypeEnum::Shipping)
-            ->where('default', true);
+        return $this->shippingAddress();
     }
 
     /**
@@ -99,6 +97,20 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         return $this->addresses()->where('default', true)->first()
             ?? $this->addresses()->latest()->first();
+    }
+
+    /**
+     * Helper: country code for VAT in uppercase.
+     */
+    public function vatCountryCode(): ?string
+    {
+        $addr = $this->relationLoaded('defaultShippingAddress')
+            ? $this->getRelation('defaultShippingAddress')
+            : $this->defaultShippingAddress()->first();
+
+        return $addr && $addr->country_code
+            ? strtoupper($addr->country_code)
+            : null;
     }
 
     public function isAdmin(): bool
