@@ -167,6 +167,7 @@ export type PageProps<
   departments: Department[];
   keyword: string;
   countryCode: string;
+  vatCountry?: string;
 };
 
 

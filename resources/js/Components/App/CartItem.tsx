@@ -14,7 +14,7 @@ function CartItem({item}: { item: CartItemType }) {
 
   const [quantity, setQuantity] = useState(item.quantity)
   const [error, setError] = useState('')
-  const { countryCode } = useVatCountry()
+  const countryCode = useVatCountry()
   const rate = getVatRate(countryCode, (item.vat_rate_type as VatRateType) ?? 'standard_rate')
   const grossPrice = calculateVatIncludedPrice(item.price, rate)
   const vatAmount = grossPrice - item.price

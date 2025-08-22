@@ -8,7 +8,7 @@ import type { VatRateType } from '@/types';
 
 function MiniCartDropdown() {
   const { totalQuantity, totalPrice, miniCartItems } = usePage().props;
-  const { countryCode } = useVatCountry();
+  const countryCode = useVatCountry();
 
   return (
     <details className="dropdown dropdown-end static sm:relative ">

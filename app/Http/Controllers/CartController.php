@@ -11,7 +11,9 @@ use App\Models\Product;
 use App\Models\Vendor;
 use App\Services\CartService;
 use App\Services\TransactionClassifierService;
+use App\Services\VatCountryResolver;
 use App\Services\VatRateService;
+use App\Support\CountryCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,9 +24,11 @@ class CartController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(CartService $cartService)
+    public function index(Request $request, CartService $cartService, VatCountryResolver $resolver)
     {
         [$user, $defaultAddress] = $this->userShippingAddress();
+        $vatCountry = $resolver->resolve($request);
+        session(['country_code' => $vatCountry]);
 
         $totals = $cartService->getTotals();
 
@@ -32,7 +36,8 @@ class CartController extends Controller
             'cartItems' => $cartService->getCartItemsGrouped(),
             'addresses' => $user ? ShippingAddressResource::collection($user->shippingAddresses)->collection->toArray() : [],
             'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null,
-            'countryCode' => session('country_code', 'RO'),
+            'vatCountry' => $vatCountry,
+            'countryCode' => $vatCountry,
             'gross_total' => $totals['gross_total'],
             'vat_total' => $totals['vat_total'],
             'net_total' => $totals['net_total'],
@@ -140,13 +145,15 @@ class CartController extends Controller
         TransactionClassifierService $classifier,
         VatRateService $vatRateService
     ) {
-        \Stripe\Stripe::setApiKey(config('app.stripe_secret_key'));
+        $stripe = new \Stripe\StripeClient(config('app.stripe_secret_key'));
 
         $vendorId = $request->input('vendor_id');
 
         $allCartItems = $cartService->getCartItemsGrouped();
 
         [$authUser, $defaultAddress] = $this->userShippingAddress();
+        $clientCountryCode = CountryCode::toIso2($defaultAddress->country_code);
+        session(['country_code' => $clientCountryCode]);
 
         DB::beginTransaction();
         try {
@@ -156,7 +163,6 @@ class CartController extends Controller
             }
             $orders = [];
             $lineItems = [];
-            $clientCountryCode = $defaultAddress->country_code;
 
             foreach ($checkoutCartItems as $item) {
                 $vendorUser = $item['user'];
@@ -176,7 +182,7 @@ class CartController extends Controller
                     'total_price' => 0,
                     'net_total' => 0,
                     'vat_total' => 0,
-                    'vat_country_code' => $clientCountryCode,
+                    'vat_country_code' => CountryCode::toIso2($clientCountryCode),
                     'transaction_type' => $transactionType,
                     'status' => OrderStatusEnum::Draft->value,
                 ]);
@@ -188,7 +194,9 @@ class CartController extends Controller
                 $orders[] = $order;
 
                 foreach ($cartItems as $cartItem) {
-                    $vatCountry = $transactionType === 'OSS' ? $clientCountryCode : $vendor->country_code;
+                    $vatCountry = $transactionType === 'OSS'
+                        ? $clientCountryCode
+                        : CountryCode::toIso2($vendor->country_code);
 
                     $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_rate_type'], $vatCountry);
 
@@ -246,11 +254,11 @@ class CartController extends Controller
                 'city' => $defaultAddress->city,
                 'state' => $defaultAddress->state,
                 'postal_code' => $defaultAddress->zipcode,
-                'country' => $defaultAddress->country_code,
+                'country' => $clientCountryCode,
             ]);
 
             if (! $customerId) {
-                $customer = \Stripe\Customer::create([
+                $customer = $stripe->customers->create([
                     'email' => $authUser->email,
                     'name' => $authUser->name,
                     'address' => $address,
@@ -263,7 +271,7 @@ class CartController extends Controller
                 $authUser->stripe_customer_id = $customerId;
                 $authUser->save();
             } else {
-                \Stripe\Customer::update($customerId, [
+                $stripe->customers->update($customerId, [
                     'address' => $address,
                     'shipping' => [
                         'name' => $authUser->name,
@@ -272,7 +280,7 @@ class CartController extends Controller
                 ]);
             }
 
-            $session = \Stripe\Checkout\Session::create([
+            $session = $stripe->checkout->sessions->create([
                 'customer' => $customerId,
                 'line_items' => $lineItems,
                 'mode' => 'payment',
@@ -283,7 +291,7 @@ class CartController extends Controller
                 ],
                 'billing_address_collection' => 'required',
                 'shipping_address_collection' => [
-                    'allowed_countries' => ['RO', 'HU', 'BG'],
+                    'allowed_countries' => [$clientCountryCode],
                 ],
                 'payment_intent_data' => [
                     'application_fee_amount' => $commission,
