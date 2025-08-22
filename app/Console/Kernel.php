@@ -24,7 +24,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('export:oss-report')->monthlyOn(1, '01:00');
+        $schedule->command('export:oss-report')->monthly();
     }
 
     /**

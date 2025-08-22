@@ -10,10 +10,9 @@ import {
 import ProductItem from "@/Components/App/ProductItem";
 import FilterPanel from "@/Components/App/FilterPanel";
 import NumberFormatter from "@/Components/Core/NumberFormatter";
-import ProductListing from "@/Components/App/ProductListing";
 import BannerSlider from "@/Components/App/BannerSlider";
 
-function CustomHits({ countryCode }: { countryCode: string }) {
+function CustomHits() {
   const { hits, results } = useHits();
 
   if (!results || results.nbHits === 0) {
@@ -57,7 +56,7 @@ function CustomHits({ countryCode }: { countryCode: string }) {
       </div>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
         {hits.map((hit: any) => (
-          <ProductItem product={hit} key={hit.id} countryCode={countryCode} />
+          <ProductItem product={hit} key={hit.id} />
         ))}
       </div>
     </>
@@ -92,9 +91,8 @@ const sampleBanners = [
 ];
 
 export default function Home({
-                               products,
-                               countryCode
-                             }: PageProps<{ products: PaginationProps<Product>; countryCode: string }>) {
+                               products: _products
+                             }: PageProps<{ products: PaginationProps<Product> }>) {
 
   return (
     <AuthenticatedLayout>
@@ -107,7 +105,7 @@ export default function Home({
 
           <div className="flex-1">
             <Configure hitsPerPage={24} />
-            <CustomHits countryCode={countryCode} />
+            <CustomHits />
             <Pagination
               classNames={{
                 root: 'hidden justify-center md:flex',

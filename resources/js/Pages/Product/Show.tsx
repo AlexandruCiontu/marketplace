@@ -5,7 +5,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
-import { getVatRate, calculateVatIncludedPrice, calculateVatAmount } from '@/utils/vat';
+ 
 
 function Show({
                 appName, product, variationOptions
@@ -35,34 +35,34 @@ function Show({
     return [...product.images];
   }, [product, selectedOptions]);
 
-  const { countryCode } = usePage<PageProps>().props as PageProps;
-
   const computedProduct = useMemo(() => {
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
       .sort();
 
     let price = product.price;
+    let gross_price = product.gross_price;
+    let vat_amount = product.vat_amount;
     let quantity = product.quantity === null ? Number.MAX_VALUE : product.quantity;
 
     for (let variation of product.variations) {
       const optionIds = variation.variation_type_option_ids.sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         price = variation.price;
+        gross_price = variation.gross_price;
+        vat_amount = variation.vat_amount;
         quantity = variation.quantity === null ? Number.MAX_VALUE : variation.quantity;
         break;
       }
     }
-
-    const rate = getVatRate(countryCode, (product.vat_rate_type as any) ?? 'standard_rate');
     return {
       price,
-      gross_price: calculateVatIncludedPrice(price, rate),
-      vat_amount: calculateVatAmount(price, rate),
+      gross_price,
+      vat_amount,
       vat_rate_type: product.vat_rate_type,
       quantity,
     };
-  }, [product, selectedOptions, countryCode]);
+  }, [product, selectedOptions]);
 
   useEffect(() => {
     for (let type of product.variationTypes) {

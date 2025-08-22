@@ -79,7 +79,7 @@ const getStatusBadgeClass = (status: string): string => {
   }
 };
 
-export default function Show({ order }: { order: Order }) {
+export default function Show({ order, canRefund }: { order: Order, canRefund: boolean }) {
   // Calculate subtotal
   const subtotal = (order.orderItems || []).reduce(
     (acc, item) => acc + item.net_price * item.quantity,
@@ -113,6 +113,16 @@ export default function Show({ order }: { order: Order }) {
             >
               Print Invoice
             </Link>
+            {canRefund && (
+              <Link
+                href={`/orders/${order.id}/refund`}
+                method="post"
+                as="button"
+                className="btn btn-error"
+              >
+                Refund Order
+              </Link>
+            )}
           </div>
         </div>
 

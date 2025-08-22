@@ -34,6 +34,7 @@ class ProductListResource extends JsonResource
             'slug'               => $this->slug,
 
             // Prețuri (brut + net + TVA)
+            'price'              => (float) ($this->price ?? 0),
             'net_raw'            => $net,
             'vat_raw'            => $vatResult['vat'],
             'gross_raw'          => $vatResult['gross'],
@@ -41,6 +42,7 @@ class ProductListResource extends JsonResource
             'vat'                => $vatFormatted,
             'gross'              => $grossFormatted,
             'gross_price'        => $vatResult['gross'], // ✅ important pentru React
+            'vat_amount'         => $vatResult['vat'],
             'net_price'          => round($net, 2),
             'vat_rate_type'      => $this->vat_rate_type ?? 'standard_rate',
             'country_code'       => session('country_code', 'RO'),
@@ -52,7 +54,7 @@ class ProductListResource extends JsonResource
             // Informații despre vânzător
             'user_id'            => $this->user->id,
             'user_name'          => $this->user->name,
-            'user_store_name'    => optional($this->user->vendor)->store_name,
+            'user_store_name'    => $this->user?->vendor?->store_name ?? '',
 
             // Informații despre departament
             'department_id'      => optional($this->department)->id,

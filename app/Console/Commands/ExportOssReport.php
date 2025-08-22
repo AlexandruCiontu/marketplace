@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\OssTransaction;
+use App\Models\Vendor;
+use App\Notifications\OssReportGenerated;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -47,8 +49,14 @@ class ExportOssReport extends Command
                 $csvData .= "{$transaction->client_country_code},{$transaction->net_amount},{$transaction->vat_amount},{$transaction->gross_amount}\n";
             }
 
-            $fileName = "oss_reports/vendor_{$vendorId}/{$month}.csv";
-            Storage::disk('private')->put($fileName, $csvData);
+            $fileName = "exports/oss/{$month}/{$vendorId}.csv";
+            Storage::disk('public')->put($fileName, $csvData);
+
+            $vendor = Vendor::with('user')->find($vendorId);
+
+            if ($vendor && $vendor->user) {
+                $vendor->user->notify(new OssReportGenerated($month));
+            }
         }
 
         $this->info('OSS report exported successfully.');

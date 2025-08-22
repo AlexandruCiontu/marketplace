@@ -15,8 +15,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Ibericode\Vat\Facades\Vat;
-use App\Helpers\VatHelper;
+use App\Services\VatRateService;
 
 class Product extends Model implements HasMedia
 {
@@ -31,17 +30,23 @@ class Product extends Model implements HasMedia
 
     public function scopeForVendor(Builder $query): Builder
     {
-        return $query->where('created_by', auth()->user()->id);
+        $userId = auth()->id();
+
+        if ($userId === null) {
+            return $query;
+        }
+
+        return $query->where('created_by', $userId);
     }
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('products.status', ProductStatusEnum::Published);
+        return $query->where('products.status', ProductStatusEnum::Published->value);
     }
 
     public function scopeSearchable(Builder $query): Builder
     {
-        return $this->scopePublished($query);
+        return $query->published()->vendorApproved();
     }
 
     public function scopeForWebsite(Builder $query): Builder
@@ -49,10 +54,11 @@ class Product extends Model implements HasMedia
         return $query->published()->vendorApproved();
     }
 
-    public function scopeVendorApproved(Builder $query)
+    public function scopeVendorApproved(Builder $query): Builder
     {
         return $query->join('vendors', 'vendors.user_id', '=', 'products.created_by')
-            ->where('vendors.status', VendorStatusEnum::Approved->value);
+            ->where('vendors.status', VendorStatusEnum::Approved->value)
+            ->select('products.*');
     }
 
     public function user(): BelongsTo
@@ -106,7 +112,7 @@ class Product extends Model implements HasMedia
         return $this->price;
     }
 
-    public function getImageForOptions(array $optionIds = null)
+    public function getImageForOptions(?array $optionIds = null): ?string
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -119,17 +125,17 @@ class Product extends Model implements HasMedia
                 }
             }
         }
-        return $this->getFirstMediaUrl('images', 'small');
+        return $this->getFirstMediaUrl('images', 'small') ?: null;
     }
 
-    public function getImagesForOptions(array $optionIds = null)
+    public function getImagesForOptions(?array $optionIds = null): MediaCollection
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
             $options = VariationTypeOption::whereIn('id', $optionIds)->get();
             foreach ($options as $option) {
                 $images = $option->getMedia('images');
-                if ($images) {
+                if ($images->isNotEmpty()) {
                     return $images;
                 }
             }
@@ -164,7 +170,7 @@ class Product extends Model implements HasMedia
         if ($this->options->count() > 0) {
             foreach ($this->options as $option) {
                 $images = $option->getMedia('images');
-                if ($images) {
+                if ($images->isNotEmpty()) {
                     return $images;
                 }
             }
@@ -186,7 +192,11 @@ class Product extends Model implements HasMedia
     {
         $optionIds = $optionIds ? array_values($optionIds) : [];
         sort($optionIds);
-        $variation = $this->variations->first(fn($variation) => $variation->variation_type_option_ids == $optionIds);
+        $variation = $this->variations->first(function ($variation) use ($optionIds) {
+            $ids = $variation->variation_type_option_ids;
+            sort($ids);
+            return $ids == $optionIds;
+        });
 
         $quantity = $this->quantity;
         if ($variation) {
@@ -205,29 +215,48 @@ class Product extends Model implements HasMedia
         return 'products_index';
     }
 
-    public function toSearchableArray()
+    public function shouldBeSearchable(): bool
     {
-        $this->load(['category', 'department', 'user']);
+        $vendorStatus = $this->user?->vendor?->status;
+
+        return $this->status === ProductStatusEnum::Published->value
+            && $vendorStatus === VendorStatusEnum::Approved->value;
+    }
+
+    protected function makeAllSearchableUsing($query)
+    {
+        return $query
+            ->where('status', ProductStatusEnum::Published->value)
+            ->whereHas('user.vendor', fn ($q) => $q->where('status', VendorStatusEnum::Approved->value))
+            ->with(['user.vendor', 'department', 'category']);
+    }
+
+    public function toSearchableArray(): array
+    {
+        $this->loadMissing(['user.vendor', 'department', 'category']);
+
+        $user = $this->user;
+        $vendor = $user?->vendor;
 
         return [
-            'id' => (string)$this->id,
-            'title' => $this->title,
-            'description' => strip_tags($this->description),
-            'slug' => $this->slug,
-            'price' => (float)$this->getPriceForFirstOptions(),
-            'vat_rate_type' => $this->vat_rate_type,
-            'quantity' => $this->quantity,
-            'image' => $this->getFirstImageUrl(),
-            'user_id' => (string)$this->user->id,
-            'user_name' => $this->user->name,
-            'user_store_name' => $this->user->vendor->store_name,
-            'department_id' => (string)($this->department->id ?? ''),
-            'department_name' => $this->department->name ?? '',
-            'department_slug' => $this->department->slug ?? '',
-            'category_id' => (string)($this->category?->id ?? ''),
-            'category_name' => $this->category?->name ?? '',
-            'category_slug' => $this->category?->slug ?? '',
-            'created_at' => $this->created_at->timestamp,
+            'id'               => (string) $this->id,
+            'title'            => $this->title,
+            'slug'             => $this->slug,
+            'price'            => (float) ($this->price ?? 0),
+            'quantity'         => (int) ($this->quantity ?? 0),
+            'image'            => $this->getFirstImageUrl(),
+
+            'user_id'          => (string) ($user?->id ?? ''),
+            'user_name'        => $user?->name ?? '',
+            'user_store_name'  => $vendor?->store_name ?? '',
+
+            'department_id'    => (string) ($this->department?->id ?? ''),
+            'department_name'  => $this->department?->name ?? '',
+            'department_slug'  => $this->department?->slug ?? '',
+
+            'category_id'      => (string) ($this->category?->id ?? ''),
+            'category_name'    => $this->category?->name ?? '',
+            'category_slug'    => $this->category?->slug ?? '',
         ];
     }
 
@@ -241,17 +270,17 @@ class Product extends Model implements HasMedia
     public function getVatAmountAttribute(): float
     {
         $country = session('country_code', 'RO'); // fallback dacă nu e setată
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
+        $calc = app(VatRateService::class)->calculate($this->price, $this->vat_rate_type, $country);
 
-        return round($this->price * ($rate / 100), 2);
+        return $calc['vat'];
     }
 
     public function getGrossPriceAttribute(): float
     {
         $country = session('country_code', 'RO'); // fallback
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
+        $calc = app(VatRateService::class)->calculate($this->price, $this->vat_rate_type, $country);
 
-        return round($this->price * (1 + $rate / 100), 2);
+        return $calc['gross'];
     }
 
 }

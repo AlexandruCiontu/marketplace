@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Services\VatRateService;
 
 class ProductResource extends JsonResource
 {
@@ -21,7 +22,7 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
-            'price' => $this->price,
+            'price' => (float) ($this->price ?? 0),
             'weight' => $this->weight,
             'length' => $this->length,
             'width' => $this->width,
@@ -39,7 +40,7 @@ class ProductResource extends JsonResource
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
-                'store_name' => $this->user->vendor->store_name,
+                'store_name' => $this->user?->vendor?->store_name ?? '',
             ],
             'department' => [
                 'id' => $this->department->id,
@@ -68,11 +69,14 @@ class ProductResource extends JsonResource
                 ];
             }),
             'variations' => $this->variations->map(function ($variation) {
+                $calc = app(VatRateService::class)->calculate($variation->price, $this->vat_rate_type);
                 return [
                     'id' => $variation->id,
                     'variation_type_option_ids' => $variation->variation_type_option_ids,
                     'quantity' => $variation->quantity,
                     'price' => $variation->price,
+                    'gross_price' => $calc['gross'],
+                    'vat_amount' => $calc['vat'],
                 ];
             }),
 
@@ -81,7 +85,6 @@ class ProductResource extends JsonResource
             'net_price' => round((float) $this->price, 2),
             'vat_rate_type' => $this->vat_rate_type ?? 'standard_rate',
             'country_code' => session('country_code') ?? 'RO',
-            'price_with_vat' => round((float) $this->price_with_vat, 2),
             'vat_amount' => round((float) $this->vat_amount, 2),
             'gross_price' => round((float) $this->gross_price, 2),
         ];

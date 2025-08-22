@@ -20,13 +20,13 @@ class ListOSSReports extends Page
     {
         $user = Filament::auth()->user();
 
-        $directories = Storage::directories('exports/oss');
+        $directories = Storage::disk('public')->directories('exports/oss');
         $reports = [];
 
         foreach ($directories as $directory) {
             $period = basename($directory);
 
-            foreach (Storage::files($directory) as $file) {
+            foreach (Storage::disk('public')->files($directory) as $file) {
                 if (pathinfo($file, PATHINFO_EXTENSION) !== 'csv') {
                     continue;
                 }
@@ -40,7 +40,7 @@ class ListOSSReports extends Page
                 $reports[] = [
                     'period' => $period,
                     'vendor' => $vendorId,
-                    'url' => Storage::url($file),
+                    'url' => Storage::disk('public')->url($file),
                 ];
             }
         }
