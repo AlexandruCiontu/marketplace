@@ -17,6 +17,7 @@ class ProductController extends Controller
     {
         $keyword = $request->query('keyword');
         $products = Product::query()
+            ->with(['user.vendor', 'department', 'options.media', 'media'])
             ->forWebsite()
             ->when($keyword, function ($query, $keyword) {
                 $query->where(function ($query) use ($keyword) {
@@ -34,7 +35,15 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product->load(['reviews.user']);
+        $product->load([
+            'reviews.user',
+            'user.vendor',
+            'department',
+            'options.media',
+            'media',
+            'variationTypes.options.media',
+            'variations',
+        ]);
 
         $hasPurchased = false;
         if (auth()->check()) {
@@ -44,6 +53,7 @@ class ProductController extends Controller
         }
 
         $relatedProducts = Product::query()
+            ->with(['user.vendor', 'department', 'options.media', 'media'])
             ->forWebsite()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
@@ -64,6 +74,7 @@ class ProductController extends Controller
 
         $keyword = $request->query('keyword');
         $products = Product::query()
+            ->with(['user.vendor', 'department', 'options.media', 'media'])
             ->forWebsite()
             ->where('department_id', $department->id)
             ->when($keyword, function ($query, $keyword) {
