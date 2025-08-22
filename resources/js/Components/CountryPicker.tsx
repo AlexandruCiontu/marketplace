@@ -20,7 +20,7 @@ export default function CountryPicker({ value, className }: Props) {
       },
       body: JSON.stringify({ country_code: code }),
     });
-    router.reload({ only: ['countryCode', 'vatCountry'] });
+    router.reload({ only: ['countryCode', 'cart', 'miniCartItems'] });
   };
 
   return (

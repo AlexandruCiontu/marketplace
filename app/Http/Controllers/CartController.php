@@ -28,7 +28,7 @@ class CartController extends Controller
     {
         [$user, $defaultAddress] = $this->userShippingAddress();
         $vatCountry = $resolver->resolve($request);
-        session(['country_code' => $vatCountry, 'vat_country_code' => $vatCountry]);
+        session(['country_code' => $vatCountry]);
 
         $totals = $cartService->getTotals();
 
@@ -133,12 +133,12 @@ class CartController extends Controller
 
         [$authUser, $defaultAddress] = $this->userShippingAddress();
 
-        $selected = $request->input('vat_country_code')
-            ?? session('vat_country_code')
+        $selected = $request->input('country_code')
+            ?? session('country_code')
             ?? $defaultAddress->country_code
             ?? 'RO';
         $clientCountryCode = CountryCode::toIso2($selected);
-        session(['country_code' => $clientCountryCode, 'vat_country_code' => $clientCountryCode]);
+        session(['country_code' => $clientCountryCode]);
 
         DB::beginTransaction();
         try {

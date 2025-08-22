@@ -14,7 +14,7 @@ class VatCountryResolver
             ?? $request->user()?->defaultAddress()?->country_code;
 
         // 2) Session country (geoIP etc.)
-        $country ??= session('vat_country_code') ?? session('country_code', 'RO');
+        $country ??= session('country_code', config('vat.fallback_country', 'RO'));
 
         return CountryCode::toIso2($country);
     }

@@ -11,7 +11,7 @@ class CountryController extends Controller
     public function select(Request $request)
     {
         $code = CountryCode::toIso2($request->input('country_code'));
-        session(['country_code' => $code, 'vat_country_code' => $code]);
+        session(['country_code' => $code]);
 
         return [
             'country_code' => $code,
@@ -20,7 +20,7 @@ class CountryController extends Controller
 
     public function current(Request $request)
     {
-        $code = session('country_code', config('app.country_code', 'RO'));
+        $code = session('country_code', config('vat.fallback_country', 'RO'));
 
         return [
             'country_code' => $code,

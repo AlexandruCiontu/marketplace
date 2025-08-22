@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react';
 
-export function useVatCountry() {
-  const page = usePage<any>();
-  return page.props?.vatCountry ?? page.props?.countryCode;
+export function useVatCountry(): string {
+  const page = usePage<{ countryCode: string; vatCountry?: string }>();
+  return page.props.vatCountry ?? page.props.countryCode;
 }
