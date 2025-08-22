@@ -129,7 +129,7 @@ class Product extends Model implements HasMedia
             $options = VariationTypeOption::whereIn('id', $optionIds)->get();
             foreach ($options as $option) {
                 $images = $option->getMedia('images');
-                if ($images) {
+                if ($images->isNotEmpty()) {
                     return $images;
                 }
             }
@@ -164,7 +164,7 @@ class Product extends Model implements HasMedia
         if ($this->options->count() > 0) {
             foreach ($this->options as $option) {
                 $images = $option->getMedia('images');
-                if ($images) {
+                if ($images->isNotEmpty()) {
                     return $images;
                 }
             }
