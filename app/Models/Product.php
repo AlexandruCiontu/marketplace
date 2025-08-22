@@ -30,7 +30,13 @@ class Product extends Model implements HasMedia
 
     public function scopeForVendor(Builder $query): Builder
     {
-        return $query->where('created_by', auth()->user()->id);
+        $userId = auth()->id();
+
+        if ($userId === null) {
+            return $query;
+        }
+
+        return $query->where('created_by', $userId);
     }
 
     public function scopePublished(Builder $query): Builder
