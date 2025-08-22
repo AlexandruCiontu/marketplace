@@ -32,7 +32,6 @@ Route::get('/test-location', function () {
     ]);
 });
 
-Route::post('/api/country/select', [CountryController::class, 'select'])->name('api.country.select');
 Route::get('/api/country/current', [CountryController::class, 'current'])->name('api.country.current');
 Route::get('/api/products/{product}/price', ProductPriceController::class);
 Route::get('/api/vat/price-batch', [VatController::class, 'priceBatch']);

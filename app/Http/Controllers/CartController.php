@@ -11,9 +11,7 @@ use App\Models\Product;
 use App\Models\Vendor;
 use App\Services\CartService;
 use App\Services\TransactionClassifierService;
-use App\Services\VatCountryResolver;
 use App\Services\VatRateService;
-use App\Support\CountryCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,11 +22,10 @@ class CartController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, CartService $cartService, VatCountryResolver $resolver)
+    public function index(Request $request, CartService $cartService)
     {
         [$user, $defaultAddress] = $this->userShippingAddress();
-        $vatCountry = $resolver->resolve($request);
-        session(['country_code' => $vatCountry]);
+        $country = session('country_code', config('vat.fallback_country', 'RO'));
 
         $totals = $cartService->getTotals();
 
@@ -38,6 +35,7 @@ class CartController extends Controller
             'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null,
             'totals' => $totals,
             'totalQuantity' => $cartService->getTotalQuantity(),
+            'countryCode' => $country,
         ]);
     }
 
@@ -131,12 +129,7 @@ class CartController extends Controller
 
         [$authUser, $defaultAddress] = $this->userShippingAddress();
 
-        $selected = $request->input('country_code')
-            ?? session('country_code')
-            ?? $defaultAddress->country_code
-            ?? 'RO';
-        $clientCountryCode = CountryCode::toIso2($selected);
-        session(['country_code' => $clientCountryCode]);
+        $clientCountryCode = session('country_code', config('vat.fallback_country', 'RO'));
 
         DB::beginTransaction();
         try {

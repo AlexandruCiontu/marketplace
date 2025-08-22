@@ -77,6 +77,13 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             ->where('default', true);
     }
 
+    public function defaultShippingAddress(): MorphOne
+    {
+        return $this->morphOne(Address::class, 'addressable')
+            ->where('type', AddressTypeEnum::Shipping)
+            ->where('default', true);
+    }
+
     /**
      * All addresses for the user.
      */

@@ -7,7 +7,7 @@ import {CreditCardIcon} from "@heroicons/react/24/outline";
 import CartItem from "@/Components/App/CartItem";
 import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
-import CountryPicker from '@/Components/CountryPicker';
+import CountryBadge from '@/Components/CountryBadge';
 
 function Index(
     {
@@ -89,13 +89,10 @@ function Index(
                              onChange={onAddressChange}
                              buttonLabel="Change Address"/>
 
-              {/* 🌍 Selector țară pentru TVA */}
-              <div className="mt-6">
-                <label htmlFor="vat_country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  VAT Country
-                </label>
-                <CountryPicker className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
-              </div>
+                <div className="mt-6 space-y-2">
+                  <CountryBadge />
+                  <Link href={route('shippingAddress.index')} className="underline text-sm">Change Address</Link>
+                </div>
             </div>
           </div>
 
