@@ -185,7 +185,11 @@ class Product extends Model implements HasMedia
     {
         $optionIds = $optionIds ? array_values($optionIds) : [];
         sort($optionIds);
-        $variation = $this->variations->first(fn($variation) => $variation->variation_type_option_ids == $optionIds);
+        $variation = $this->variations->first(function ($variation) use ($optionIds) {
+            $ids = $variation->variation_type_option_ids;
+            sort($ids);
+            return $ids == $optionIds;
+        });
 
         $quantity = $this->quantity;
         if ($variation) {
