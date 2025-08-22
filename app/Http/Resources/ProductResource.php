@@ -22,7 +22,7 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
-            'price' => $this->price,
+            'price' => (float) ($this->price ?? 0),
             'weight' => $this->weight,
             'length' => $this->length,
             'width' => $this->width,
@@ -40,7 +40,7 @@ class ProductResource extends JsonResource
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
-                'store_name' => optional($this->user->vendor)->store_name ?? '',
+                'store_name' => $this->user?->vendor?->store_name ?? '',
             ],
             'department' => [
                 'id' => $this->department->id,

@@ -34,6 +34,7 @@ class ProductListResource extends JsonResource
             'slug'               => $this->slug,
 
             // Prețuri (brut + net + TVA)
+            'price'              => (float) ($this->price ?? 0),
             'net_raw'            => $net,
             'vat_raw'            => $vatResult['vat'],
             'gross_raw'          => $vatResult['gross'],
@@ -53,7 +54,7 @@ class ProductListResource extends JsonResource
             // Informații despre vânzător
             'user_id'            => $this->user->id,
             'user_name'          => $this->user->name,
-            'user_store_name'    => optional($this->user->vendor)->store_name,
+            'user_store_name'    => $this->user?->vendor?->store_name ?? '',
 
             // Informații despre departament
             'department_id'      => optional($this->department)->id,

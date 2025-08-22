@@ -41,7 +41,7 @@ class Product extends Model implements HasMedia
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('products.status', ProductStatusEnum::Published);
+        return $query->where('products.status', ProductStatusEnum::Published->value);
     }
 
     public function scopeSearchable(Builder $query): Builder
@@ -54,7 +54,7 @@ class Product extends Model implements HasMedia
         return $query->published()->vendorApproved();
     }
 
-    public function scopeVendorApproved(Builder $query)
+    public function scopeVendorApproved(Builder $query): Builder
     {
         return $query->join('vendors', 'vendors.user_id', '=', 'products.created_by')
             ->where('vendors.status', VendorStatusEnum::Approved->value)
@@ -112,7 +112,7 @@ class Product extends Model implements HasMedia
         return $this->price;
     }
 
-    public function getImageForOptions(array $optionIds = null)
+    public function getImageForOptions(?array $optionIds = null): ?string
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -125,10 +125,10 @@ class Product extends Model implements HasMedia
                 }
             }
         }
-        return $this->getFirstMediaUrl('images', 'small');
+        return $this->getFirstMediaUrl('images', 'small') ?: null;
     }
 
-    public function getImagesForOptions(array $optionIds = null)
+    public function getImagesForOptions(?array $optionIds = null): MediaCollection
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -215,36 +215,49 @@ class Product extends Model implements HasMedia
         return 'products_index';
     }
 
-    public function toSearchableArray()
-    {
-        $this->load(['category', 'department', 'user.vendor']);
-
-        return [
-            'id' => (string)$this->id,
-            'title' => $this->title,
-            'description' => strip_tags($this->description),
-            'slug' => $this->slug,
-            'price' => (float)$this->getPriceForFirstOptions(),
-            'vat_rate_type' => $this->vat_rate_type,
-            'quantity' => $this->quantity,
-            'image' => $this->getFirstImageUrl(),
-            'user_id' => (string)$this->user->id,
-            'user_name' => $this->user->name,
-            'user_store_name' => optional($this->user->vendor)->store_name ?? '',
-            'department_id' => (string)($this->department->id ?? ''),
-            'department_name' => $this->department->name ?? '',
-            'department_slug' => $this->department->slug ?? '',
-            'category_id' => (string)($this->category?->id ?? ''),
-            'category_name' => $this->category?->name ?? '',
-            'category_slug' => $this->category?->slug ?? '',
-            'created_at' => $this->created_at->timestamp,
-        ];
-    }
-
     public function shouldBeSearchable(): bool
     {
-        return $this->status === ProductStatusEnum::Published
-            && $this->user?->vendor?->status === VendorStatusEnum::Approved->value;
+        $vendorStatus = $this->user?->vendor?->status;
+
+        return $this->status === ProductStatusEnum::Published->value
+            && $vendorStatus === VendorStatusEnum::Approved->value;
+    }
+
+    protected function makeAllSearchableUsing($query)
+    {
+        return $query
+            ->where('status', ProductStatusEnum::Published->value)
+            ->whereHas('user.vendor', fn ($q) => $q->where('status', VendorStatusEnum::Approved->value))
+            ->with(['user.vendor', 'department', 'category']);
+    }
+
+    public function toSearchableArray(): array
+    {
+        $this->loadMissing(['user.vendor', 'department', 'category']);
+
+        $user = $this->user;
+        $vendor = $user?->vendor;
+
+        return [
+            'id'               => (string) $this->id,
+            'title'            => $this->title,
+            'slug'             => $this->slug,
+            'price'            => (float) ($this->price ?? 0),
+            'quantity'         => (int) ($this->quantity ?? 0),
+            'image'            => $this->getFirstImageUrl(),
+
+            'user_id'          => (string) ($user?->id ?? ''),
+            'user_name'        => $user?->name ?? '',
+            'user_store_name'  => $vendor?->store_name ?? '',
+
+            'department_id'    => (string) ($this->department?->id ?? ''),
+            'department_name'  => $this->department?->name ?? '',
+            'department_slug'  => $this->department?->slug ?? '',
+
+            'category_id'      => (string) ($this->category?->id ?? ''),
+            'category_name'    => $this->category?->name ?? '',
+            'category_slug'    => $this->category?->slug ?? '',
+        ];
     }
 
 
