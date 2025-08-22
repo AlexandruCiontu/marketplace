@@ -58,7 +58,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/shipping-address/{address}', [ShippingAddressController::class, 'destroy'])->name('shippingAddress.destroy');
 
     // ✅ VAT Country selector (manual override)
-    Route::post('/set-vat-country', [CartController::class, 'setVatCountry'])->name('set.vat.country');
 
     // Orders routes for buyers
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');

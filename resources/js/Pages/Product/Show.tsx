@@ -5,7 +5,6 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
-import { getVatRate, calculateVatIncludedPrice, calculateVatAmount } from '@/utils/vat';
 
 function Show({
                 appName, product, variationOptions
@@ -35,9 +34,17 @@ function Show({
     return [...product.images];
   }, [product, selectedOptions]);
 
-  const { countryCode } = usePage<PageProps>().props as PageProps;
 
-  const computedProduct = useMemo(() => {
+  const [computedProduct, setComputedProduct] = useState<{ price: number; price_gross: number; vat_amount: number; vat_rate: number; vat_rate_type: string; quantity: number }>({
+    price: product.price,
+    price_gross: product.gross_price,
+    vat_amount: product.vat_amount,
+    vat_rate: product.vat_rate,
+    vat_rate_type: product.vat_rate_type,
+    quantity: product.quantity ?? Number.MAX_VALUE,
+  });
+
+  useEffect(() => {
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
       .sort();
@@ -54,15 +61,17 @@ function Show({
       }
     }
 
-    const rate = getVatRate(countryCode, (product.vat_rate_type as any) ?? 'standard_rate');
-    return {
-      price,
-      gross_price: calculateVatIncludedPrice(price, rate),
-      vat_amount: calculateVatAmount(price, rate),
-      vat_rate_type: product.vat_rate_type,
-      quantity,
-    };
-  }, [product, selectedOptions, countryCode]);
+    fetch(`/api/products/${product.id}/price?price=${price}`)
+      .then(res => res.json())
+      .then(data => setComputedProduct({
+        price,
+        price_gross: data.price_gross,
+        vat_amount: data.vat_amount,
+        vat_rate: data.vat_rate,
+        vat_rate_type: product.vat_rate_type,
+        quantity,
+      }));
+  }, [selectedOptions]);
 
   useEffect(() => {
     for (let type of product.variationTypes) {
@@ -225,11 +234,11 @@ function Show({
                 {product.user.name} in {product.department.name}
               </p>
               <p className="text-3xl font-semibold mt-4">
-                <CurrencyFormatter amount={computedProduct.gross_price ?? 0} />
+                <CurrencyFormatter amount={computedProduct.price_gross ?? 0} />
               </p>
               {computedProduct.vat_amount && computedProduct.vat_amount > 0 && (
                 <p className="text-sm text-gray-500">
-                  Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount ?? 0} />
+                Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount ?? 0} />
                 </p>
               )}
               <ProductDetails />

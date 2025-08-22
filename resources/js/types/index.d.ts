@@ -111,6 +111,9 @@ export type CartItem = {
   slug: string;
   price: number;
   vat_rate_type: string;
+  vat_rate: number;
+  vat_amount: number;
+  price_gross: number;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;

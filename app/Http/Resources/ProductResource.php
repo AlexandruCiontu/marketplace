@@ -14,6 +14,8 @@ class ProductResource extends JsonResource
         $options = $request->input('options') ?: [];
         $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
 
+        $calc = app(\App\Services\VatRateService::class)->calculate($this->price, $this->vat_rate_type);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -80,10 +82,10 @@ class ProductResource extends JsonResource
             // ✅ TVA fields
             'net_price' => round((float) $this->price, 2),
             'vat_rate_type' => $this->vat_rate_type ?? 'standard_rate',
-            'country_code' => session('country_code') ?? 'RO',
-            'price_with_vat' => round((float) $this->price_with_vat, 2),
-            'vat_amount' => round((float) $this->vat_amount, 2),
-            'gross_price' => round((float) $this->gross_price, 2),
+            'vat_rate' => $calc['rate'],
+            'country_code' => $calc['country'],
+            'vat_amount' => $calc['vat'],
+            'gross_price' => $calc['gross'],
         ];
     }
 }

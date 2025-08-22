@@ -38,29 +38,9 @@ class CartController extends Controller
             'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null,
             'vatCountry' => $vatCountry,
             'countryCode' => $vatCountry,
-            'gross_total' => $totals['gross_total'],
-            'vat_total' => $totals['vat_total'],
-            'net_total' => $totals['net_total'],
+            'totals' => $totals,
+            'totalQuantity' => $cartService->getTotalQuantity(),
         ]);
-    }
-
-    public function setVatCountry(Request $request)
-    {
-        $code = $request->input('vat_country');
-
-        $euCountries = [
-            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
-            'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT',
-            'RO', 'SK', 'SI', 'ES', 'SE',
-        ];
-
-        if (! in_array($code, $euCountries)) {
-            $code = 'RO';
-        }
-
-        session(['country_code' => $code]);
-
-        return back();
     }
 
     /**

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { PageProps, GroupedCartItems, Address } from '@/types';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
@@ -8,28 +7,20 @@ import {CreditCardIcon} from "@heroicons/react/24/outline";
 import CartItem from "@/Components/App/CartItem";
 import AddressItem from "@/Pages/ShippingAddress/Partials/AddressItem";
 import SelectAddress from "@/Components/App/SelectAddress";
+import CountryPicker from '@/Components/CountryPicker';
 
 function Index(
     {
       csrf_token,
       cartItems,
       totalQuantity,
-      totalPrice,
-      totalGross,
-      totalVat,
+      totals,
       shippingAddress,
       addresses,
       vatCountry: initialVatCountry,
-    }: PageProps<{
-      cartItems: Record<number, GroupedCartItems>,
-      shippingAddress: Address,
-      addresses: Address[],
-      vatCountry: string,
-      totalGross: number
-      totalVat: number
-    }>) {
+    }: PageProps<{ cartItems: Record<number, GroupedCartItems>; shippingAddress: Address; addresses: Address[]; vatCountry: string; totals: { net_total: number; gross_total: number; vat_total: number }; }>) {
 
-  const [countryCode, setCountryCode] = useState(initialVatCountry);
+  const countryCode = initialVatCountry;
 
   const onAddressChange = (address: Address) => {
     router.put(route('cart.shippingAddress', address.id), {}, {
@@ -102,30 +93,12 @@ function Index(
                              buttonLabel="Change Address"/>
 
               {/* 🌍 Selector țară pentru TVA */}
-              <form method="POST" action={route('set.vat.country')} className="mt-6">
-                <input type="hidden" name="_token" value={csrf_token}/>
+              <div className="mt-6">
                 <label htmlFor="vat_country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   VAT Country
                 </label>
-                <select
-                  name="vat_country"
-                  id="vat_country"
-                  value={countryCode ?? 'RO'}
-                  onChange={(e) => {
-                    setCountryCode(e.target.value);
-                    e.currentTarget.form?.submit();
-                  }}
-                  className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                >
-                  {[
-                    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
-                    'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT',
-                    'RO', 'SK', 'SI', 'ES', 'SE'
-                  ].map(code => (
-                    <option key={code} value={code}>{code}</option>
-                  ))}
-                </select>
-              </form>
+                <CountryPicker value={countryCode} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
+              </div>
             </div>
           </div>
 
@@ -133,7 +106,7 @@ function Index(
             <div className="card-body gap-1">
               <div className="flex justify-between">
                 <span>Items ({totalQuantity})</span>
-                <CurrencyFormatter amount={totalPrice}/>
+                <CurrencyFormatter amount={totals.net_total}/>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -141,11 +114,11 @@ function Index(
               </div>
               <div className="flex justify-between">
                 <span>Tax</span>
-                <CurrencyFormatter amount={totalVat}/>
+                <CurrencyFormatter amount={totals.vat_total}/>
               </div>
               <div className="flex justify-between font-bold text-xl">
                 <span>Order Total</span>
-                <CurrencyFormatter amount={totalGross}/>
+                <CurrencyFormatter amount={totals.gross_total}/>
               </div>
               <form action={route('cart.checkout')} method="post">
                 <input type="hidden" name="_token" value={csrf_token}/>

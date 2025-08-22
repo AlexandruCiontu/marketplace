@@ -6,7 +6,7 @@ export function getVatRate(
   countryCode: string,
   type: 'standard_rate' | 'reduced_rate' | 'reduced_rate_alt' | 'super_reduced_rate' = 'standard_rate'
 ): number {
-  const country = rates[countryCode] ?? rates['RO'];
+  const country = rates[countryCode] || {};
   const rate = country?.[type];
   if (typeof rate === 'number') {
     return rate;
