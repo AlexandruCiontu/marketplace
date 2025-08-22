@@ -1,31 +1,30 @@
 <?php
 
-namespace App\Services\VendorCountry\RO;
+namespace App\Services\VendorCountry\BG;
 
 use Illuminate\Support\Facades\Http;
 
-class AnafClient
+class NraClient
 {
     /**
-     * Sends the signed XML to the ANAF e-Factura API.
+     * Sends the PDF invoice to the Bulgarian NRA API.
      *
-     * @param string $signedXml
+     * @param string $pdfContent
      * @return array
      */
-    public function send(string $signedXml): array
+    public function send(string $pdfContent): array
     {
-        $endpoint = 'https://api.anaf.ro/prod/FCTEL/rest/upload';
+        $endpoint = 'https://api.nra.bg/v1/invoices';
 
         try {
             $response = Http::retry(3, 1000)->post($endpoint, [
-                'file' => base64_encode($signedXml),
+                'file' => base64_encode($pdfContent),
             ]);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'upload_id' => $response->json('upload_id'),
-                    'message' => 'Factura a fost trimisă cu succes.',
+                    'message' => 'Invoice sent to NRA successfully.',
                 ];
             }
 

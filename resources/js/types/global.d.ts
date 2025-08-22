@@ -6,16 +6,6 @@ import { PageProps as AppPageProps } from './';
 declare global {
     interface Window {
         axios: AxiosInstance;
-        vatService?: {
-            calculate: (
-                price: number,
-                rateType: string,
-                countryCode?: string
-            ) => {
-                gross: number;
-                vat: number;
-            };
-        };
     }
 
     /* eslint-disable no-var */

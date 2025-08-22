@@ -34,12 +34,52 @@ class InvoiceService implements InvoiceServiceInterface
 
     public function generateStorno(Order $order, Order $refundOrder)
     {
-        Log::info("Generated HU Storno for order {$order->id}");
+        // 1. Vendor keys remain the same as the original order
+        $vendorKeys = [
+            'user_id' => $order->vendor->nav_user_id,
+            'exchange_key' => $order->vendor->nav_exchange_key,
+        ];
+
+        // 2. Generate a NAV storno XML referencing the original invoice
+        $navXml = $this->generateNavXml($refundOrder, $order);
+
+        // 3. Send to NAV Online
+        $response = $this->navClient->send($navXml, $vendorKeys);
+
+        Log::info("Generated HU Storno for order {$order->id}", ['response' => $response]);
+
+        return $response;
     }
 
-    private function generateNavXml(Order $order): string
+    private function generateNavXml(Order $order, ?Order $originalOrder = null): string
     {
-        // Placeholder for NAV XML generation logic
-        return '<NAV-Invoice>...</NAV-Invoice>';
+        $xml = new \SimpleXMLElement('<Invoice/>' );
+        $xml->addChild('invoiceNumber', $order->id);
+        if ($originalOrder) {
+            $xml->addChild('originalInvoiceNumber', $originalOrder->id);
+            $xml->addChild('invoiceType', 'STORNO');
+        } else {
+            $xml->addChild('invoiceType', 'ORIGINAL');
+        }
+
+        // Supplier
+        $supplier = $xml->addChild('Supplier');
+        $supplier->addChild('Name', $order->vendor->store_name);
+
+        // Customer
+        $customer = $xml->addChild('Customer');
+        $customer->addChild('Name', $order->user->name);
+
+        // Items
+        $items = $xml->addChild('Items');
+        foreach ($order->orderItems as $item) {
+            $line = $items->addChild('Item');
+            $line->addChild('Description', $item->product->name ?? 'Item');
+            $line->addChild('Quantity', $item->quantity);
+            $line->addChild('UnitPrice', $item->gross_price);
+        }
+        $xml->addChild('Total', $order->total_price);
+
+        return $xml->asXML();
     }
 }

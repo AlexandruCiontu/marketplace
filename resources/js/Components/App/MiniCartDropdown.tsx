@@ -2,13 +2,10 @@ import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
 import { productRoute } from '@/helpers';
-import { getVatRate, calculateVatIncludedPrice } from '@/utils/vat';
-import { useVatCountry } from '@/hooks/useVatCountry';
-import type { VatRateType } from '@/types';
 
 function MiniCartDropdown() {
-  const { totalQuantity, totalPrice, miniCartItems } = usePage().props;
-  const { countryCode } = useVatCountry();
+  
+  const { totalQuantity, totalGross, totalVat, miniCartItems } = usePage().props;
 
   return (
     <details className="dropdown dropdown-end static sm:relative ">
@@ -43,36 +40,36 @@ function MiniCartDropdown() {
                 You don't have any items yet.
               </div>
             )}
-            {miniCartItems.map((item) => {
-              const rate = getVatRate(countryCode, (item.vat_rate_type as VatRateType) ?? 'standard_rate');
-              const gross = calculateVatIncludedPrice(item.price, rate);
-              return (
-                <div key={item.id} className={'flex gap-4 p-3'}>
-                  <Link href={productRoute(item)} className={'w-16 h-16 flex justify-center items-center'}>
-                    <img src={item.image} alt={item.title} className={'max-w-full max-h-full'} />
-                  </Link>
-                  <div className={'flex-1'}>
-                    <h3 className={'mb-3 font-semibold'}>
-                      <Link href={productRoute(item)}>{item.title}</Link>
-                    </h3>
-                    <div className={'flex justify-between text-sm'}>
-                      <div>Quantity: {item.quantity}</div>
-                      <div>
-                        <CurrencyFormatter amount={gross * item.quantity} />
-                      </div>
+            {miniCartItems.map((item) => (
+              <div key={item.id} className={'flex gap-4 p-3'}>
+                <Link href={productRoute(item)} className={'w-16 h-16 flex justify-center items-center'}>
+                  <img src={item.image} alt={item.title} className={'max-w-full max-h-full'} />
+                </Link>
+                <div className={'flex-1'}>
+                  <h3 className={'mb-3 font-semibold'}>
+                    <Link href={productRoute(item)}>{item.title}</Link>
+                  </h3>
+                  <div className={'flex justify-between text-sm'}>
+                    <div>Quantity: {item.quantity}</div>
+                    <div>
+                      <CurrencyFormatter amount={item.gross_price * item.quantity} />
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
-          <span className="text-lg">
-            Subtotal:{' '}
-            <CurrencyFormatter
-              amount={calculateVatIncludedPrice(totalPrice, getVatRate(countryCode))}
-            />
-          </span>
+
+          <div>
+            <div className="text-lg">
+              Subtotal: <CurrencyFormatter amount={totalGross} />
+            </div>
+            <div className="text-xs text-gray-500">
+              Includes VAT: <CurrencyFormatter amount={totalVat} />
+            </div>
+          </div>
+
           <div className="card-actions">
             <Link href={route('cart.index')}
                   className="btn btn-primary btn-block">

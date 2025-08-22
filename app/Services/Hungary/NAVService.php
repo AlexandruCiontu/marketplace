@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Vendor;
 use App\Services\VendorCountry\InvoiceServiceInterface;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class NAVService implements InvoiceServiceInterface
 {
@@ -28,7 +29,21 @@ class NAVService implements InvoiceServiceInterface
 
     public function generateStorno(Order $order, Order $refundOrder)
     {
-        // TODO: Implement this method
+        $vendor = $order->vendor;
+        $token = $this->generateRequestToken($vendor);
+
+        $xml = $this->generateXML($refundOrder, $order);
+        $response = $this->uploadInvoiceXML($xml, $vendor, $token);
+
+        $storageDir = "invoices/hu/{$refundOrder->id}";
+        Storage::disk('private')->put("{$storageDir}/invoice.xml", $xml);
+        Storage::disk('private')->put("{$storageDir}/response.json", json_encode($response));
+        $refundOrder->invoice_type = 'nav';
+        $refundOrder->invoice_storage_path = "{$storageDir}/invoice.xml";
+
+        $refundOrder->save();
+
+        $this->handleNAVResponse($response, $refundOrder);
     }
 
     private function handleNAVResponse($response, Order $order)
@@ -44,11 +59,33 @@ class NAVService implements InvoiceServiceInterface
         $order->save();
     }
 
-    public function generateXML(Order $order)
+    public function generateXML(Order $order, ?Order $originalOrder = null)
     {
-        // This is a placeholder. A real implementation would use a library to generate the NAV-specific XML.
-        $xml = new \SimpleXMLElement('<Invoice/>');
+        $xml = new \SimpleXMLElement('<Invoice/>' );
         $xml->addChild('order_id', $order->id);
+        if ($originalOrder) {
+            $xml->addChild('original_order_id', $originalOrder->id);
+            $xml->addChild('invoice_type', 'STORNO');
+        } else {
+            $xml->addChild('invoice_type', 'ORIGINAL');
+        }
+
+        $supplier = $xml->addChild('supplier');
+        $supplier->addChild('name', $order->vendor->store_name);
+
+        $customer = $xml->addChild('customer');
+        $customer->addChild('name', $order->user->name);
+
+        $items = $xml->addChild('items');
+        foreach ($order->orderItems as $item) {
+            $line = $items->addChild('item');
+            $line->addChild('description', $item->product->name ?? 'Item');
+            $line->addChild('quantity', $item->quantity);
+            $line->addChild('unit_price', $item->gross_price);
+        }
+
+        $xml->addChild('total', $order->total_price);
+
         return $xml->asXML();
     }
 
@@ -62,21 +99,21 @@ class NAVService implements InvoiceServiceInterface
         $body = json_encode($payload);
         $signature = $this->requestSignature($body);
 
-        $ch = curl_init('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/tokenExchange');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Request-Signature: ' . $signature,
-        ]);
+        try {
+            $response = Http::retry(3, 1000)->withHeaders([
+                'Content-Type' => 'application/json',
+                'Request-Signature' => $signature,
+            ])->post('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/tokenExchange', $payload);
 
-        $response = curl_exec($ch);
-        curl_close($ch);
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['encodedExchangeToken'] ?? '';
+            }
+        } catch (\Throwable $e) {
+            // Ignore and return empty string
+        }
 
-        $data = json_decode($response, true);
-
-        return $data['encodedExchangeToken'] ?? '';
+        return '';
     }
 
     private function requestSignature(string $payload): string
@@ -95,19 +132,20 @@ class NAVService implements InvoiceServiceInterface
         $body = json_encode($payload);
         $signature = $this->requestSignature($body);
 
-        $ch = curl_init('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/manageInvoice');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $token,
-            'Request-Signature: ' . $signature,
-        ]);
+        try {
+            $response = Http::retry(3, 1000)->withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $token,
+                'Request-Signature' => $signature,
+            ])->post('https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/manageInvoice', $payload);
 
-        $response = curl_exec($ch);
-        curl_close($ch);
+            if ($response->successful()) {
+                return $response->json();
+            }
 
-        return json_decode($response, true);
+            return ['success' => false, 'message' => $response->body()];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
     }
 }

@@ -128,6 +128,12 @@ return [
     'stripe_secret_key' => env('STRIPE_SECRET'),
     'stripe_webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
 
+    'stripe_tax_rates' => [
+        'RO' => env('STRIPE_TAX_RATE_RO'),
+        'BG' => env('STRIPE_TAX_RATE_BG'),
+        'HU' => env('STRIPE_TAX_RATE_HU'),
+    ],
+
     'platform_fee_pct' => 10
 ];
 

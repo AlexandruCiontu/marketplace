@@ -15,8 +15,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Ibericode\Vat\Facades\Vat;
-use App\Helpers\VatHelper;
+use App\Services\VatRateService;
 
 class Product extends Model implements HasMedia
 {
@@ -241,17 +240,17 @@ class Product extends Model implements HasMedia
     public function getVatAmountAttribute(): float
     {
         $country = session('country_code', 'RO'); // fallback dacă nu e setată
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
+        $calc = app(VatRateService::class)->calculate($this->price, $this->vat_rate_type, $country);
 
-        return round($this->price * ($rate / 100), 2);
+        return $calc['vat'];
     }
 
     public function getGrossPriceAttribute(): float
     {
         $country = session('country_code', 'RO'); // fallback
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
+        $calc = app(VatRateService::class)->calculate($this->price, $this->vat_rate_type, $country);
 
-        return round($this->price * (1 + $rate / 100), 2);
+        return $calc['gross'];
     }
 
 }
