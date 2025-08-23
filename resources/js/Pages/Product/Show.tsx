@@ -8,15 +8,22 @@ import {arraysAreEqual} from "@/helpers";
 import RatingSummary from "@/Components/RatingSummary";
 import ReviewList from "@/Components/ReviewList";
 import ReviewForm from "@/Components/ReviewForm";
+import Carousel from "@/Components/ui/Carousel";
+import ProductCardMini from "@/Components/Product/ProductCardMini";
 
 function Show({
-                appName, product, variationOptions, can_review, already_reviewed, all_reviews
+                appName, product, variationOptions, can_review, already_reviewed, all_reviews,
+                bought_together, similar_products, compare_products, also_viewed
               }: PageProps<{
   product: Product,
   variationOptions: number[],
   can_review: boolean,
   already_reviewed: boolean,
   all_reviews: Review[],
+  bought_together: any[],
+  similar_products: any[],
+  compare_products: any[],
+  also_viewed: any[],
 }>) {
   const form = useForm<{
     option_ids: Record<string, number>;
@@ -52,6 +59,21 @@ function Show({
 
   const [showAllReviews, setShowAllReviews] = useState(false);
   const reviewsRef = useRef<HTMLDivElement | null>(null);
+
+  const toCards = (list: any[] = []) =>
+    list.map((p) => (
+      <ProductCardMini
+        key={p.id}
+        id={p.id}
+        name={p.name}
+        slug={p.slug}
+        image_url={p.image_url}
+        price_gross={p.price_gross}
+        currency={p.currency}
+        rating_average={p.rating_average}
+        reviews_count={p.reviews_count}
+      />
+    ));
 
   const openAllReviews = () => {
     setShowAllReviews(true);
@@ -273,6 +295,11 @@ function Show({
               onClick={openAllReviews}
             />
           </section>
+
+          <Carousel title="Frequently bought together" items={toCards(bought_together)} />
+          <Carousel title="You may also like" items={toCards(similar_products)} />
+          <Carousel title="Compare with similar products" items={toCards(compare_products)} />
+          <Carousel title="Customers also viewed" items={toCards(also_viewed)} />
 
           <div className="prose max-w-none">
             <h2>About the Item</h2>
