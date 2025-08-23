@@ -46,15 +46,11 @@ class ProductController extends Controller
             'reviews.user',
         ]);
 
-        $hasPurchased = $user ? OrderItem::query()
-            ->where('product_id', $product->id)
-            ->whereIn('order_id', function ($q) use ($user) {
-                $q->select('id')
-                    ->from('orders')
-                    ->where('user_id', $user->id)
-                    ->whereIn('status', ['paid', 'completed']);
-            })
-            ->exists()
+        $hasPurchased = $user
+            ? $user->orders()
+                ->whereIn('status', ['paid','completed'])
+                ->whereHas('items', fn($q) => $q->where('product_id', $product->id))
+                ->exists()
             : false;
 
         $already = $user
