@@ -72,6 +72,11 @@ export default function ProductItem({ product }: { product: ProductListItem }) {
                 ) : (
                   "—"
                 )}
+                {typeof product.vat_rate === "number" && (
+                  <span className="block text-xs text-muted-foreground">
+                    VAT {product.vat_rate}%
+                  </span>
+                )}
               </span>
             );
           })()}

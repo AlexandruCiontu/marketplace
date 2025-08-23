@@ -4,18 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\VatCountryResolver;
 use App\Services\VatRateService;
-use App\Support\CountryCode;
 use Illuminate\Http\Request;
 
 class ProductPriceController extends Controller
 {
-    public function __invoke(Request $request, Product $product, VatRateService $service)
+    public function __invoke(Request $request, Product $product, VatRateService $service, VatCountryResolver $resolver)
     {
         $price = (float) $request->query('price', $product->price);
 
-        $country = session('country_code', config('vat.fallback_country', 'RO'));
-        $country = strtoupper(CountryCode::toIso2($country) ?? 'RO');
+        $country = $resolver->resolve($request);
 
         $rate = $service->rateForProduct($product, $country);
         $vat = round($price * $rate / 100, 2);

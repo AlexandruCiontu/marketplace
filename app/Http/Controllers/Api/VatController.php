@@ -4,35 +4,35 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\VatCountryResolver;
 use App\Services\VatRateService;
-use App\Support\CountryCode;
 use Illuminate\Http\Request;
 
 class VatController extends Controller
 {
-    public function priceBatch(Request $request, VatRateService $vat)
+    /**
+     * Return breakdown for a batch of products keyed by product id.
+     * Result: [id => {price_net, vat_rate, vat_amount, price_gross}]
+     */
+    public function priceBatch(Request $request, VatRateService $service, VatCountryResolver $resolver)
     {
-        $ids = array_map('intval', (array) $request->query('ids', []));
-        $country = session('country_code', config('vat.fallback_country', 'RO'));
-        $country = strtoupper(CountryCode::toIso2($country) ?? 'RO');
+        $ids = array_values(array_filter((array) $request->query('ids', []), fn ($v) => is_numeric($v)));
+        if (empty($ids)) {
+            return [];
+        }
 
-        $products = Product::whereIn('id', $ids)->get(['id', 'price', 'vat_type']);
+        $country = $resolver->resolve($request);
 
-        $items = $products->map(function ($p) use ($vat, $country) {
-            $percent = $vat->rateForProduct($p, $country);
-            $unitVat = round($p->price * $percent / 100, 2);
-            $unitGross = round($p->price + $unitVat, 2);
-            return [
-                'id' => (int) $p->id,
-                'unit_gross' => (float) $unitGross,
-                'vat_rate' => (float) $percent,
-            ];
-        })->values();
+        $products = Product::query()
+            ->whereIn('id', $ids)
+            ->get(['id', 'price', 'vat_type']);
 
-        return response()->json([
-            'country_code' => $country,
-            'items' => $items,
-        ]);
+        $out = [];
+        foreach ($products as $p) {
+            $out[$p->id] = $service->calculate((float) $p->price, $p, $country);
+        }
+
+        return $out;
     }
 }
 

@@ -15,7 +15,8 @@ import BannerSlider from "@/Components/App/BannerSlider";
 
 function CustomHits() {
   const { hits, results } = useHits();
-  const [priceMap, setPriceMap] = React.useState<Record<string, number>>({});
+  type VatCalc = { price_net: number; vat_rate: number; vat_amount: number; price_gross: number };
+  const [priceMap, setPriceMap] = React.useState<Record<string, VatCalc>>({});
 
   React.useEffect(() => {
     const ids = hits.map((h: any) => h.id);
@@ -24,10 +25,8 @@ function CustomHits() {
     ids.forEach((id: any) => params.append('ids[]', String(id)));
     fetch(`/api/vat/price-batch?${params.toString()}`, { credentials: 'same-origin' })
       .then(res => res.json())
-      .then(data => {
-        const map: Record<string, number> = {};
-        data.items.forEach((i: any) => { map[String(i.id)] = i.unit_gross; });
-        setPriceMap(map);
+      .then((data: Record<string, VatCalc>) => {
+        setPriceMap(data);
       });
   }, [hits]);
 
@@ -71,12 +70,15 @@ function CustomHits() {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-        {hits.map((hit: any) => (
-          <ProductItem
-            product={{ ...hit, price_gross: priceMap[String(hit.id)] }}
-            key={hit.id}
-          />
-        ))}
+        {hits.map((hit: any) => {
+          const calc = priceMap[String(hit.id)];
+          return (
+            <ProductItem
+              product={calc ? { ...hit, ...calc } : hit}
+              key={hit.id}
+            />
+          );
+        })}
       </div>
     </>
   );
