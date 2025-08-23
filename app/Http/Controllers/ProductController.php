@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Support\CountryCode;
 use App\Services\VatCountryResolver;
 use App\Services\VatRateService;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -89,12 +90,14 @@ class ProductController extends Controller
                 ];
             });
 
-        $similarProducts = Product::query()
+        $baseQuery = Product::query()
             ->where('category_id', $product->category_id)
-            ->when($product->brand_id ?? null, fn ($q) => $q->orWhere('brand_id', $product->brand_id))
             ->where('id', '!=', $product->id)
             ->withCount('reviews')
-            ->withAvg('reviews', 'rating')
+            ->withAvg('reviews', 'rating');
+
+        $similarProducts = (clone $baseQuery)
+            ->when($product->brand_id ?? null, fn ($q) => $q->orWhere('brand_id', $product->brand_id))
             ->orderByDesc('reviews_avg_rating')
             ->limit(20)
             ->get()
@@ -112,11 +115,7 @@ class ProductController extends Controller
                 ];
             });
 
-        $compareProducts = Product::query()
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating')
+        $compareProducts = (clone $baseQuery)
             ->orderBy('price')
             ->limit(20)
             ->get()
@@ -134,12 +133,15 @@ class ProductController extends Controller
                 ];
             });
 
-        $alsoViewed = Product::query()
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating')
-            ->orderByDesc('views')
+        if (Schema::hasColumn('products', 'views')) {
+            $alsoViewedQuery = (clone $baseQuery)->orderByDesc('views');
+        } else {
+            $alsoViewedQuery = (clone $baseQuery)
+                ->orderByDesc('reviews_count')
+                ->orderByDesc('reviews_avg_rating');
+        }
+
+        $alsoViewed = $alsoViewedQuery
             ->limit(20)
             ->get()
             ->map(function ($p) use ($vat, $country) {
