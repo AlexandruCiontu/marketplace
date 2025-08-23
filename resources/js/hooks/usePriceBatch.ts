@@ -3,7 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 export type PriceBreakdown = { net: number; vat: number; gross: number; rate: number };
 
 export function stableKeyFromHit(hit: any): string {
-  return String(hit?.id ?? hit?.slug ?? "");
+  // prefer numeric id, then slug, then objectID (Typesense/Algolia)
+  const raw = hit?.id ?? hit?.slug ?? hit?.objectID ?? "";
+  return String(raw);
 }
 // mic cache in-memory pentru dedupe între rerenderi
 const pageCache = new Map<string, PriceBreakdown>();

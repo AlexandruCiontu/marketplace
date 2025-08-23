@@ -3,6 +3,7 @@ import { ProductListItem } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import type { PriceBreakdown } from "@/hooks/usePriceBatch";
+import { stableKeyFromHit } from "@/hooks/usePriceBatch";
 
 type Props = {
   product: ProductListItem;
@@ -29,9 +30,7 @@ export default function ProductItem({ product, price }: Props) {
     });
   };
 
-  const key: string = String(
-    product?.objectID ?? product?.id ?? product?.slug ?? ""
-  );
+  const key: string = stableKeyFromHit(product);
   const [localPrice, setLocalPrice] = useState<PriceBreakdown | undefined>();
 
   useEffect(() => {
