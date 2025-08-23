@@ -111,8 +111,11 @@ class VatRateService
     /**
      * Helper used by resources/controllers.
      */
-    public function calculate(float $net, mixed $productOrType, string $country): array
+    public function calculate(float $net, mixed $productOrType, ?string $country = null): array
     {
+        $country = $country ?? session('country_code', config('vat.fallback_country', 'RO'));
+        $country = strtoupper(CountryCode::toIso2($country) ?? $country);
+
         $rate = $this->rateForProduct($productOrType, $country);
         $vat  = round($net * $rate / 100, 2);
         $gross = round($net + $vat, 2);
