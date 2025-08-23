@@ -236,7 +236,7 @@ function Show({
         <link rel="canonical" href={route('product.show', product.slug)}/>
         <meta property="og:title" content={product.title}/>
         <meta property="og:description" content={product.meta_description}/>
-        <meta property="og:image" content={images[0]?.small}/>
+        <meta property="og:image" content={images[0]?.medium || images[0]?.small || images[0]?.url}/>
         <meta property="og:url" content={route('product.show', product.slug)}/>
         <meta property="og:type" content="product"/>
         <meta property="og:site_name" content={appName}/>

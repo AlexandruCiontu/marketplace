@@ -22,9 +22,10 @@ class ProductResource extends JsonResource
 
         $images = $this->getMedia('images')->map(function ($m) {
             return [
-                'url'   => $m->getUrl(),
-                'small' => $m->hasGeneratedConversion('small') ? $m->getUrl('small') : $m->getUrl(),
-                'thumb' => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl(),
+                'url'    => $m->getUrl(),
+                'medium' => $m->hasGeneratedConversion('medium') ? $m->getUrl('medium') : $m->getUrl(),
+                'small'  => $m->hasGeneratedConversion('small') ? $m->getUrl('small') : $m->getUrl(),
+                'thumb'  => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl(),
             ];
         })->values();
 
@@ -65,9 +66,10 @@ class ProductResource extends JsonResource
                                 'name' => $op->name,
                                 'images' => $media->map(function ($m) {
                                     return [
-                                        'url'   => $m->getUrl(),
-                                        'small' => $m->hasGeneratedConversion('small') ? $m->getUrl('small') : $m->getUrl(),
-                                        'thumb' => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl(),
+                                        'url'    => $m->getUrl(),
+                                        'medium' => $m->hasGeneratedConversion('medium') ? $m->getUrl('medium') : $m->getUrl(),
+                                        'small'  => $m->hasGeneratedConversion('small') ? $m->getUrl('small') : $m->getUrl(),
+                                        'thumb'  => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl(),
                                     ];
                                 })->values(),
                             ];

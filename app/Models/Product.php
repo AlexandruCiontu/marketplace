@@ -60,14 +60,19 @@ class Product extends Model implements HasMedia
     public function registerMediaConversions(?Media $media = null): void
     {
         $this
-            ->addMediaConversion('small')
-            ->fit(Fit::Contain, 600, 600)
-            ->nonQueued();
-
-        $this
             ->addMediaConversion('thumb')
             ->fit(Fit::Crop, 200, 200)
             ->sharpen(10)
+            ->nonQueued();
+
+        $this
+            ->addMediaConversion('small')
+            ->fit(Fit::Contain, 300, 300)
+            ->nonQueued();
+
+        $this
+            ->addMediaConversion('medium')
+            ->fit(Fit::Contain, 600, 600)
             ->nonQueued();
     }
 

@@ -23,13 +23,18 @@ class VariationTypeOption extends Model implements HasMedia
     public function registerMediaConversions(?Media $media = null): void
     {
         $this
+            ->addMediaConversion('thumb')
+            ->fit(Fit::Crop, 64, 64)
+            ->nonQueued();
+
+        $this
             ->addMediaConversion('small')
             ->fit(Fit::Contain, 300, 300)
             ->nonQueued();
 
         $this
-            ->addMediaConversion('thumb')
-            ->fit(Fit::Crop, 64, 64)
+            ->addMediaConversion('medium')
+            ->fit(Fit::Contain, 600, 600)
             ->nonQueued();
     }
 
