@@ -14,29 +14,27 @@ class VatController extends Controller
      * Return pricing breakdown for multiple products.
      * Response: { prices: {id: {price_net, vat_rate, vat_amount, price_gross}} }
      */
-    public function priceBatch(
-        Request $request,
-        VatCountryResolver $country,
-        VatRateService $vat
-    ) {
-        $ids = collect($request->input('ids', []))
-            ->map(fn($id) => (int) $id)
-            ->filter()
-            ->values();
+    public function priceBatch(Request $request, VatRateService $vat, VatCountryResolver $countryResolver)
+    {
+        $raw = $request->query('ids', []);
+        if (is_string($raw)) {
+            $raw = preg_split('/[,\s]+/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+        }
+        $ids = collect($raw)->map(fn($v) => (int) $v)->filter()->values();
 
         if ($ids->isEmpty()) {
             return response()->json([]);
         }
 
-        $countryCode = $country->resolve($request);
+        $country = $countryResolver->resolve();
 
         $products = Product::query()
             ->whereIn('id', $ids)
-            ->where('status', 'published')
             ->get(['id', 'price', 'vat_type']);
 
-        $result = $products->mapWithKeys(function (Product $p) use ($vat, $countryCode) {
-            return [$p->id => $vat->calculate((float) $p->price, $p, $countryCode)];
+        $result = $products->mapWithKeys(function (Product $p) use ($vat, $country) {
+            $calc = $vat->calculate($p->price, $p, $country);
+            return [$p->id => $calc];
         });
 
         return response()->json($result);

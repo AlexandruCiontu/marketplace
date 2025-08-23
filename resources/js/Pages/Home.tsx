@@ -21,9 +21,8 @@ function CustomHits() {
   React.useEffect(() => {
     const ids = hits.map((h: any) => h.id);
     if (ids.length === 0) return;
-    const params = new URLSearchParams();
-    ids.forEach((id: any) => params.append('ids[]', String(id)));
-    fetch(`/api/vat/price-batch?${params.toString()}`, { credentials: 'same-origin' })
+    const qs = ids.map((id: any) => `ids[]=${id}`).join('&');
+    fetch(`/api/vat/price-batch?${qs}`, { credentials: 'same-origin' })
       .then(res => res.json())
       .then((res) => {
         setPriceMap(res || {});

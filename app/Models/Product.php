@@ -18,40 +18,43 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
 
-    /**
-     * Normalize VAT type accessor.
-     */
-    public function getVatTypeAttribute($value): string
+    protected function vatType(): Attribute
     {
-        $raw = $value ?? ($this->attributes['vat_type'] ?? null);
+        return Attribute::make(
+            get: function ($value, $attributes) {
+                $raw = $value ?? ($attributes['vat_type'] ?? null);
+                $norm = Str::of((string) $raw)
+                    ->lower()
+                    ->replace([' ', '-', '.', '/'], '_')
+                    ->replace('__', '_')
+                    ->trim('_')
+                    ->value();
 
-        $norm = Str::of((string) $raw)
+                return match ($norm) {
+                    'super_reduced', 'superreduced'    => 'super_reduced',
+                    'reduced_alt', 'reducedalt'        => 'reduced_alt',
+                    'reduced'                          => 'reduced',
+                    'zero', 'no_vat', 'none', '0'      => 'zero',
+                    default                            => 'standard',
+                };
+            }
+        );
+    }
+
+    public function setVatTypeAttribute($value): void
+    {
+        $this->attributes['vat_type'] = Str::of((string) $value)
             ->lower()
             ->replace([' ', '-', '.', '/'], '_')
             ->replace('__', '_')
             ->trim('_')
             ->value();
-
-        return match ($norm) {
-            'super_reduced', 'superreduced'    => 'super_reduced',
-            'reduced_alt', 'reducedalt'        => 'reduced_alt',
-            'reduced'                          => 'reduced',
-            'zero', 'no_vat', 'none', '0'      => 'zero',
-            default                            => 'standard',
-        };
-    }
-
-    /**
-     * Mutator to store normalized VAT type.
-     */
-    public function setVatTypeAttribute($value): void
-    {
-        $this->attributes['vat_type'] = $this->getVatTypeAttribute($value);
     }
 
     public function registerMediaConversions(?Media $media = null): void

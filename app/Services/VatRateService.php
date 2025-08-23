@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Product;
+use Illuminate\Support\Str;
 
 class VatRateService
 {
@@ -18,18 +19,18 @@ class VatRateService
 
     private function normalizeType(string $type): string
     {
-        $t = \Illuminate\Support\Str::of($type)
+        $t = Str::of($type)
             ->lower()
             ->replace([' ', '-', '.', '/'], '_')
             ->trim('_')
             ->value();
 
         return match ($t) {
-            'super_reduced', 'superreduced' => 'super_reduced',
-            'reduced_alt', 'reducedalt'     => 'reduced_alt',
-            'reduced'                       => 'reduced',
-            'zero', 'no_vat', 'none', '0'   => 'zero',
-            default                         => 'standard',
+            'super_reduced', 'superreduced'      => 'super_reduced',
+            'reduced_alt', 'reducedalt'          => 'reduced_alt',
+            'reduced'                            => 'reduced',
+            'zero', 'no_vat', 'none', '0'        => 'zero',
+            default                              => 'standard',
         };
     }
 
@@ -49,7 +50,7 @@ class VatRateService
 
     public function rateForProduct(mixed $productOrType, string $country): float
     {
-        $country = \Illuminate\Support\Str::upper($country);
+        $country = Str::upper($country);
 
         $type = is_string($productOrType)
             ? $productOrType
@@ -58,15 +59,10 @@ class VatRateService
         $type = $this->normalizeType($type);
 
         $rates = $this->rates;
-        $rate = $rates[$type][$country] ?? (
-            $type === 'reduced_alt'
-                ? ($rates['reduced'][$country] ?? null)
-                : null
-        );
 
-        if ($rate === null) {
-            $rate = $this->defaults[$type] ?? $this->defaults['standard'] ?? 19;
-        }
+        $rate = $rates[$type][$country]
+            ?? ($type === 'reduced_alt' ? ($rates['reduced'][$country] ?? null) : null)
+            ?? ($this->defaults[$type] ?? $this->defaults['standard'] ?? 19);
 
         return (float) $rate;
     }
