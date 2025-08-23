@@ -13,12 +13,13 @@ class VatController extends Controller
     public function priceBatch(Request $request, VatRateService $vat)
     {
         $ids = array_map('intval', (array) $request->query('ids', []));
-        $country = CountryCode::toIso2(session('country_code', config('vat.fallback_country', 'RO'))) ?? config('vat.fallback_country', 'RO');
+        $country = session('country_code', config('vat.fallback_country', 'RO'));
+        $country = strtoupper(CountryCode::toIso2($country) ?? 'RO');
 
         $products = Product::whereIn('id', $ids)->get(['id', 'price', 'vat_rate_type']);
 
         $items = $products->map(function ($p) use ($vat, $country) {
-            $percent = $vat->getRate($country, $p->vat_rate_type ?? 'standard_rate');
+            $percent = $vat->rateForProduct($p, $country);
             $unitVat = round($p->price * $percent / 100, 2);
             $unitGross = round($p->price + $unitVat, 2);
             return [

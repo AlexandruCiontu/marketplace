@@ -37,6 +37,22 @@ Route::get('/api/country/current', [CountryController::class, 'current'])->name(
 Route::get('/api/products/{product}/price', ProductPriceController::class);
 Route::get('/api/vat/price-batch', [VatController::class, 'priceBatch']);
 
+Route::get('/_vat/debug', function (Request $r, \App\Services\VatRateService $vat) {
+    $country = session('country_code', config('vat.fallback_country','RO'));
+    $country = \App\Support\CountryCode::toIso2($country) ?? 'RO';
+
+    $p = \App\Models\Product::query()->first();
+    $type = strtolower((string) ($p->vat_type ?? 'standard'));
+    $rate = $vat->rateForProduct($p, $country);
+
+    return [
+        'session_country' => session('country_code'),
+        'normalized' => strtoupper($country),
+        'product_vat_type' => $type,
+        'resolved_rate' => $rate,
+    ];
+});
+
 // Guest Routes
 Route::get('/', [ProductController::class, 'home'])->name('dashboard');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');

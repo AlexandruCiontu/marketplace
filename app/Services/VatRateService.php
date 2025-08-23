@@ -3,54 +3,62 @@
 namespace App\Services;
 
 use App\Support\CountryCode;
-use Ibericode\Vat\Rates;
-
 class VatRateService
 {
-    protected Rates $rates;
-
-    public function __construct()
+    /**
+     * Return the VAT percent for a product and country.
+     */
+    public function rateForProduct($product, string $country): float
     {
-        // Poți schimba path-ul dacă preferi altă locație pentru cache
-        $this->rates = new Rates(storage_path('framework/cache/vat_rates.cache'));
+        // 1) Normalize country to ISO-2 uppercase
+        $cc = CountryCode::toIso2($country) ?? config('vat.fallback_country', 'RO');
+        $cc = strtoupper($cc);
+
+        // 2) Normalize VAT type
+        $type = strtolower((string) ($product->vat_type ?? $product->vat_rate_type ?? 'standard'));
+        $type = in_array($type, ['reduced', 'super_reduced', 'zero']) ? $type : 'standard';
+
+        // 3) Prefer config map
+        $cfg = config("vat.rates.$type", []);
+        if (is_array($cfg) && array_key_exists($cc, $cfg)) {
+            return (float) $cfg[$cc];
+        }
+
+        // 4) Fallback: bundled JSON
+        $json = $this->ratesFromJson();
+        if (isset($json[$cc])) {
+            $key = match ($type) {
+                'reduced' => 'reduced_rate',
+                'super_reduced' => 'super_reduced_rate',
+                'zero' => 'parking_rate',
+                default => 'standard_rate',
+            };
+            $v = $json[$cc][$key] ?? null;
+            if (is_numeric($v)) {
+                return (float) $v;
+            }
+        }
+
+        // 5) Last resort: default_rates
+        return (float) config("vat.default_rates.$type", 21.0);
     }
 
-    /**
-     * Returnează procentul TVA pentru o țară și un tip de rată.
-     */
-    public function getRate(string $countryCode, string $rateType): float
+    protected function ratesFromJson(): array
     {
-        $rateKeyMap = [
-            'standard_rate' => ['standard'],
-            'reduced_rate' => ['reduced', 'reduced2'],
-            'reduced_rate_alt' => ['reduced1', 'reduced2', 'reduced'],
-            'super_reduced_rate' => ['super_reduced'],
-        ];
-
-        $rateKeys = $rateKeyMap[$rateType] ?? [$rateType];
-        $rate = 0.0;
-
-        foreach ($rateKeys as $key) {
-            try {
-                $rate = $this->rates->getRateForCountry($countryCode, $key);
-            } catch (\Throwable $e) {
-                $rate = 0.0;
-            }
-
-            if (is_numeric($rate) && $rate > 0) {
-                break;
-            }
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
         }
 
-        if (! is_numeric($rate) || $rate <= 0) {
-            try {
-                $rate = $this->rates->getRateForCountry($countryCode, 'standard');
-            } catch (\Throwable $e) {
-                $rate = 0.0;
-            }
+        $path = storage_path('app/vat/rates.json');
+        if (is_file($path)) {
+            $raw = json_decode(file_get_contents($path), true);
+            $cache = $raw['rates'] ?? [];
+        } else {
+            $cache = [];
         }
 
-        return (float) $rate;
+        return $cache;
     }
 
     /**
@@ -61,9 +69,10 @@ class VatRateService
     public function calculate(float $netAmount, string $rateType = 'standard_rate', ?string $countryCode = null): array
     {
         $code = $countryCode ?? session('country_code', config('vat.fallback_country', 'RO'));
-        $code = CountryCode::toIso2($code) ?? config('vat.fallback_country', 'RO');
+        $code = strtoupper(CountryCode::toIso2($code) ?? config('vat.fallback_country', 'RO'));
 
-        $rate  = $this->getRate($code, $rateType);
+        $type = strtolower($rateType);
+        $rate = $this->rateForProduct((object) ['vat_type' => $type], $code);
         $vat   = round($netAmount * ($rate / 100), 2);
         $gross = round($netAmount + $vat, 2);
 
