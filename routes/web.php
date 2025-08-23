@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\ShippingAddressController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Stevebauman\Location\Facades\Location;
@@ -109,6 +110,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/vendor/details', [VendorController::class, 'details'])
             ->name('vendor.details')
             ->middleware(['role:' . \App\Enums\RolesEnum::Vendor->value]);
+
+        Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])
+            ->name('products.reviews.store')
+            ->middleware('throttle:20,1');
     });
 });
 

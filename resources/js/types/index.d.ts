@@ -48,6 +48,14 @@ export type VariationType = {
   options: VariationTypeOption[]
 }
 
+export type Review = {
+  id: number;
+  rating: number;
+  comment?: string;
+  created_at: string;
+  user: { id: number; name: string };
+};
+
 export type Product = {
   id: number;
   title: string;
@@ -86,6 +94,9 @@ export type Product = {
     quantity: number;
     price: number;
   }>
+  reviews_count: number;
+  rating_average: number;
+  reviews: Review[];
 }
 
 export type ProductListItem = {

@@ -5,12 +5,16 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
+import ReviewList from "@/Components/ReviewList";
+import ReviewForm from "@/Components/ReviewForm";
 
 function Show({
-                appName, product, variationOptions
+                appName, product, variationOptions, can_review, already_reviewed
               }: PageProps<{
   product: Product,
-  variationOptions: number[]
+  variationOptions: number[],
+  can_review: boolean,
+  already_reviewed: boolean,
 }>) {
   const form = useForm<{
     option_ids: Record<string, number>;
@@ -249,6 +253,24 @@ function Show({
             <h2>About the Item</h2>
             <div dangerouslySetInnerHTML={{ __html: product.description }} />
           </div>
+
+          <section className="mt-10 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Recenzii</h2>
+              <div className="text-sm opacity-70">
+                {product.reviews_count} recenzii • medie {product.rating_average ?? 0}/5
+              </div>
+            </div>
+
+            <ReviewList reviews={product.reviews} />
+
+            {can_review && !already_reviewed && (
+              <div className="mt-6">
+                <h3 className="font-medium mb-2">Lasă o recenzie</h3>
+                <ReviewForm postUrl={route('products.reviews.store', product.id)} />
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </AuthenticatedLayout>

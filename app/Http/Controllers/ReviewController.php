@@ -2,35 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
+use App\Http\Requests\StoreReviewRequest;
 use App\Models\Product;
 use App\Models\Review;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 class ReviewController extends Controller
 {
-    public function store(Request $request, Product $product)
+    public function store(StoreReviewRequest $request, Product $product): RedirectResponse
     {
-        $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string',
-        ]);
+        $user = $request->user();
 
-        $hasPurchased = Order::where('user_id', auth()->id())
+        $hasPurchased = $user->orders()
+            ->where('status', 'paid')
             ->whereHas('orderItems', fn ($q) => $q->where('product_id', $product->id))
             ->exists();
 
-        if (! $hasPurchased || ! auth()->user()->hasVerifiedEmail()) {
-            abort(403, 'Only verified buyers can leave a review.');
+        if (! $hasPurchased) {
+            return back()->withErrors(['review' => 'Poți lăsa recenzie doar pentru produsele cumpărate.']);
+        }
+
+        $already = Review::where('user_id', $user->id)
+            ->where('product_id', $product->id)
+            ->exists();
+
+        if ($already) {
+            return back()->withErrors(['review' => 'Ai lăsat deja o recenzie pentru acest produs.']);
         }
 
         Review::create([
-            'user_id' => auth()->id(),
+            'user_id' => $user->id,
             'product_id' => $product->id,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
+            'rating' => (int) $request->integer('rating'),
+            'comment' => $request->input('comment'),
         ]);
 
-        return redirect()->back();
+        return back()->with('success', 'Mulțumim pentru recenzie!');
     }
 }

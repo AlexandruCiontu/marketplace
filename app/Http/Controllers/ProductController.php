@@ -39,11 +39,16 @@ class ProductController extends Controller
     {
         $product->load(['reviews.user']);
 
+        $user = auth()->user();
         $hasPurchased = false;
-        if (auth()->check()) {
-            $hasPurchased = Order::where('user_id', auth()->id())
+        $already = false;
+
+        if ($user) {
+            $hasPurchased = $user->orders()
+                ->where('status', 'paid')
                 ->whereHas('orderItems', fn ($q) => $q->where('product_id', $product->id))
                 ->exists();
+            $already = $product->reviews->firstWhere('user_id', $user->id) !== null;
         }
 
         $relatedProducts = Product::query()
@@ -65,7 +70,8 @@ class ProductController extends Controller
                 ['vat' => ['rate' => $rate, 'amount' => $vatA, 'gross' => $gross]]
             ),
             'variationOptions' => request('options', []),
-            'hasPurchased' => $hasPurchased,
+            'can_review' => (bool) ($user && $user->hasVerifiedEmail() && $hasPurchased),
+            'already_reviewed' => $already,
             'relatedProducts' => ProductListResource::collection($relatedProducts),
             'vatCountry' => $country,
         ]);
