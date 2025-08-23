@@ -46,11 +46,18 @@ export default function ProductItem({ product, price }: Props) {
       .catch((e) => console.error("single price fetch failed", e));
   }, [key, !!price]);
 
-  const shown = price ?? localPrice;
+  const net = Number((product as any).price ?? 0);
+  const serverGross =
+    product?.price_gross != null ? Number(product.price_gross) : undefined;
+  const serverRate =
+    product?.vat_rate != null ? Number(product.vat_rate) : undefined;
 
-  const amount = fmt(
-    shown?.gross ?? product.price_gross ?? (product as any).price ?? 0
-  );
+  const shownGross = price?.gross ?? localPrice?.gross ?? serverGross;
+  const shownRate = price?.rate ?? localPrice?.rate ?? serverRate;
+  const shownVat =
+    price?.vat ?? localPrice?.vat ?? (shownGross != null ? +(shownGross - net).toFixed(2) : undefined);
+
+  const amount = fmt(shownGross ?? net);
 
   return (
     <div className="card bg-base-100 shadow">
@@ -97,9 +104,9 @@ export default function ProductItem({ product, price }: Props) {
             ) : (
               "—"
             )}
-            {shown && (
+            {shownGross != null && (
               <span className="block text-xs text-muted-foreground">
-                Includes VAT {shown.rate}% ({shown.vat.toFixed(2)})
+                Includes VAT {shownVat?.toFixed(2)}{shownRate != null ? ` (${shownRate}%)` : ""}
               </span>
             )}
           </span>

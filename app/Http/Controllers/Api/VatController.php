@@ -10,38 +10,46 @@ use Illuminate\Http\Request;
 
 class VatController extends Controller
 {
-    public function priceBatch(Request $request, VatRateService $vat, VatCountryResolver $countryResolver)
+    public function priceBatch(Request $request, VatCountryResolver $resolver, VatRateService $vat)
     {
-        // ids poate fi fie array (ids[]=...), fie string "1,2,slug-3"
-        $raw = $request->query('ids', []);
-        if (is_string($raw)) {
-            $raw = preg_split('/[\s,]+/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+        $tokens = collect((array)$request->input('ids', []))
+            ->map(fn ($v) => (string)$v)
+            ->filter(fn ($v) => $v !== '')
+            ->values();
+
+        if ($tokens->isEmpty()) {
+            return response()->json([]);
         }
-        $raw = array_values(array_filter(array_map('strval', (array) $raw)));
 
         $idInts = [];
-        $slugs  = [];
-        foreach ($raw as $v) {
-            if (ctype_digit($v)) {
-                $idInts[] = (int) $v;
+        $slugs = [];
+        foreach ($tokens as $t) {
+            if (ctype_digit($t)) {
+                $idInts[] = (int)$t;
             } else {
-                $slugs[] = $v;
+                $slugs[] = $t;
             }
         }
-
-        $country = $countryResolver->resolve();
 
         $products = Product::query()
             ->when($idInts, fn($q) => $q->whereIn('id', $idInts))
             ->when($slugs, fn($q) => $q->orWhereIn('slug', $slugs))
-            ->get(['id', 'slug', 'price', 'vat_type']);
+            ->get(['id','slug','price','vat_type']);
 
+        $byId = $products->keyBy('id');
+        $bySlug = $products->keyBy('slug');
+
+        $country = $resolver->resolve($request);
         $out = [];
-        foreach ($products as $p) {
-            $calc = $vat->calculate($p->price, $p, $country); // [price_net, vat_rate, vat_amount, price_gross]
-            // cheiem rezultatul pe ambele variante, ca frontul să poată mapa indiferent ce cheie are
-            $out[(string) $p->id] = $calc;
-            $out[$p->slug]       = $calc;
+
+        foreach ($tokens as $t) {
+            $p = $bySlug[$t] ?? (ctype_digit($t) ? ($byId[(int)$t] ?? null) : null);
+            if (!$p) { continue; }
+            $rate = $vat->rateForProduct($p, $country);
+            $net = (float)$p->price;
+            $vatAmount = round($net * ($rate/100), 2);
+            $gross = round($net + $vatAmount, 2);
+            $out[$t] = ['net'=>$net,'vat'=>$vatAmount,'gross'=>$gross,'rate'=>$rate];
         }
 
         return response()->json($out);
