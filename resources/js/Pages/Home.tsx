@@ -12,25 +12,29 @@ import FilterPanel from "@/Components/App/FilterPanel";
 import NumberFormatter from "@/Components/Core/NumberFormatter";
 import ProductListing from "@/Components/App/ProductListing";
 import BannerSlider from "@/Components/App/BannerSlider";
+import usePriceBatch, { pickHitKey } from "@/hooks/usePriceBatch";
 
 function CustomHits() {
-  const { hits, results } = useHits();
-  type VatCalc = { net: number; vat: number; rate: number; gross: number };
-  const [priceMap, setPriceMap] = React.useState<Record<string, VatCalc>>({});
+  const { hits, results } = useHits<any>();
 
-  React.useEffect(() => {
-    const ids = hits.map((h: any) => h.id);
-    if (ids.length === 0) return;
-    const qs = ids.map((id: any) => `ids[]=${id}`).join('&');
-    fetch(`/api/vat/price-batch?${qs}`, { credentials: 'same-origin' })
-      .then(res => res.json())
-      .then((res) => {
-        setPriceMap(res || {});
-      })
-      .catch(() => setPriceMap({}));
-  }, [hits]);
+  // 1) cerem prețurile din backend pentru cheile detectate
+  const priceMap = usePriceBatch(hits);
 
-  if (!results || results.nbHits === 0) {
+  // 2) decorăm hit-urile cu rezultatele din batch (cheie = id sau slug)
+  const decorated = React.useMemo(
+    () =>
+      hits.map((h: any) => {
+        const key = pickHitKey(h);
+        const fromMap =
+          priceMap[key] ??
+          (h?.slug ? priceMap[h.slug] : undefined) ??
+          (h?.id ? priceMap[String(h.id)] : undefined);
+        return fromMap ? { ...h, ...fromMap } : h;
+      }),
+    [hits, priceMap]
+  );
+
+  if (!decorated?.length || !results || results.nbHits === 0) {
     return (
       <div className="w-full py-8 text-center">
         <div className="card bg-base-100 shadow-xl">
@@ -70,17 +74,9 @@ function CustomHits() {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-        {hits.map((hit: any) => {
-          const calc = priceMap[String(hit.id)];
-          return (
-            <ProductItem
-              product={hit}
-              priceGross={calc?.gross}
-              vatRate={calc?.rate}
-              key={hit.id}
-            />
-          );
-        })}
+        {decorated.map((product: any) => (
+          <ProductItem key={product.id ?? product.slug} product={product} />
+        ))}
       </div>
     </>
   );
