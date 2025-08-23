@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-use App\Support\CountryCode;
+use App\Support\CountryCodes;
 
 class Order extends Model
 {
@@ -85,7 +85,10 @@ class Order extends Model
      */
     public function setVatCountryCodeAttribute($value): void
     {
-        $this->attributes['vat_country_code'] = CountryCode::toIso2((string) $value)
-            ?? config('vat.fallback_country', 'RO');
+        $value = strtoupper((string) $value);
+        if (strlen($value) === 3) {
+            $value = CountryCodes::alpha3To2($value);
+        }
+        $this->attributes['vat_country_code'] = $value;
     }
 }
