@@ -19,7 +19,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Spatie\Image\Manipulations;
+use Spatie\Image\Enums\Fit;
 
 class Product extends Model implements HasMedia
 {
@@ -57,16 +57,16 @@ class Product extends Model implements HasMedia
             ->useFallbackUrl('/images/placeholder.png');
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this
             ->addMediaConversion('small')
-            ->fit(Manipulations::FIT_CONTAIN, 600, 600)
+            ->fit(Fit::Contain, 600, 600)
             ->nonQueued();
 
         $this
             ->addMediaConversion('thumb')
-            ->fit(Manipulations::FIT_CROP, 200, 200)
+            ->fit(Fit::Crop, 200, 200)
             ->sharpen(10)
             ->nonQueued();
     }
