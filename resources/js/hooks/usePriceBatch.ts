@@ -3,8 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 export type PriceBreakdown = { net: number; vat: number; gross: number; rate: number };
 
 export function stableKeyFromHit(hit: any): string {
-  const raw = hit?.slug ?? hit?.objectID ?? hit?.id ?? "";
-  return String(raw);
+  return String(hit?.id ?? hit?.slug ?? "");
 }
 // mic cache in-memory pentru dedupe între rerenderi
 const pageCache = new Map<string, PriceBreakdown>();
@@ -16,7 +15,7 @@ export default function usePriceBatch(hits: any[]) {
   const keys = useMemo(() => {
     const ks = hits
       .filter((h) => h?.price_gross == null)
-      .map(stableKeyFromHit)
+      .map(h => stableKeyFromHit(h))
       .filter(Boolean) as string[];
     return Array.from(new Set(ks));
   }, [hits]);
