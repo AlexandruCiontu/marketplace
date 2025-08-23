@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Services\VatRateService;
+use App\Support\CountryCode;
 
 class ProductListResource extends JsonResource
 {
@@ -43,7 +44,7 @@ class ProductListResource extends JsonResource
             'gross_price'        => $vatResult['gross'], // ✅ important pentru React
             'net_price'          => round($net, 2),
             'vat_rate_type'      => $this->vat_rate_type ?? 'standard_rate',
-            'country_code'       => session('country_code', 'RO'),
+            'country_code'       => CountryCode::toIso2(session('country_code', 'RO')) ?? 'RO',
 
             // Stoc și imagine
             'quantity'           => $this->quantity,

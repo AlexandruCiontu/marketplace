@@ -12,6 +12,7 @@ use App\Models\Vendor;
 use App\Services\CartService;
 use App\Services\TransactionClassifierService;
 use App\Services\VatRateService;
+use App\Support\CountryCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +26,7 @@ class CartController extends Controller
     public function index(Request $request, CartService $cartService)
     {
         [$user, $defaultAddress] = $this->userShippingAddress();
-        $country = session('country_code', config('vat.fallback_country', 'RO'));
+        $country = CountryCode::toIso2(session('country_code', config('vat.fallback_country', 'RO'))) ?? config('vat.fallback_country', 'RO');
 
         $totals = $cartService->getTotals();
 
@@ -129,7 +130,7 @@ class CartController extends Controller
 
         [$authUser, $defaultAddress] = $this->userShippingAddress();
 
-        $clientCountryCode = session('country_code', config('vat.fallback_country', 'RO'));
+        $clientCountryCode = CountryCode::toIso2(session('country_code', config('vat.fallback_country', 'RO'))) ?? config('vat.fallback_country', 'RO');
 
         DB::beginTransaction();
         try {
@@ -300,7 +301,7 @@ class CartController extends Controller
         }
         // Update the shipping address in session and set VAT country
         session()->put('shipping_address_id', $address->id);
-        session()->put('country_code', $address->country_code);
+        session()->put('country_code', CountryCode::toIso2($address->country_code) ?? config('vat.fallback_country', 'RO'));
 
         return back();
     }

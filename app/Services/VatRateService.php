@@ -61,7 +61,7 @@ class VatRateService
     public function calculate(float $netAmount, string $rateType = 'standard_rate', ?string $countryCode = null): array
     {
         $code = $countryCode ?? session('country_code', config('vat.fallback_country', 'RO'));
-        $code = CountryCode::toIso2($code);
+        $code = CountryCode::toIso2($code) ?? config('vat.fallback_country', 'RO');
 
         $rate  = $this->getRate($code, $rateType);
         $vat   = round($netAmount * ($rate / 100), 2);

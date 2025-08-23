@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\CountryCode;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -13,14 +14,14 @@ class SyncVatCountryFromAddress
             return $next($request);
         }
 
-        $user = $request->user();
-        $country = strtoupper($user?->vatCountryCode() ?? '');
+        $raw  = $request->user()?->vatCountryCode();
+        $iso2 = CountryCode::toIso2($raw);
 
-        if ($country && $country !== session('country_code')) {
-            session(['country_code' => $country]);
+        if ($iso2 && $iso2 !== session('country_code')) {
+            session(['country_code' => strtoupper($iso2)]);
         }
 
-        if (!$country && !session()->has('country_code')) {
+        if (!$iso2 && !session()->has('country_code')) {
             session(['country_code' => config('vat.fallback_country', 'RO')]);
         }
 

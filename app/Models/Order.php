@@ -85,6 +85,7 @@ class Order extends Model
      */
     public function setVatCountryCodeAttribute($value): void
     {
-        $this->attributes['vat_country_code'] = CountryCode::toIso2((string) $value);
+        $this->attributes['vat_country_code'] = CountryCode::toIso2((string) $value)
+            ?? config('vat.fallback_country', 'RO');
     }
 }

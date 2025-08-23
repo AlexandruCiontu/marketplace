@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\VatRateService;
+use App\Support\CountryCode;
 use Illuminate\Http\Request;
 
 class VatController extends Controller
@@ -12,7 +13,7 @@ class VatController extends Controller
     public function priceBatch(Request $request, VatRateService $vat)
     {
         $ids = array_map('intval', (array) $request->query('ids', []));
-        $country = session('country_code', config('vat.fallback_country', 'RO'));
+        $country = CountryCode::toIso2(session('country_code', config('vat.fallback_country', 'RO'))) ?? config('vat.fallback_country', 'RO');
 
         $products = Product::whereIn('id', $ids)->get(['id', 'price', 'vat_rate_type']);
 

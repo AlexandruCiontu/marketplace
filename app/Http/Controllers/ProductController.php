@@ -8,6 +8,7 @@ use App\Http\Resources\ProductResource;
 use App\Models\Department;
 use App\Models\Order;
 use App\Models\Product;
+use App\Support\CountryCode;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -28,7 +29,7 @@ class ProductController extends Controller
 
         return Inertia::render('Home', [
             'products' => ProductListResource::collection($products),
-            'countryCode' => session('country_code'),
+            'countryCode' => CountryCode::toIso2(session('country_code')) ?? config('vat.fallback_country', 'RO'),
         ]);
     }
 

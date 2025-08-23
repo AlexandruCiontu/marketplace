@@ -21,13 +21,13 @@ class CountryController extends Controller
 
         session(['country_code' => strtoupper($data['country_code'])]);
 
-        return ['country_code' => session('country_code')];
+        return ['country_code' => strtoupper(session('country_code'))];
     }
 
     public function current()
     {
         return [
-            'country_code' => session('country_code', config('vat.fallback_country', 'RO')),
+            'country_code' => strtoupper(session('country_code', config('vat.fallback_country', 'RO'))),
         ];
     }
 }

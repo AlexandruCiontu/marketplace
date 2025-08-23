@@ -89,9 +89,8 @@ function Index(
                              onChange={onAddressChange}
                              buttonLabel="Change Address"/>
 
-                <div className="mt-6 space-y-2">
+                <div className="mt-6">
                   <CountryBadge />
-                  <Link href={route('shippingAddress.index')} className="underline text-sm">Change Address</Link>
                 </div>
             </div>
           </div>
