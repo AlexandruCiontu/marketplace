@@ -5,7 +5,6 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
-import route from 'ziggy-js';
 
 import RatingSummary from "@/Components/RatingSummary";
 import ReviewList from "@/Components/ReviewList";
@@ -116,7 +115,7 @@ function Show({
   };
 
   const addToCart = () => {
-    form.post(route('cart.store', product.id), {
+    form.post(`/cart/${product.id}`, {
       preserveScroll: true,
       preserveState: true,
       onError: (err) => console.log(err)
@@ -233,11 +232,11 @@ function Show({
         <title>{product.title}</title>
         <meta name="title" content={product.meta_title || product.title}/>
         <meta name="description" content={product.meta_description}/>
-        <link rel="canonical" href={route('product.show', product.slug)}/>
+        <link rel="canonical" href={`/product/${product.slug}`}/>
         <meta property="og:title" content={product.title}/>
         <meta property="og:description" content={product.meta_description}/>
         <meta property="og:image" content={images[0]?.medium || images[0]?.small || images[0]?.url}/>
-        <meta property="og:url" content={route('product.show', product.slug)}/>
+        <meta property="og:url" content={`/product/${product.slug}`}/>
         <meta property="og:type" content="product"/>
         <meta property="og:site_name" content={appName}/>
       </Head>
@@ -289,7 +288,7 @@ function Show({
             {can_review && !already_reviewed && (
               <div className="mt-6">
                 <h3 className="font-medium mb-2">Leave a review</h3>
-                <ReviewForm postUrl={route('products.reviews.store', product.id)} />
+                <ReviewForm postUrl={`/products/${product.id}/reviews`} />
               </div>
             )}
           </section>
