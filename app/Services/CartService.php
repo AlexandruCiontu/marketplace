@@ -112,7 +112,7 @@ class CartService
                         'title' => $product->title,
                         'slug' => $product->slug,
                         'price' => $cartItem['price'],
-                        'vat_type' => $product->vat_type_normalized,
+                        'vat_type' => $product->vat_type,
                         'vat_rate' => $vatCalc['vat_rate'],
                         'vat_amount' => $vatCalc['vat_amount'],
                         'price_gross' => $vatCalc['price_gross'],

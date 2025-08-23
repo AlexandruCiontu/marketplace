@@ -28,32 +28,19 @@ class Product extends Model implements HasMedia
     /**
      * Supported VAT types.
      */
-    public const VAT_TYPES = ['standard','reduced','reduced_alt','super_reduced','zero'];
-
-    /**
-     * Append normalized VAT type for resources/services.
-     *
-     * @var array<int, string>
-     */
-    protected $appends = ['vat_type_normalized'];
-
-    /**
-     * Internal normalizer for various VAT type spellings.
-     */
-    protected function normalizeVatType(?string $raw): string
-    {
-        $raw = strtolower(trim($raw ?? 'standard'));
-        $raw = str_replace([' ', '-'], '_', $raw);
-        $allowed = self::VAT_TYPES;
-        return in_array($raw, $allowed, true) ? $raw : 'standard';
-    }
+    protected const SUPPORTED_TAX_TYPES = [
+        'standard', 'reduced', 'reduced_alt', 'super_reduced', 'zero',
+    ];
 
     /**
      * Normalize VAT type accessor.
      */
     public function getVatTypeAttribute($value): string
     {
-        return $this->normalizeVatType($value);
+        $t = strtolower(trim((string) $value));
+        $t = str_replace([' ', '-'], '_', $t);
+
+        return in_array($t, self::SUPPORTED_TAX_TYPES, true) ? $t : 'standard';
     }
 
     /**
@@ -61,16 +48,7 @@ class Product extends Model implements HasMedia
      */
     public function setVatTypeAttribute($value): void
     {
-        $this->attributes['vat_type'] = $this->normalizeVatType($value);
-    }
-
-    /**
-     * Exposed normalized VAT type attribute.
-     */
-    public function getVatTypeNormalizedAttribute(): string
-    {
-        $value = $this->attributes['vat_type'] ?? 'standard';
-        return $this->normalizeVatType($value);
+        $this->attributes['vat_type'] = $this->getVatTypeAttribute($value);
     }
 
     public function registerMediaConversions(?Media $media = null): void

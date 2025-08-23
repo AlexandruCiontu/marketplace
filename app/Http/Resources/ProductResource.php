@@ -20,7 +20,7 @@ class ProductResource extends JsonResource
         /** @var \App\Services\VatRateService $vat */
         $vat = app(\App\Services\VatRateService::class)->calculate(
             (float) $this->price,
-            $this->vat_type_normalized,
+            $this->resource,
             $country
         );
 
@@ -87,7 +87,7 @@ class ProductResource extends JsonResource
             }),
 
             // ✅ VAT fields computed server-side
-            'vat_type'    => (string) $this->vat_type_normalized,
+            'vat_type'    => (string) $this->vat_type,
             'vat_rate'    => (float) $vat['vat_rate'],
             'vat_amount'  => (float) $vat['vat_amount'],
             'price_net'   => (float) $vat['price_net'],

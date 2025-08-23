@@ -172,7 +172,12 @@ class CartController extends Controller
                 $orders[] = $order;
 
                 foreach ($cartItems as $cartItem) {
-                    $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_type'] ?? 'standard', $clientCountryCode);
+                    $productModel = Product::find($cartItem['product_id']);
+                    $calc = $vatRateService->calculate(
+                        $cartItem['price'],
+                        $productModel ?? ($cartItem['vat_type'] ?? 'standard'),
+                        $clientCountryCode
+                    );
 
                     OrderItem::create([
                         'order_id' => $order->id,

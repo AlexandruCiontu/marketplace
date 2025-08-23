@@ -22,8 +22,8 @@ class ProductListResource extends JsonResource
 
         /** @var VatRateService $vat */
         $vatCalc = app(VatRateService::class)->calculate(
-            (float) $this->getPriceForFirstOptions(),
-            $this->vat_type_normalized,
+            (float) $this->price,
+            $this->resource,
             $country
         );
 
@@ -31,7 +31,7 @@ class ProductListResource extends JsonResource
             'id'          => $this->id,
             'title'       => $this->title,
             'slug'        => $this->slug,
-            'vat_type'    => (string) $this->vat_type_normalized,
+            'vat_type'    => (string) $this->vat_type,
             'vat_rate'    => (float) $vatCalc['vat_rate'],
             'vat_amount'  => (float) $vatCalc['vat_amount'],
             'price_net'   => (float) $vatCalc['price_net'],
