@@ -19,10 +19,14 @@ use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Spatie\Image\Manipulations;
 
 class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
+
+    // expose first thumb url for carousels
+    protected $appends = ['image_url'];
 
     protected $fillable = [
         'vat_type',
@@ -47,11 +51,36 @@ class Product extends Model implements HasMedia
         $this->attributes['vat_type'] = str_replace([' ', '-'], '_', strtolower(trim((string) $value)));
     }
 
-    public function registerMediaConversions(?Media $media = null): void
+    public function registerMediaCollections(): void
     {
-        $this->addMediaConversion('thumb')->width(100)->nonQueued();
-        $this->addMediaConversion('small')->width(480)->nonQueued();
-        $this->addMediaConversion('large')->width(1200)->nonQueued();
+        $this->addMediaCollection('images')
+            ->useFallbackUrl('/images/placeholder.png');
+    }
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        $this
+            ->addMediaConversion('small')
+            ->fit(Manipulations::FIT_CONTAIN, 600, 600)
+            ->nonQueued();
+
+        $this
+            ->addMediaConversion('thumb')
+            ->fit(Manipulations::FIT_CROP, 200, 200)
+            ->sharpen(10)
+            ->nonQueued();
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        $first = $this->getFirstMedia('images');
+        if (! $first) {
+            return null;
+        }
+
+        return $first->hasGeneratedConversion('thumb')
+            ? $first->getUrl('thumb')
+            : $first->getUrl();
     }
 
     public function scopeForVendor(Builder $query): Builder

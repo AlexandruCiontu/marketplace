@@ -38,9 +38,10 @@ class ProductController extends Controller
     {
         $user = auth()->user();
 
+        // Load media instead of legacy images relation
         $product->load([
-            'images',
-            'variationTypes.options.images',
+            'media',
+            'variationTypes.options.media',
             'variations',
             'reviews.user',
         ]);

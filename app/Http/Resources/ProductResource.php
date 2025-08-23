@@ -12,9 +12,6 @@ class ProductResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $options = $request->input('options') ?: [];
-        $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
-
         $country = session('country_code', config('vat.fallback_country','RO'));
         $country = strtoupper(\App\Support\CountryCode::toIso2($country) ?? 'RO');
 
@@ -22,6 +19,14 @@ class ProductResource extends JsonResource
         $service = app(\App\Services\VatRateService::class);
         $rate = $service->rateForProduct($this->resource, $country);
         $vat = $service->calculate((float) $this->price, $rate);
+
+        $images = $this->getMedia('images')->map(function ($m) {
+            return [
+                'url'   => $m->getUrl(),
+                'small' => $m->hasGeneratedConversion('small') ? $m->getUrl('small') : $m->getUrl(),
+                'thumb' => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl(),
+            ];
+        })->values();
 
         return [
             'id' => $this->id,
@@ -36,15 +41,7 @@ class ProductResource extends JsonResource
             'width' => $this->width,
             'height' => $this->height,
             'quantity' => $this->quantity,
-            'image' => $this->getFirstImageUrl(),
-            'images' => $images->map(function ($image) {
-                return [
-                    'id' => $image->id,
-                    'thumb' => $image->getUrl('thumb'),
-                    'small' => $image->getUrl('small'),
-                    'large' => $image->getUrl('large'),
-                ];
-            }),
+            'images' => $images,
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
@@ -55,35 +52,34 @@ class ProductResource extends JsonResource
                 'name' => $this->department->name,
                 'slug' => $this->department->slug,
             ],
-            'variationTypes' => $this->variationTypes->map(function ($variationType) {
-                return [
-                    'id' => $variationType->id,
-                    'name' => $variationType->name,
-                    'type' => $variationType->type,
-                    'options' => $variationType->options->map(function ($option) {
-                        return [
-                            'id' => $option->id,
-                            'name' => $option->name,
-                            'images' => $option->getMedia('images')->map(function ($image) {
-                                return [
-                                    'id' => $image->id,
-                                    'thumb' => $image->getUrl('thumb'),
-                                    'small' => $image->getUrl('small'),
-                                    'large' => $image->getUrl('large'),
-                                ];
-                            })
-                        ];
-                    })
-                ];
+            'variationTypes' => $this->whenLoaded('variationTypes', function () {
+                return $this->variationTypes->map(function ($type) {
+                    return [
+                        'id' => $type->id,
+                        'name' => $type->name,
+                        'type' => $type->type,
+                        'options' => $type->options->map(function ($op) {
+                            $media = method_exists($op, 'getMedia') ? $op->getMedia('images') : collect();
+                            return [
+                                'id' => $op->id,
+                                'name' => $op->name,
+                                'images' => $media->map(function ($m) {
+                                    return [
+                                        'url'   => $m->getUrl(),
+                                        'small' => $m->hasGeneratedConversion('small') ? $m->getUrl('small') : $m->getUrl(),
+                                        'thumb' => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl(),
+                                    ];
+                                })->values(),
+                            ];
+                        })->values(),
+                    ];
+                })->values();
             }),
-            'variations' => $this->variations->map(function ($variation) {
-                return [
-                    'id' => $variation->id,
-                    'variation_type_option_ids' => $variation->variation_type_option_ids,
-                    'quantity' => $variation->quantity,
-                    'price' => $variation->price,
-                ];
-            }),
+            'variations' => $this->whenLoaded('variations', fn () => $this->variations->map(fn ($v) => [
+                'variation_type_option_ids' => $v->variation_type_option_ids,
+                'price' => $v->price,
+                'quantity' => $v->quantity,
+            ])->values()),
 
             // ✅ VAT fields computed server-side
             'vat_type'    => (string) $this->vat_type,
