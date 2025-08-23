@@ -2,8 +2,10 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "tsc && vite build && vite build --ssr",
-        "dev": "vite"
+        "typecheck": "tsc --noEmit",
+        "build": "vite build",
+        "dev": "vite",
+        "preview": "vite preview"
     },
     "devDependencies": {
         "@headlessui/react": "^2.0.0",
