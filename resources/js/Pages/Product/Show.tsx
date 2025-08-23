@@ -10,6 +10,7 @@ import ReviewList from "@/Components/ReviewList";
 import ReviewForm from "@/Components/ReviewForm";
 import Carousel from "@/Components/ui/Carousel";
 import ProductCardMini from "@/Components/Product/ProductCardMini";
+import ErrorBoundary from "@/Components/ErrorBoundary";
 
 function Show({
                 appName, product, variationOptions, can_review, already_reviewed, all_reviews,
@@ -35,7 +36,9 @@ function Show({
     price: null
   })
 
-  const {url} = usePage();
+  const page = usePage<PageProps>();
+  const { url } = page;
+  const countryCode = (page.props as any).countryCode;
   const [selectedOptions, setSelectedOptions] =
     useState<Record<number, VariationTypeOption>>([]);
 
@@ -105,17 +108,29 @@ function Show({
       }
     }
 
-    fetch(`/api/products/${product.id}/price?price=${price}`)
-      .then(res => res.json())
-      .then(data => setComputedProduct({
+    const fetchVat = async () => {
+      const url = `/api/vat/price?price=${price}&country=${countryCode || 'RO'}&rate=${product.vat_type || 'standard'}`;
+      let json: any = null;
+      try {
+        const res = await fetch(url, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        json = await res.json();
+      } catch (err) {
+        console.error('VAT price fetch failed:', err);
+        json = { net: price, vat_amount: 0, gross: price, rate: 0 };
+      }
+      setComputedProduct({
         price,
-        price_gross: data.price_gross,
-        vat_amount: data.vat_amount,
-        vat_rate: data.vat_rate,
+        price_gross: json?.gross ?? price,
+        vat_amount: json?.vat_amount ?? 0,
+        vat_rate: json?.rate ?? 0,
         vat_type: product.vat_type,
         quantity,
-      }));
-  }, [selectedOptions]);
+      });
+    };
+    if (typeof window === 'undefined') return;
+    fetchVat();
+  }, [selectedOptions, countryCode]);
 
   useEffect(() => {
     for (let type of product.variationTypes) {
@@ -254,6 +269,7 @@ function Show({
   }, [selectedOptions]);
 
   return (
+    <ErrorBoundary>
     <AuthenticatedLayout>
       <Head>
         <title>{product.title}</title>
@@ -303,13 +319,13 @@ function Show({
 
           <div className="prose max-w-none">
             <h2>About the Item</h2>
-            <div dangerouslySetInnerHTML={{ __html: product.description }} />
+            <div dangerouslySetInnerHTML={{ __html: product?.description || '' }} />
           </div>
           <section ref={reviewsRef} id="reviews" className="mt-10 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Reviews</h2>
               <div className="text-sm opacity-70">
-                {product.reviews_count} reviews • average {product.rating_average ?? 0}/5
+                {product?.reviews_count ?? 0} reviews • average {product?.rating_average ?? 0}/5
               </div>
             </div>
 
@@ -332,6 +348,7 @@ function Show({
         </div>
       </div>
     </AuthenticatedLayout>
+    </ErrorBoundary>
   );
 }
 

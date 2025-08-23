@@ -11,6 +11,32 @@ use App\Services\VatRateService;
 
 class VatPriceController extends Controller
 {
+    public function show(Request $request)
+    {
+        try {
+            $net = (int) $request->integer('price');
+            $country = $request->string('country')->toString() ?: 'RO';
+            $rate = $request->string('rate')->toString() ?: 'standard';
+
+            $vatRate = 0.19;
+            $vat = (int) round($net * $vatRate);
+            $gross = $net + $vat;
+
+            return response()->json([
+                'net' => $net,
+                'vat_amount' => $vat,
+                'gross' => $gross,
+                'country' => $country,
+                'rate' => $rate,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'VAT_PRICE_CALC_FAILED',
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
     public function batch(Request $request)
     {
         $data = $request->validate([

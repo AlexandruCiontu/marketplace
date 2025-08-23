@@ -12,6 +12,11 @@ Route::middleware(['web', StartSession::class])->group(function () {
     Route::get('products/{product}/price', [ProductPriceController::class, 'show']);
 });
 
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/vat/price', [VatPriceController::class, 'show'])
+        ->name('api.vat.price');
+});
+
 Route::post('/vat/price-batch', [VatPriceController::class, 'batch'])
     ->name('api.vat.price-batch');
 
