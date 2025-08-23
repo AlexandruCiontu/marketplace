@@ -92,8 +92,16 @@ class ProductResource extends JsonResource
             'price_net'   => (float) $vat['price_net'],
             'price_gross' => (float) $vat['price_gross'],
             'country_code'=> $country,
-            'reviews_count' => $this->reviews->count(),
-            'rating_average' => round((float) $this->reviews->avg('rating'), 2),
+            'reviews_count' => $this->when(
+                isset($this->reviews_count),
+                (int) $this->reviews_count,
+                fn () => $this->reviews->count()
+            ),
+            'rating_average' => $this->when(
+                isset($this->reviews_avg_rating),
+                round((float) $this->reviews_avg_rating, 2),
+                fn () => round((float) $this->reviews->avg('rating'), 2)
+            ),
             'reviews' => ReviewResource::collection($this->reviews->sortByDesc('created_at')->take(5)),
         ];
     }

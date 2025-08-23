@@ -95,7 +95,7 @@ class ProductController extends Controller
             ->where('id', '!=', $product->id)
             ->withCount('reviews')
             ->withAvg('reviews', 'rating')
-            ->orderByDesc('rating_average')
+            ->orderByDesc('reviews_avg_rating')
             ->limit(20)
             ->get()
             ->map(function ($p) use ($vat, $country) {
