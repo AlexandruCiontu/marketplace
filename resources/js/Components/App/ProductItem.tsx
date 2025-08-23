@@ -2,7 +2,7 @@ import { ProductListItem } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 
-export default function ProductItem({ product, priceGross }: { product: ProductListItem; priceGross?: number }) {
+export default function ProductItem({ product }: { product: ProductListItem }) {
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -21,8 +21,6 @@ export default function ProductItem({ product, priceGross }: { product: ProductL
       },
     });
   };
-
-  const displayPrice = priceGross ?? product.price_gross ?? product.price_net ?? product.price;
 
   return (
     <div className="card bg-base-100 shadow">
@@ -64,7 +62,7 @@ export default function ProductItem({ product, priceGross }: { product: ProductL
             Add to Cart
           </button>
           <span className="text-2xl">
-            <CurrencyFormatter amount={displayPrice} />
+            <CurrencyFormatter amount={product.price_gross} />
           </span>
         </div>
       </div>

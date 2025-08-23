@@ -72,7 +72,10 @@ function CustomHits() {
       </div>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
         {hits.map((hit: any) => (
-          <ProductItem product={hit} key={hit.id} priceGross={priceMap[String(hit.id)]} />
+          <ProductItem
+            product={{ ...hit, price_gross: priceMap[String(hit.id)] }}
+            key={hit.id}
+          />
         ))}
       </div>
     </>

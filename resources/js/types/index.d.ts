@@ -92,11 +92,10 @@ export type ProductListItem = {
   id: number;
   title: string;
   slug: string;
-  price: number;
   price_net: number;
-  price_gross?: number;
-  vat_type?: string;
-  vat_rate?: number;
+  price_gross: number;
+  vat_type: 'standard' | 'reduced' | 'reduced_alt' | 'super_reduced' | 'zero';
+  vat_rate: number;
   quantity: number;
   image: string;
   user_id: number;

@@ -34,6 +34,7 @@ class ProductListResource extends JsonResource
             'slug'        => $this->slug,
             'vat_type'    => $this->vat_type,
             'vat_rate'    => $rate,
+            'vat_amount'  => $vatAm,
             'price_net'   => $net,
             'price_gross' => $gross,
             'country_code'=> $country,
