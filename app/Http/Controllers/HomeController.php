@@ -10,9 +10,10 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $products = Product::published()
-            ->with('vendor')
-            ->latest()
+        $products = Product::query()
+            ->publishedWithApprovedVendor()
+            ->with('vendor:id,user_id,status')
+            ->latest('id')
             ->paginate(12);
 
         return Inertia::render('Home', [

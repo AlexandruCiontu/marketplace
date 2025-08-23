@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Enums\ProductStatusEnum;
 use App\Enums\VendorStatusEnum;
 use App\Models\Review;
+use App\Models\Vendor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Builder;
 use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -85,6 +87,24 @@ class Product extends Model implements HasMedia
     public function scopeForWebsite(Builder $query): Builder
     {
         return $query->published()->vendorApproved();
+    }
+
+    /**
+     * Vendor that owns the product.
+     */
+    public function vendor(): HasOne
+    {
+        return $this->hasOne(Vendor::class, 'user_id', 'created_by');
+    }
+
+    /**
+     * Scope: published products with approved vendors.
+     */
+    public function scopePublishedWithApprovedVendor(Builder $query): Builder
+    {
+        return $query
+            ->where('status', ProductStatusEnum::Published)
+            ->whereHas('vendor', fn ($q) => $q->where('status', VendorStatusEnum::Approved->value));
     }
 
     public function scopeVendorApproved(Builder $query)
