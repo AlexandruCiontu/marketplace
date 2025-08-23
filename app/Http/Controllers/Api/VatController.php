@@ -12,32 +12,48 @@ class VatController extends Controller
 {
     /**
      * Return pricing breakdown for multiple products.
-     * Response: { prices: {id: {price_net, vat_rate, vat_amount, price_gross}} }
+     * Response: { id: { price_net, vat_rate, vat_amount, price_gross, unit_gross } }
      */
-    public function priceBatch(Request $request, VatRateService $vat, VatCountryResolver $countryResolver)
+    public function priceBatch(Request $request, VatCountryResolver $countryResolver, VatRateService $vatService)
     {
-        $raw = $request->query('ids', []);
-        if (is_string($raw)) {
-            $raw = preg_split('/[,\s]+/', $raw, -1, PREG_SPLIT_NO_EMPTY);
+        // Accept both ids[]=1&ids[]=2 and ids=1,2,3
+        $ids = $request->input('ids', []);
+        if (is_string($ids)) {
+            $ids = preg_split('/[,\s;]+/', $ids, -1, PREG_SPLIT_NO_EMPTY);
         }
-        $ids = collect($raw)->map(fn($v) => (int) $v)->filter()->values();
-
-        if ($ids->isEmpty()) {
+        if (!is_array($ids)) {
+            $ids = [];
+        }
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (empty($ids)) {
             return response()->json([]);
         }
 
-        $country = $countryResolver->resolve();
+        $country = $countryResolver->resolve($request);
 
+        // IMPORTANT: do not select vat_type from DB
         $products = Product::query()
             ->whereIn('id', $ids)
-            ->get(['id', 'price', 'vat_type']);
+            ->where('status', 'published')
+            ->select(['id', 'price'])
+            ->get();
 
-        $result = $products->mapWithKeys(function (Product $p) use ($vat, $country) {
-            $calc = $vat->calculate($p->price, $p, $country);
-            return [$p->id => $calc];
-        });
+        $out = [];
+        foreach ($products as $product) {
+            $rate = $vatService->rateForProduct($product, $country);
+            $calc = $vatService->calculate($product->price, $rate);
 
-        return response()->json($result);
+            $out[$product->id] = [
+                'price_net'   => $calc['price_net'],
+                'vat_rate'    => $rate,
+                'vat_amount'  => $calc['vat_amount'],
+                'price_gross' => $calc['price_gross'],
+                // compat old field
+                'unit_gross'  => $calc['price_gross'],
+            ];
+        }
+
+        return response()->json($out);
     }
 }
 

@@ -20,19 +20,17 @@ class ProductListResource extends JsonResource
         $country = session('country_code', config('vat.fallback_country','RO'));
         $country = strtoupper(CountryCode::toIso2($country) ?? 'RO');
 
-        /** @var VatRateService $vat */
-        $vatCalc = app(VatRateService::class)->calculate(
-            (float) $this->price,
-            $this->resource,
-            $country
-        );
+        /** @var VatRateService $service */
+        $service = app(VatRateService::class);
+        $rate = $service->rateForProduct($this->resource, $country);
+        $vatCalc = $service->calculate((float) $this->price, $rate);
 
         return [
             'id'          => $this->id,
             'title'       => $this->title,
             'slug'        => $this->slug,
             'vat_type'    => (string) $this->vat_type,
-            'vat_rate'    => (float) $vatCalc['vat_rate'],
+            'vat_rate'    => (float) $rate,
             'vat_amount'  => (float) $vatCalc['vat_amount'],
             'price_net'   => (float) $vatCalc['price_net'],
             'price_gross' => (float) $vatCalc['price_gross'],

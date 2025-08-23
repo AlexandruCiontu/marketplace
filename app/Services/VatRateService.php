@@ -34,9 +34,11 @@ class VatRateService
         };
     }
 
-    public function calculate(float $net, mixed $productOrType, string $country): array
+    /**
+     * Calculate VAT breakdown for a net amount and percentage rate.
+     */
+    public function calculate(float $net, float $rate): array
     {
-        $rate = $this->rateForProduct($productOrType, $country);
         $vat  = round($net * $rate / 100, 2);
         $gross = round($net + $vat, 2);
 

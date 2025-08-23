@@ -17,12 +17,10 @@ class ProductResource extends JsonResource
         $country = session('country_code', config('vat.fallback_country','RO'));
         $country = strtoupper(\App\Support\CountryCode::toIso2($country) ?? 'RO');
 
-        /** @var \App\Services\VatRateService $vat */
-        $vat = app(\App\Services\VatRateService::class)->calculate(
-            (float) $this->price,
-            $this->resource,
-            $country
-        );
+        /** @var \App\Services\VatRateService $service */
+        $service = app(\App\Services\VatRateService::class);
+        $rate = $service->rateForProduct($this->resource, $country);
+        $vat = $service->calculate((float) $this->price, $rate);
 
         return [
             'id' => $this->id,
@@ -88,7 +86,7 @@ class ProductResource extends JsonResource
 
             // ✅ VAT fields computed server-side
             'vat_type'    => (string) $this->vat_type,
-            'vat_rate'    => (float) $vat['vat_rate'],
+            'vat_rate'    => (float) $rate,
             'vat_amount'  => (float) $vat['vat_amount'],
             'price_net'   => (float) $vat['price_net'],
             'price_gross' => (float) $vat['price_gross'],

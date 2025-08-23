@@ -26,7 +26,8 @@ function CustomHits() {
       .then(res => res.json())
       .then((res) => {
         setPriceMap(res || {});
-      });
+      })
+      .catch(() => setPriceMap({}));
   }, [hits]);
 
   if (!results || results.nbHits === 0) {
@@ -73,7 +74,9 @@ function CustomHits() {
           const calc = priceMap[String(hit.id)];
           return (
             <ProductItem
-              product={calc ? { ...hit, ...calc } : hit}
+              product={hit}
+              priceGross={calc?.price_gross}
+              vatRate={calc?.vat_rate}
               key={hit.id}
             />
           );
