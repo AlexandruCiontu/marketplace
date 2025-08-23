@@ -7,52 +7,40 @@ use App\Models\Product;
 use App\Services\VatCountryResolver;
 use App\Services\VatRateService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 
 class VatController extends Controller
 {
     /**
-     * Return breakdown for a batch of product ids.
-     * Response: { data: [id => {price_net, vat_rate, vat_amount, price_gross}] }
+     * Return pricing breakdown for multiple products.
+     * Response: { prices: {id: {price_net, vat_rate, vat_amount, price_gross}} }
      */
     public function priceBatch(
         Request $request,
-        VatRateService $service,
-        VatCountryResolver $resolver
+        VatCountryResolver $country,
+        VatRateService $vat
     ) {
         $ids = $request->input('ids', []);
         if (is_string($ids)) {
-            $ids = array_filter(explode(',', $ids));
+            $ids = array_filter(array_map('trim', explode(',', $ids)));
         }
-        $ids = array_values(array_unique(array_map('intval', Arr::wrap($ids))));
+        $ids = array_values(array_unique(array_map('intval', (array) $ids)));
         if (empty($ids)) {
-            return response()->json(['data' => []]);
+            return response()->json(['prices' => []]);
         }
 
-        $country = $resolver->resolve($request);
+        $countryCode = $country->resolve($request);
 
         $products = Product::query()
-            ->select(['id', 'price', 'vat_type'])
             ->whereIn('id', $ids)
-            ->get()
-            ->keyBy('id');
+            ->where('status', 'published')
+            ->get(['id', 'price', 'vat_type']);
 
-        $out = [];
-        foreach ($ids as $id) {
-            $p = $products->get($id);
-            if (!$p) {
-                continue;
-            }
-            $calc = $service->calculate((float) $p->price, $p, $country);
-            $out[$id] = [
-                'price_net'   => $calc['price_net'],
-                'vat_rate'    => $calc['vat_rate'],
-                'vat_amount'  => $calc['vat_amount'],
-                'price_gross' => $calc['price_gross'],
-            ];
+        $prices = [];
+        foreach ($products as $p) {
+            $prices[(string) $p->id] = $vat->calculate((float) $p->price, $p, $countryCode);
         }
 
-        return response()->json(['data' => $out]);
+        return response()->json(['prices' => $prices]);
     }
 }
 

@@ -3,45 +3,30 @@
 namespace App\Services;
 
 use App\Models\Product;
-use App\Support\CountryCode;
+use Illuminate\Support\Facades\Storage;
 
 class VatRateService
 {
-    protected function normalizeType(?string $type): string
+    protected array $rates;
+    protected array $defaults;
+
+    public function __construct()
     {
-        $t = strtolower(trim((string) $type));
-        $t = str_replace([' ', '-'], '_', $t);
-        return in_array($t, ['standard','reduced','reduced_alt','super_reduced','zero'], true)
-            ? $t : 'standard';
+        $config = config('vat');
+        $this->rates    = $config['rates'] ?? [];
+        $this->defaults = $config['default_rates'] ?? [];
+
+        if (empty($this->rates) && Storage::disk('local')->exists('vat/rates.json')) {
+            $json = json_decode(Storage::disk('local')->get('vat/rates.json'), true) ?: [];
+            $this->rates = $json['rates'] ?? [];
+            $this->defaults = $json['default_rates'] ?? $this->defaults;
+        }
     }
 
-    public function rateForProduct(Product|string $productOrType, string $country): float
+    public function calculate(float $net, mixed $productOrType, string $country): array
     {
-        $country = strtoupper(CountryCode::toIso2($country) ?? 'RO');
-
-        $type = $productOrType instanceof Product
-            ? $this->normalizeType($productOrType->vat_type)
-            : $this->normalizeType((string) $productOrType);
-
-        $configured = config("vat.rates.$type.$country");
-        if ($configured !== null) {
-            return (float) $configured;
-        }
-
-        if ($type === 'reduced_alt') {
-            $alt = config("vat.rates.reduced.$country");
-            if ($alt !== null) {
-                return (float) $alt;
-            }
-        }
-
-        return (float) config("vat.default_rates.$type", config('vat.default_rates.standard', 21.0));
-    }
-
-    public function calculate(float $net, Product|string $productOrType, string $country): array
-    {
-        $rate  = $this->rateForProduct($productOrType, $country);
-        $vat   = round($net * $rate / 100, 2);
+        $rate = $this->rateForProduct($productOrType, $country);
+        $vat  = round($net * $rate / 100, 2);
         $gross = round($net + $vat, 2);
 
         return [
@@ -51,4 +36,28 @@ class VatRateService
             'price_gross' => (float) $gross,
         ];
     }
+
+    public function rateForProduct(mixed $productOrType, string $country): float
+    {
+        $type = $productOrType instanceof Product
+            ? $productOrType->vat_type
+            : (string) $productOrType;
+
+        $type = strtolower(preg_replace('/[^a-z]+/i', '_', $type));
+        $type = trim($type, '_');
+        $country = strtoupper($country);
+
+        $rate = $this->rates[$type][$country] ?? null;
+
+        if ($rate === null && $type === 'reduced_alt') {
+            $rate = $this->rates['reduced'][$country] ?? null;
+        }
+
+        if ($rate === null) {
+            $rate = $this->defaults[$type] ?? $this->defaults['standard'] ?? 19.0;
+        }
+
+        return (float) $rate;
+    }
 }
+
