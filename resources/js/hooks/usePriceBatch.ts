@@ -1,53 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 
-export type BatchPrice = {
-  price_net: number;
-  vat_rate: number;
-  vat_amount: number;
-  price_gross: number;
-};
+export type PriceBreakdown = { net: number; vat: number; gross: number; rate: number };
 
-/** Extrage o cheie stabilă dintr-un hit Typesense/Algolia/Eloquent. */
-export function pickHitKey(hit: any): string {
-  // încearcă, în ordinea asta: id, objectID (Algolia), document.id (Typesense),
-  // slug (fallback), document.slug (alt fallback)
-  const key =
-    hit?.id ??
-    hit?.objectID ??
-    hit?.document?.id ??
-    hit?.slug ??
-    hit?.document?.slug ??
-    "";
-  return key ? String(key) : "";
+export function stableKeyFromHit(hit: any): string {
+  // Typesense: objectID (string) e "id"-ul documentului. Fallback pe id/slug.
+  const raw = hit?.objectID ?? hit?.id ?? hit?.slug ?? "";
+  return String(raw);
 }
 
 export default function usePriceBatch(hits: any[]) {
-  const keys = useMemo(() => {
-    const k = Array.from(
-      new Set(
-        (hits || [])
-          .map(pickHitKey)
-          .map(String)
-          .filter(Boolean)
-      )
-    );
-    return k;
-  }, [hits]);
+  const [prices, setPrices] = useState<Record<string, PriceBreakdown>>({});
 
-  const [map, setMap] = useState<Record<string, BatchPrice>>({});
+  const keys = useMemo(
+    () => Array.from(new Set(hits.map(stableKeyFromHit).filter(Boolean))),
+    [hits]
+  );
 
   useEffect(() => {
-    if (!keys.length) {
-      setMap({});
-      return;
-    }
-    const qs = keys.map((k) => `ids[]=${encodeURIComponent(k)}`).join("&");
-    fetch(`/api/vat/price-batch?${qs}`, { credentials: "same-origin" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r)))
-      .then((res) => setMap(res || {}))
-      .catch(() => setMap({}));
-    // stringify pt. a evita efecte false când se reface array-ul
-  }, [JSON.stringify(keys)]);
+    if (!keys.length) { setPrices({}); return; }
 
-  return map;
+    const params = new URLSearchParams();
+    keys.forEach(k => params.append("ids[]", k));
+
+    fetch(`/api/vat/price-batch?${params.toString()}`, { headers: { Accept: "application/json" } })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then((json) => { setPrices(json || {}); })
+      .catch(err => { console.error("price-batch failed", err); setPrices({}); });
+  // stringify pentru a evita rerulări inutile
+  }, [keys.join("|")]);
+
+  return { prices, keyFor: stableKeyFromHit };
 }

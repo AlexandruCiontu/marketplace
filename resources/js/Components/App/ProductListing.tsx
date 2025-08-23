@@ -15,8 +15,12 @@ function ProductListing({products}: { products: PaginationProps<ProductListItem>
         {products.data.map(product => (
           <ProductItem
             product={product}
-            priceGross={product.price_gross}
-            vatRate={product.vat_rate}
+            price={{
+              net: product.price_net ?? product.price,
+              gross: product.price_gross,
+              vat: product.vat_amount ?? (product.price_gross - (product.price_net ?? product.price)),
+              rate: product.vat_rate ?? 0,
+            }}
             key={product.id}
           />
         ))}

@@ -8,6 +8,7 @@ import {
   useHits
 } from "react-instantsearch";
 import ProductItem from "@/Components/App/ProductItem";
+import usePriceBatch from "@/hooks/usePriceBatch";
 import FilterPanel from "@/Components/App/FilterPanel";
 import NumberFormatter from "@/Components/Core/NumberFormatter";
 import ProductListing from "@/Components/App/ProductListing";
@@ -16,23 +17,7 @@ import BannerSlider from "@/Components/App/BannerSlider";
 
 function CustomHits() {
   const { hits, results } = useHits<any>();
-
-  const hitKey = (h: any) =>
-    String(h.objectID ?? h.document?.id ?? h.id ?? h.slug ?? h.document?.slug);
-
-  const [priceMap, setPriceMap] = React.useState<Record<string, any>>({});
-
-  React.useEffect(() => {
-    const ids = hits.map(hitKey).filter(Boolean);
-    if (!ids.length) {
-      setPriceMap({});
-      return;
-    }
-    const qs = new URLSearchParams(ids.map((id) => ["ids[]", id])).toString();
-    fetch(`/api/vat/price-batch?${qs}`, { credentials: "same-origin" })
-      .then((r) => r.json())
-      .then((data) => setPriceMap(data || {}));
-  }, [JSON.stringify(hits.map(hitKey))]);
+  const { prices, keyFor } = usePriceBatch(hits);
 
   if (!hits?.length || !results || results.nbHits === 0) {
     return (
@@ -75,10 +60,9 @@ function CustomHits() {
       </div>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
         {hits.map((hit: any) => {
-          const key = hitKey(hit);
-          const calc = priceMap[key];
-          const product = calc ? { ...hit, ...calc } : hit;
-          return <ProductItem product={product} key={key} />;
+          const key = keyFor(hit);
+          const price = prices[key];
+          return <ProductItem product={hit} price={price} key={key} />;
         })}
       </div>
     </>

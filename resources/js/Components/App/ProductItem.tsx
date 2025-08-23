@@ -1,14 +1,14 @@
 import { ProductListItem } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
+import type { PriceBreakdown } from "@/hooks/usePriceBatch";
 
 type Props = {
   product: ProductListItem;
-  priceGross?: number;
-  vatRate?: number;
+  price?: PriceBreakdown;
 };
 
-export default function ProductItem({ product, priceGross, vatRate }: Props) {
+export default function ProductItem({ product, price }: Props) {
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -69,8 +69,8 @@ export default function ProductItem({ product, priceGross, vatRate }: Props) {
           </button>
           {(() => {
             const amount = Number(
-              typeof priceGross === "number"
-                ? priceGross
+              typeof price?.gross === "number"
+                ? price.gross
                 : product.price_gross ?? product.price ?? 0
             );
             return (
@@ -80,9 +80,9 @@ export default function ProductItem({ product, priceGross, vatRate }: Props) {
                 ) : (
                   "—"
                 )}
-                {typeof vatRate === "number" ? (
+                {price ? (
                   <span className="block text-xs text-muted-foreground">
-                    VAT {vatRate}%
+                    Includes VAT {price.rate}% ({price.vat.toFixed(2)})
                   </span>
                 ) : (
                   typeof product.vat_rate === "number" && (
