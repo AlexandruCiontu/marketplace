@@ -74,7 +74,8 @@ class HandleInertiaRequests extends Middleware
             'miniCartItems' => $cartItems,
             'departments' => DepartmentResource::collection($departments)->collection->toArray(),
             'keyword' => $request->query('keyword'),
-            'countryCode' => session('country_code'),
+            'countryCode' => strtoupper(session('country_code', config('vat.fallback_country', 'RO'))),
+            'vatLockedToAddress' => (bool) config('vat.lock_to_default_address'),
         ];
     }
 }

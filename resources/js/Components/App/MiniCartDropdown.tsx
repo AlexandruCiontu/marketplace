@@ -2,13 +2,9 @@ import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
 import { productRoute } from '@/helpers';
-import { getVatRate, calculateVatIncludedPrice } from '@/utils/vat';
-import { useVatCountry } from '@/hooks/useVatCountry';
-import type { VatRateType } from '@/types';
 
 function MiniCartDropdown() {
-  const { totalQuantity, totalPrice, miniCartItems } = usePage().props;
-  const { countryCode } = useVatCountry();
+  const { totalQuantity, totalGross, miniCartItems } = usePage().props;
 
   return (
     <details className="dropdown dropdown-end static sm:relative ">
@@ -44,8 +40,6 @@ function MiniCartDropdown() {
               </div>
             )}
             {miniCartItems.map((item) => {
-              const rate = getVatRate(countryCode, (item.vat_rate_type as VatRateType) ?? 'standard_rate');
-              const gross = calculateVatIncludedPrice(item.price, rate);
               return (
                 <div key={item.id} className={'flex gap-4 p-3'}>
                   <Link href={productRoute(item)} className={'w-16 h-16 flex justify-center items-center'}>
@@ -58,7 +52,7 @@ function MiniCartDropdown() {
                     <div className={'flex justify-between text-sm'}>
                       <div>Quantity: {item.quantity}</div>
                       <div>
-                        <CurrencyFormatter amount={gross * item.quantity} />
+                        <CurrencyFormatter amount={item.price_gross * item.quantity} />
                       </div>
                     </div>
                   </div>
@@ -69,9 +63,7 @@ function MiniCartDropdown() {
 
           <span className="text-lg">
             Subtotal:{' '}
-            <CurrencyFormatter
-              amount={calculateVatIncludedPrice(totalPrice, getVatRate(countryCode))}
-            />
+            <CurrencyFormatter amount={totalGross} />
           </span>
           <div className="card-actions">
             <Link href={route('cart.index')}

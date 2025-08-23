@@ -5,22 +5,47 @@ namespace App\Models;
 use App\Enums\ProductStatusEnum;
 use App\Enums\VendorStatusEnum;
 use App\Models\Review;
+use App\Models\Vendor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Builder;
 use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Ibericode\Vat\Facades\Vat;
-use App\Helpers\VatHelper;
+use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
+
+    protected $fillable = [
+        'vat_type',
+    ];
+
+    protected $casts = [
+        'vat_type' => 'string',
+    ];
+
+    // normalizează valori de tip TVA
+    public function getVatTypeNormalizedAttribute(): string
+    {
+        $raw = $this->attributes['vat_type'] ?? 'standard';
+        $t = str_replace([' ', '-'], '_', strtolower(trim($raw)));
+        return in_array($t, ['standard', 'reduced', 'reduced_alt', 'super_reduced'], true)
+            ? $t
+            : 'standard';
+    }
+
+    public function setVatTypeAttribute($value): void
+    {
+        $this->attributes['vat_type'] = str_replace([' ', '-'], '_', strtolower(trim((string) $value)));
+    }
 
     public function registerMediaConversions(?Media $media = null): void
     {
@@ -47,6 +72,24 @@ class Product extends Model implements HasMedia
     public function scopeForWebsite(Builder $query): Builder
     {
         return $query->published()->vendorApproved();
+    }
+
+    /**
+     * Vendor that owns the product.
+     */
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'created_by', 'user_id');
+    }
+
+    /**
+     * Scope: published products with approved vendors.
+     */
+    public function scopePublishedWithApprovedVendor(Builder $query): Builder
+    {
+        return $query
+            ->where('status', ProductStatusEnum::Published)
+            ->whereHas('vendor', fn ($q) => $q->where('status', VendorStatusEnum::Approved->value));
     }
 
     public function scopeVendorApproved(Builder $query)
@@ -106,7 +149,7 @@ class Product extends Model implements HasMedia
         return $this->price;
     }
 
-    public function getImageForOptions(array $optionIds = null)
+    public function getImageForOptions(?array $optionIds = null): ?string
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -122,7 +165,7 @@ class Product extends Model implements HasMedia
         return $this->getFirstMediaUrl('images', 'small');
     }
 
-    public function getImagesForOptions(array $optionIds = null)
+    public function getImagesForOptions(?array $optionIds = null): array
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -134,7 +177,7 @@ class Product extends Model implements HasMedia
                 }
             }
         }
-        return $this->getMedia('images');
+        return $this->getMedia('images')->toArray();
     }
 
     public function getPriceForFirstOptions(): float
@@ -235,23 +278,6 @@ class Product extends Model implements HasMedia
     public function reviews()
     {
         return $this->hasMany(Review::class);
-    }
-
-    // ✅ TVA calculat dinamic pe baza codului de țară
-    public function getVatAmountAttribute(): float
-    {
-        $country = session('country_code', 'RO'); // fallback dacă nu e setată
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
-
-        return round($this->price * ($rate / 100), 2);
-    }
-
-    public function getGrossPriceAttribute(): float
-    {
-        $country = session('country_code', 'RO'); // fallback
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
-
-        return round($this->price * (1 + $rate / 100), 2);
     }
 
 }

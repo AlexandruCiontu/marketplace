@@ -12,6 +12,7 @@ use App\Models\Vendor;
 use App\Services\CartService;
 use App\Services\TransactionClassifierService;
 use App\Services\VatRateService;
+use App\Support\CountryCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,9 +23,10 @@ class CartController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(CartService $cartService)
+    public function index(Request $request, CartService $cartService)
     {
         [$user, $defaultAddress] = $this->userShippingAddress();
+        $country = CountryCode::toIso2(session('country_code', config('vat.fallback_country', 'RO'))) ?? config('vat.fallback_country', 'RO');
 
         $totals = $cartService->getTotals();
 
@@ -32,30 +34,10 @@ class CartController extends Controller
             'cartItems' => $cartService->getCartItemsGrouped(),
             'addresses' => $user ? ShippingAddressResource::collection($user->shippingAddresses)->collection->toArray() : [],
             'shippingAddress' => $defaultAddress ? new ShippingAddressResource($defaultAddress) : null,
-            'countryCode' => session('country_code', 'RO'),
-            'gross_total' => $totals['gross_total'],
-            'vat_total' => $totals['vat_total'],
-            'net_total' => $totals['net_total'],
+            'totals' => $totals,
+            'totalQuantity' => $cartService->getTotalQuantity(),
+            'countryCode' => $country,
         ]);
-    }
-
-    public function setVatCountry(Request $request)
-    {
-        $code = $request->input('vat_country');
-
-        $euCountries = [
-            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE',
-            'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT',
-            'RO', 'SK', 'SI', 'ES', 'SE',
-        ];
-
-        if (! in_array($code, $euCountries)) {
-            $code = 'RO';
-        }
-
-        session(['country_code' => $code]);
-
-        return back();
     }
 
     /**
@@ -140,13 +122,15 @@ class CartController extends Controller
         TransactionClassifierService $classifier,
         VatRateService $vatRateService
     ) {
-        \Stripe\Stripe::setApiKey(config('app.stripe_secret_key'));
+        $stripe = new \Stripe\StripeClient(config('app.stripe_secret_key'));
 
         $vendorId = $request->input('vendor_id');
 
         $allCartItems = $cartService->getCartItemsGrouped();
 
         [$authUser, $defaultAddress] = $this->userShippingAddress();
+
+        $clientCountryCode = CountryCode::toIso2(session('country_code', config('vat.fallback_country', 'RO'))) ?? config('vat.fallback_country', 'RO');
 
         DB::beginTransaction();
         try {
@@ -156,7 +140,6 @@ class CartController extends Controller
             }
             $orders = [];
             $lineItems = [];
-            $clientCountryCode = $defaultAddress->country_code;
 
             foreach ($checkoutCartItems as $item) {
                 $vendorUser = $item['user'];
@@ -177,6 +160,7 @@ class CartController extends Controller
                     'net_total' => 0,
                     'vat_total' => 0,
                     'vat_country_code' => $clientCountryCode,
+                    'vat_rate' => null,
                     'transaction_type' => $transactionType,
                     'status' => OrderStatusEnum::Draft->value,
                 ]);
@@ -188,24 +172,27 @@ class CartController extends Controller
                 $orders[] = $order;
 
                 foreach ($cartItems as $cartItem) {
-                    $vatCountry = $transactionType === 'OSS' ? $clientCountryCode : $vendor->country_code;
-
-                    $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_rate_type'], $vatCountry);
+                    $productModel = Product::find($cartItem['product_id']);
+                    $rate = $vatRateService->rateForProduct(
+                        $productModel ?? ($cartItem['vat_type'] ?? 'standard'),
+                        $clientCountryCode
+                    );
+                    $calc = $vatRateService->calculate($cartItem['price'], $rate);
 
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $cartItem['product_id'],
                         'quantity' => $cartItem['quantity'],
                         'net_price' => $cartItem['price'],
-                        'vat_rate' => $calc['rate'],
-                        'vat_amount' => $calc['vat'],
-                        'gross_price' => $calc['gross'],
+                        'vat_rate' => $rate,
+                        'vat_amount' => $calc['vat_amount'],
+                        'gross_price' => $calc['price_gross'],
                         'variation_type_option_ids' => $cartItem['option_ids'],
                     ]);
 
                     $orderNet += $cartItem['price'] * $cartItem['quantity'];
-                    $orderGross += $calc['gross'] * $cartItem['quantity'];
-                    $orderVat += $calc['vat'] * $cartItem['quantity'];
+                    $orderGross += $calc['price_gross'] * $cartItem['quantity'];
+                    $orderVat += $calc['vat_amount'] * $cartItem['quantity'];
 
                     $description = collect($cartItem['options'])->map(function ($item) {
                         return "{$item['type']['name']}: {$item['name']}";
@@ -218,7 +205,7 @@ class CartController extends Controller
                                 'name' => $cartItem['title'],
                                 'images' => [$cartItem['image']],
                             ],
-                            'unit_amount' => (int) round($calc['gross'] * 100),
+                              'unit_amount' => (int) round($calc['price_gross'] * 100),
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];
@@ -228,10 +215,13 @@ class CartController extends Controller
                     $lineItems[] = $lineItem;
                 }
 
+                $orderRate = $orderNet > 0 ? round(($orderVat / $orderNet) * 100, 2) : 0;
                 $order->update([
                     'total_price' => $orderGross,
                     'net_total' => $orderNet,
                     'vat_total' => $orderVat,
+                    'vat_country_code' => $clientCountryCode,
+                    'vat_rate' => $orderRate,
                 ]);
             }
             $firstOrder = $orders[0];
@@ -246,11 +236,11 @@ class CartController extends Controller
                 'city' => $defaultAddress->city,
                 'state' => $defaultAddress->state,
                 'postal_code' => $defaultAddress->zipcode,
-                'country' => $defaultAddress->country_code,
+                'country' => $clientCountryCode,
             ]);
 
             if (! $customerId) {
-                $customer = \Stripe\Customer::create([
+                $customer = $stripe->customers->create([
                     'email' => $authUser->email,
                     'name' => $authUser->name,
                     'address' => $address,
@@ -263,7 +253,7 @@ class CartController extends Controller
                 $authUser->stripe_customer_id = $customerId;
                 $authUser->save();
             } else {
-                \Stripe\Customer::update($customerId, [
+                $stripe->customers->update($customerId, [
                     'address' => $address,
                     'shipping' => [
                         'name' => $authUser->name,
@@ -272,7 +262,7 @@ class CartController extends Controller
                 ]);
             }
 
-            $session = \Stripe\Checkout\Session::create([
+            $session = $stripe->checkout->sessions->create([
                 'customer' => $customerId,
                 'line_items' => $lineItems,
                 'mode' => 'payment',
@@ -283,7 +273,7 @@ class CartController extends Controller
                 ],
                 'billing_address_collection' => 'required',
                 'shipping_address_collection' => [
-                    'allowed_countries' => ['RO', 'HU', 'BG'],
+                    'allowed_countries' => [$clientCountryCode],
                 ],
                 'payment_intent_data' => [
                     'application_fee_amount' => $commission,
@@ -316,7 +306,7 @@ class CartController extends Controller
         }
         // Update the shipping address in session and set VAT country
         session()->put('shipping_address_id', $address->id);
-        session()->put('country_code', $address->country_code);
+        session()->put('country_code', CountryCode::toIso2($address->country_code) ?? config('vat.fallback_country', 'RO'));
 
         return back();
     }

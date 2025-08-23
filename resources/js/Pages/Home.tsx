@@ -8,15 +8,18 @@ import {
   useHits
 } from "react-instantsearch";
 import ProductItem from "@/Components/App/ProductItem";
+import usePriceBatch from "@/hooks/usePriceBatch";
 import FilterPanel from "@/Components/App/FilterPanel";
 import NumberFormatter from "@/Components/Core/NumberFormatter";
 import ProductListing from "@/Components/App/ProductListing";
 import BannerSlider from "@/Components/App/BannerSlider";
+// prices for hits are fetched in batch from the backend
 
-function CustomHits({ countryCode }: { countryCode: string }) {
-  const { hits, results } = useHits();
+function CustomHits() {
+  const { hits, results } = useHits<any>();
+  const { prices, keyFor } = usePriceBatch(hits);
 
-  if (!results || results.nbHits === 0) {
+  if (!hits?.length || !results || results.nbHits === 0) {
     return (
       <div className="w-full py-8 text-center">
         <div className="card bg-base-100 shadow-xl">
@@ -56,9 +59,11 @@ function CustomHits({ countryCode }: { countryCode: string }) {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-        {hits.map((hit: any) => (
-          <ProductItem product={hit} key={hit.id} countryCode={countryCode} />
-        ))}
+        {hits.map((hit: any) => {
+          const key = keyFor(hit);
+          const price = prices[key];
+          return <ProductItem product={hit} price={price} key={key} />;
+        })}
       </div>
     </>
   );
@@ -93,7 +98,6 @@ const sampleBanners = [
 
 export default function Home({
                                products,
-                               countryCode
                              }: PageProps<{ products: PaginationProps<Product>; countryCode: string }>) {
 
   return (
@@ -107,7 +111,7 @@ export default function Home({
 
           <div className="flex-1">
             <Configure hitsPerPage={24} />
-            <CustomHits countryCode={countryCode} />
+            <CustomHits />
             <Pagination
               classNames={{
                 root: 'hidden justify-center md:flex',
