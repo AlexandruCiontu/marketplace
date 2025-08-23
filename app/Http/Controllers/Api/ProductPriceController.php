@@ -4,29 +4,26 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use App\Services\VatCountryResolver;
-use App\Services\VatRateService;
 use Illuminate\Http\Request;
 
 class ProductPriceController extends Controller
 {
-    public function __invoke(Request $request, Product $product, VatRateService $service, VatCountryResolver $resolver)
+    public function show(Request $request, Product $product)
     {
-        $price = (float) $request->query('price', $product->price);
+        $net = (int) $request->integer('price');
 
-        $country = $resolver->resolve($request);
+        $vatRate = match ($product->vat_type ?? 'standard') {
+            'reduced', 'reduced_alt' => 0.09,
+            default => 0.19,
+        };
+        $vat = (int) round($net * $vatRate);
+        $gross = $net + $vat;
 
-        $rate = $service->rateForProduct($product, $country);
-        $vat = round($price * $rate / 100, 2);
-        $gross = round($price + $vat, 2);
-
-        return [
-            'price_net' => $price,
-            'vat_rate' => $rate,
-            'vat_amount' => $vat,
+        return response()->json([
             'price_gross' => $gross,
-            'country_code' => $country,
-        ];
+            'vat_amount'  => $vat,
+            'vat_rate'    => $vatRate * 100,
+        ]);
     }
 }
 

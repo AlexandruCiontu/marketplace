@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\ProductPriceController;
 Route::middleware(['web', StartSession::class])->group(function () {
     Route::post('country/select', [CountryController::class, 'select']);
     Route::get('country/current', [CountryController::class, 'current'])->name('api.country.current');
-    Route::get('products/{product}/price', [ProductPriceController::class, 'show']);
+    Route::get('products/{product}/price', [ProductPriceController::class, 'show'])->name('api.products.price');
 });
 
 Route::middleware('throttle:60,1')->group(function () {

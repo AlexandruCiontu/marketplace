@@ -38,7 +38,7 @@ export default function ProductCardMini(p: CardProps) {
       <div className="mt-3 line-clamp-2 min-h-[3.2rem]">{p.name}</div>
 
       <div className="mt-2 flex items-center gap-2">
-        <StarRating value={p.rating_average ?? 0} />
+        <StarRating value={(p.rating_average ?? (p as any).reviews_avg_rating ?? 0) as number} />
         <span className="text-xs opacity-70">({p.reviews_count ?? 0})</span>
       </div>
 

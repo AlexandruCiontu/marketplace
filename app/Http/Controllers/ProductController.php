@@ -6,12 +6,9 @@ use App\Http\Resources\DepartmentResource;
 use App\Http\Resources\ProductListResource;
 use App\Http\Resources\ProductResource;
 use App\Models\Department;
-use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Support\CountryCode;
-use App\Services\VatCountryResolver;
-use App\Services\VatRateService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,34 +34,38 @@ class ProductController extends Controller
         ]);
     }
 
-    public function show(Product $product, VatCountryResolver $countryResolver, VatRateService $vat)
+    public function show(Product $product)
     {
-        $product->load(['reviews.user']);
-
         $user = auth()->user();
-        $hasPurchased = false;
-        $already = false;
 
-        if ($user) {
-            $hasPurchased = $user->orders()
+        $product->load([
+            'images',
+            'variationTypes.options.images',
+            'variations',
+            'reviews.user',
+        ]);
+
+        $hasPurchased = $user
+            ? $user->orders()
                 ->where('status', 'paid')
-                ->whereHas('orderItems', fn ($q) => $q->where('product_id', $product->id))
-                ->exists();
-            $already = $product->reviews->firstWhere('user_id', $user->id) !== null;
-        }
+                ->whereHas('items', fn($q) => $q->where('product_id', $product->id))
+                ->exists()
+            : false;
 
-        $country = $countryResolver->resolve();
-        $rate = $vat->rateForProduct($product, $country);
-        $net = round((float) $product->price, 2);
-        $vatA = round($net * $rate / 100, 2);
-        $gross = round($net + $vatA, 2);
+        $already = $user
+            ? $product->reviews()->where('user_id', $user->id)->exists()
+            : false;
+
+        $base = Product::query()
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating');
 
         $boughtTogetherIds = OrderItem::query()
             ->selectRaw('product_id, COUNT(*) as c')
             ->whereIn('order_id', function ($q) use ($product) {
-                $q->select('order_id')
-                    ->from('order_items')
-                    ->where('product_id', $product->id);
+                $q->select('order_id')->from('order_items')->where('product_id', $product->id);
             })
             ->where('product_id', '!=', $product->id)
             ->groupBy('product_id')
@@ -72,106 +73,27 @@ class ProductController extends Controller
             ->limit(15)
             ->pluck('product_id');
 
-        $boughtTogether = Product::whereIn('id', $boughtTogetherIds)
+        $boughtTogether = Product::query()
+            ->whereIn('id', $boughtTogetherIds)
             ->withCount('reviews')
             ->withAvg('reviews', 'rating')
-            ->get()
-            ->map(function ($p) use ($vat, $country) {
-                $calc = $vat->priceForProduct($p, $country);
-                return [
-                    'id' => $p->id,
-                    'name' => $p->title,
-                    'slug' => $p->slug,
-                    'image_url' => $p->getFirstImageUrl(),
-                    'price_gross' => $calc['gross'],
-                    'currency' => $calc['currency'],
-                    'rating_average' => round((float) $p->reviews_avg_rating, 2),
-                    'reviews_count' => $p->reviews_count,
-                ];
-            });
+            ->get();
 
-        $baseQuery = Product::query()
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating');
+        $similar = (clone $base)->orderByDesc('reviews_avg_rating')->limit(20)->get();
+        $compare = (clone $base)->orderBy('price')->limit(20)->get();
 
-        $similarProducts = (clone $baseQuery)
-            ->when($product->brand_id ?? null, fn ($q) => $q->orWhere('brand_id', $product->brand_id))
-            ->orderByDesc('reviews_avg_rating')
-            ->limit(20)
-            ->get()
-            ->map(function ($p) use ($vat, $country) {
-                $calc = $vat->priceForProduct($p, $country);
-                return [
-                    'id' => $p->id,
-                    'name' => $p->title,
-                    'slug' => $p->slug,
-                    'image_url' => $p->getFirstImageUrl(),
-                    'price_gross' => $calc['gross'],
-                    'currency' => $calc['currency'],
-                    'rating_average' => round((float) $p->reviews_avg_rating, 2),
-                    'reviews_count' => $p->reviews_count,
-                ];
-            });
-
-        $compareProducts = (clone $baseQuery)
-            ->orderBy('price')
-            ->limit(20)
-            ->get()
-            ->map(function ($p) use ($vat, $country) {
-                $calc = $vat->priceForProduct($p, $country);
-                return [
-                    'id' => $p->id,
-                    'name' => $p->title,
-                    'slug' => $p->slug,
-                    'image_url' => $p->getFirstImageUrl(),
-                    'price_gross' => $calc['gross'],
-                    'currency' => $calc['currency'],
-                    'rating_average' => round((float) $p->reviews_avg_rating, 2),
-                    'reviews_count' => $p->reviews_count,
-                ];
-            });
-
-        if (Schema::hasColumn('products', 'views')) {
-            $alsoViewedQuery = (clone $baseQuery)->orderByDesc('views');
-        } else {
-            $alsoViewedQuery = (clone $baseQuery)
-                ->orderByDesc('reviews_count')
-                ->orderByDesc('reviews_avg_rating');
-        }
-
-        $alsoViewed = $alsoViewedQuery
-            ->limit(20)
-            ->get()
-            ->map(function ($p) use ($vat, $country) {
-                $calc = $vat->priceForProduct($p, $country);
-                return [
-                    'id' => $p->id,
-                    'name' => $p->title,
-                    'slug' => $p->slug,
-                    'image_url' => $p->getFirstImageUrl(),
-                    'price_gross' => $calc['gross'],
-                    'currency' => $calc['currency'],
-                    'rating_average' => round((float) $p->reviews_avg_rating, 2),
-                    'reviews_count' => $p->reviews_count,
-                ];
-            });
+        $alsoViewed = Schema::hasColumn('products', 'views')
+            ? (clone $base)->orderByDesc('views')->limit(20)->get()
+            : (clone $base)->orderByDesc('reviews_count')->orderByDesc('reviews_avg_rating')->limit(20)->get();
 
         return Inertia::render('Product/Show', [
-            'product' => array_merge(
-                (new ProductResource($product))->toArray(request()),
-                ['vat' => ['rate' => $rate, 'amount' => $vatA, 'gross' => $gross]]
-            ),
-            'variationOptions' => request('options', []),
+            'product' => new \App\Http\Resources\ProductResource($product),
             'can_review' => (bool) ($user && $user->hasVerifiedEmail() && $hasPurchased),
-            'already_reviewed' => $already,
-            'all_reviews' => $product->reviews()->with('user:id,name')->latest()->get(),
-            'bought_together' => $boughtTogether,
-            'similar_products' => $similarProducts,
-            'compare_products' => $compareProducts,
-            'also_viewed' => $alsoViewed,
-            'vatCountry' => $country,
+            'already_reviewed' => (bool) $already,
+            'bought_together' => $boughtTogether->map->only(['id','name','slug','image_url','price_gross','reviews_count','reviews_avg_rating']),
+            'similar_products' => $similar->map->only(['id','name','slug','image_url','price_gross','reviews_count','reviews_avg_rating']),
+            'compare_products' => $compare->map->only(['id','name','slug','image_url','price_gross','reviews_count','reviews_avg_rating']),
+            'also_viewed' => $alsoViewed->map->only(['id','name','slug','image_url','price_gross','reviews_count','reviews_avg_rating']),
         ]);
     }
 
