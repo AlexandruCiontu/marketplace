@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Session\Middleware\StartSession;
 use App\Http\Controllers\Api\CountryController;
-use App\Http\Controllers\Api\VatController;
+use App\Http\Controllers\Api\VatPriceController;
 use App\Http\Controllers\Api\ProductPriceController;
 
 Route::middleware(['web', StartSession::class])->group(function () {
@@ -12,8 +12,6 @@ Route::middleware(['web', StartSession::class])->group(function () {
     Route::get('products/{product}/price', [ProductPriceController::class, 'show']);
 });
 
-Route::prefix('vat')->group(function () {
-    Route::get('price-batch', [VatController::class, 'priceBatch'])
-        ->name('api.vat.price-batch');
-});
+Route::post('/vat/price-batch', [VatPriceController::class, 'batch'])
+    ->name('api.vat.price-batch');
 

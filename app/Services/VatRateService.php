@@ -64,5 +64,20 @@ class VatRateService
 
         return (float) ($rates[$type] ?? $rates['reduced_alt'] ?? $rates['standard']);
     }
+
+    public function priceForProduct(Product $product, string $country, string $currency = 'EUR'): array
+    {
+        $rate = $this->rateForProduct($product, $country);
+        $calc = $this->calculate((float) $product->price, $rate);
+
+        return [
+            'net'      => $calc['price_net'],
+            'vat'      => $calc['vat_amount'],
+            'gross'    => $calc['price_gross'],
+            'rate'     => $calc['vat_rate'],
+            'type'     => $product->vat_type_normalized,
+            'currency' => $currency,
+        ];
+    }
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useVatCountry } from "./useVatCountry";
 
 export type PriceBreakdown = { net: number; vat: number; gross: number; rate: number };
 
@@ -13,6 +14,7 @@ const pageCache = new Map<string, PriceBreakdown>();
 export default function usePriceBatch(hits: any[]) {
   const [prices, setPrices] = useState<Record<string, PriceBreakdown>>({});
   const abortRef = useRef<AbortController | null>(null);
+  const country = useVatCountry();
 
   const keys = useMemo(() => {
     const ks = hits
@@ -37,17 +39,23 @@ export default function usePriceBatch(hits: any[]) {
     abortRef.current?.abort();
     abortRef.current = ctrl;
 
-    const params = new URLSearchParams();
-    miss.forEach(k => params.append("ids[]", k));
-
-    fetch(`/api/vat/price-batch?${params.toString()}`, {
-      headers: { Accept: "application/json" },
+    fetch(`/api/vat/price-batch`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: miss, country_code: country }),
       signal: ctrl.signal,
     })
       .then(r => r.ok ? r.json() : Promise.reject(r))
-      .then((json: Record<string, PriceBreakdown>) => {
-        for (const [k, v] of Object.entries(json || {})) pageCache.set(k, v);
-        setPrices(p => ({ ...p, ...(json || {}) }));
+      .then((json: any) => {
+        const map = json?.items || {};
+        const out: Record<string, PriceBreakdown> = {};
+        Object.entries(map).forEach(([k, v]: any) => {
+          if (v && v.found) {
+            out[k] = { net: v.net, vat: v.vat, gross: v.gross, rate: v.rate };
+            pageCache.set(k, out[k]);
+          }
+        });
+        setPrices(p => ({ ...p, ...out }));
       })
       .catch(err => { if (err?.name !== "AbortError") console.error("price-batch failed", err); });
 

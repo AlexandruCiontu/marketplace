@@ -1,6 +1,8 @@
 <?php
 return [
     'fallback_country' => env('VAT_FALLBACK_COUNTRY', 'RO'),
+    'default_country' => env('VAT_DEFAULT_COUNTRY', 'RO'),
+    'default_currency' => env('VAT_DEFAULT_CURRENCY', 'EUR'),
     'lock_to_default_address' => env('VAT_LOCK_TO_DEFAULT_ADDRESS', true),
     // Preferred rates per country; extend as needed
     'rates' => [
