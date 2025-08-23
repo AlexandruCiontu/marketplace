@@ -72,6 +72,7 @@ class ProductController extends Controller
             'variationOptions' => request('options', []),
             'can_review' => (bool) ($user && $user->hasVerifiedEmail() && $hasPurchased),
             'already_reviewed' => $already,
+            'all_reviews' => $product->reviews()->with('user:id,name')->latest()->get(),
             'relatedProducts' => ProductListResource::collection($relatedProducts),
             'vatCountry' => $country,
         ]);

@@ -15,7 +15,7 @@ class StoreReviewRequest extends FormRequest
     {
         return [
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
-            'comment' => ['nullable', 'string', 'max:2000'],
+            'body' => ['nullable', 'string', 'max:2000'],
         ];
     }
 

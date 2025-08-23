@@ -34,7 +34,7 @@ class ReviewController extends Controller
             'user_id' => $user->id,
             'product_id' => $product->id,
             'rating' => (int) $request->integer('rating'),
-            'comment' => $request->input('comment'),
+            'comment' => $request->input('body'),
         ]);
 
         return back()->with('success', 'Mulțumim pentru recenzie!');

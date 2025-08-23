@@ -51,7 +51,7 @@ export type VariationType = {
 export type Review = {
   id: number;
   rating: number;
-  comment?: string;
+  body?: string;
   created_at: string;
   user: { id: number; name: string };
 };

@@ -1,20 +1,23 @@
-import {PageProps, Product, VariationTypeOption, Image} from "@/types";
+import {PageProps, Product, VariationTypeOption, Image, Review} from "@/types";
 import {Head, router, useForm, usePage} from "@inertiajs/react";
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
+import RatingSummary from "@/Components/RatingSummary";
 import ReviewList from "@/Components/ReviewList";
 import ReviewForm from "@/Components/ReviewForm";
+import route from 'ziggy-js';
 
 function Show({
-                appName, product, variationOptions, can_review, already_reviewed
+                appName, product, variationOptions, can_review, already_reviewed, all_reviews
               }: PageProps<{
   product: Product,
   variationOptions: number[],
   can_review: boolean,
   already_reviewed: boolean,
+  all_reviews: Review[],
 }>) {
   const form = useForm<{
     option_ids: Record<string, number>;
@@ -47,6 +50,22 @@ function Show({
     vat_type: product.vat_type,
     quantity: product.quantity ?? Number.MAX_VALUE,
   });
+
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const reviewsRef = useRef<HTMLDivElement | null>(null);
+
+  const openAllReviews = () => {
+    setShowAllReviews(true);
+    setTimeout(() => {
+      reviewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  };
+
+  useEffect(() => {
+    if (window.location.hash === '#reviews') {
+      openAllReviews();
+    }
+  }, []);
 
   useEffect(() => {
     const selectedOptionIds = Object.values(selectedOptions)
@@ -248,25 +267,34 @@ function Show({
               <ProductDetails />
             </div>
           </div>
+          <section className="mt-6">
+            <RatingSummary
+              average={product.rating_average ?? 0}
+              count={product.reviews_count ?? 0}
+              onClick={openAllReviews}
+            />
+          </section>
 
           <div className="prose max-w-none">
             <h2>About the Item</h2>
             <div dangerouslySetInnerHTML={{ __html: product.description }} />
           </div>
-
-          <section className="mt-10 space-y-4">
+          <section ref={reviewsRef} id="reviews" className="mt-10 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Recenzii</h2>
+              <h2 className="text-xl font-semibold">Reviews</h2>
               <div className="text-sm opacity-70">
-                {product.reviews_count} recenzii • medie {product.rating_average ?? 0}/5
+                {product.reviews_count} reviews • average {product.rating_average ?? 0}/5
               </div>
             </div>
 
-            <ReviewList reviews={product.reviews} />
+            <ReviewList
+              reviews={showAllReviews ? (all_reviews ?? product.reviews ?? []) : (product.reviews ?? [])}
+              limit={showAllReviews ? undefined : 5}
+            />
 
             {can_review && !already_reviewed && (
               <div className="mt-6">
-                <h3 className="font-medium mb-2">Lasă o recenzie</h3>
+                <h3 className="font-medium mb-2">Leave a review</h3>
                 <ReviewForm postUrl={route('products.reviews.store', product.id)} />
               </div>
             )}

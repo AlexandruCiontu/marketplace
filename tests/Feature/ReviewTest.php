@@ -16,7 +16,7 @@ it('allows verified buyer to post a review', function () {
     OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $product->id]);
 
     $this->actingAs($user)
-        ->post(route('products.reviews.store', $product), ['rating' => 5, 'comment' => 'ok'])
+        ->post(route('products.reviews.store', $product), ['rating' => 5, 'body' => 'ok'])
         ->assertRedirect();
 
     $this->assertDatabaseHas('reviews', [
