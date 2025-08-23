@@ -92,9 +92,9 @@ class Product extends Model implements HasMedia
     /**
      * Vendor that owns the product.
      */
-    public function vendor(): HasOne
+    public function vendor(): BelongsTo
     {
-        return $this->hasOne(Vendor::class, 'user_id', 'created_by');
+        return $this->belongsTo(Vendor::class, 'created_by', 'user_id');
     }
 
     /**
