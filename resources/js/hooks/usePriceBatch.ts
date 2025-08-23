@@ -3,11 +3,6 @@ import { useVatCountry } from "./useVatCountry";
 
 export type PriceBreakdown = { net: number; vat: number; gross: number; rate: number };
 
-export function stableKeyFromHit(hit: any): string {
-  // prefer numeric id, then slug, then objectID (Typesense/Algolia)
-  const raw = hit?.id ?? hit?.slug ?? hit?.objectID ?? "";
-  return String(raw);
-}
 // mic cache in-memory pentru dedupe între rerenderi
 const pageCache = new Map<string, PriceBreakdown>();
 
@@ -19,7 +14,7 @@ export default function usePriceBatch(hits: any[]) {
   const keys = useMemo(() => {
     const ks = hits
       .filter((h) => h?.price_gross == null)
-      .map(h => stableKeyFromHit(h))
+      .map(h => String(h.id ?? ""))
       .filter(Boolean) as string[];
     return Array.from(new Set(ks));
   }, [hits]);
@@ -62,5 +57,5 @@ export default function usePriceBatch(hits: any[]) {
     return () => { ctrl.abort(); };
   }, [keys.join("|")]);
 
-  return { prices, keyFor: stableKeyFromHit };
+  return { prices, keyFor: (hit: any) => String(hit.id ?? "") };
 }

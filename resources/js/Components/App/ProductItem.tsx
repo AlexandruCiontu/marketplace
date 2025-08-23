@@ -3,7 +3,7 @@ import { ProductListItem } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import type { PriceBreakdown } from "@/hooks/usePriceBatch";
-import { stableKeyFromHit } from "@/hooks/usePriceBatch";
+import { useVatCountry } from "@/hooks/useVatCountry";
 
 type Props = {
   product: ProductListItem;
@@ -30,20 +30,25 @@ export default function ProductItem({ product, price }: Props) {
     });
   };
 
-  const key: string = stableKeyFromHit(product);
+  const country = useVatCountry();
+  const key = String(product.id);
   const [localPrice, setLocalPrice] = useState<PriceBreakdown | undefined>();
 
   useEffect(() => {
     if (price || !key) return;
-    const params = new URLSearchParams();
-    params.append("ids[]", key);
-    fetch(`/api/vat/price-batch?${params.toString()}`, {
-      headers: { Accept: "application/json" },
+    const ctrl = new AbortController();
+    fetch(`/api/vat/price-batch`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: [key], country_code: country }),
+      signal: ctrl.signal,
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
-      .then((json) => setLocalPrice(json?.[key]))
+      .then((json) => setLocalPrice(json?.items?.[key]))
       .catch((e) => console.error("single price fetch failed", e));
-  }, [key, !!price]);
+
+    return () => ctrl.abort();
+  }, [key, country, !!price]);
 
   const net = Number((product as any).price ?? 0);
   const serverGross =
