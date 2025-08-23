@@ -18,12 +18,11 @@ class ProductResource extends JsonResource
         $country = strtoupper(\App\Support\CountryCode::toIso2($country) ?? 'RO');
 
         /** @var \App\Services\VatRateService $vat */
-        $vat = app(\App\Services\VatRateService::class);
-        $rate = $vat->rateForProduct($this->resource, $country);
-
-        $net   = (float) $this->price;
-        $vatAm = (float) round($net * $rate / 100, 2);
-        $gross = (float) round($net + $vatAm, 2);
+        $vat = app(\App\Services\VatRateService::class)->calculate(
+            (float) $this->price,
+            $this->vat_type_normalized,
+            $country
+        );
 
         return [
             'id' => $this->id,
@@ -32,7 +31,7 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'meta_title' => $this->meta_title,
             'meta_description' => $this->meta_description,
-            'price' => $this->price,
+            'price' => (float) $this->price,
             'weight' => $this->weight,
             'length' => $this->length,
             'width' => $this->width,
@@ -88,11 +87,11 @@ class ProductResource extends JsonResource
             }),
 
             // ✅ VAT fields computed server-side
-            'vat_type'    => (string) $this->vat_type,
-            'vat_rate'    => (float) $rate,
-            'vat_amount'  => (float) $vatAm,
-            'price_net'   => (float) $net,
-            'price_gross' => (float) $gross,
+            'vat_type'    => (string) $this->vat_type_normalized,
+            'vat_rate'    => (float) $vat['vat_rate'],
+            'vat_amount'  => (float) $vat['vat_amount'],
+            'price_net'   => (float) $vat['price_net'],
+            'price_gross' => (float) $vat['price_gross'],
             'country_code'=> $country,
         ];
     }

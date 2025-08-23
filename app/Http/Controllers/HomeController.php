@@ -12,7 +12,7 @@ class HomeController extends Controller
     {
         $products = Product::query()
             ->publishedWithApprovedVendor()
-            ->with('vendor:user_id,status')
+            ->with('vendor')
             ->latest('id')
             ->paginate(12);
 

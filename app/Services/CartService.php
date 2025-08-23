@@ -102,8 +102,9 @@ class CartService
                         ];
                     }
 
-                    $calc = app(\App\Services\VatRateService::class)
-                        ->calculate($cartItem['price'], $product->vat_rate_type);
+                    $country = session('country_code', config('vat.fallback_country','RO'));
+                    $vatCalc = app(\App\Services\VatRateService::class)
+                        ->calculate($cartItem['price'], $product, $country);
 
                     $cartItemData[] = [
                         'id' => $cartItem['id'],
@@ -111,10 +112,10 @@ class CartService
                         'title' => $product->title,
                         'slug' => $product->slug,
                         'price' => $cartItem['price'],
-                        'vat_rate_type' => $product->vat_rate_type ?? 'standard_rate',
-                        'vat_rate' => $calc['rate'],
-                        'vat_amount' => $calc['vat'],
-                        'price_gross' => $calc['gross'],
+                        'vat_type' => $product->vat_type_normalized,
+                        'vat_rate' => $vatCalc['vat_rate'],
+                        'vat_amount' => $vatCalc['vat_amount'],
+                        'price_gross' => $vatCalc['price_gross'],
                         'quantity' => $cartItem['quantity'],
                         'option_ids' => $cartItem['option_ids'],
                         'options' => $optionInfo,

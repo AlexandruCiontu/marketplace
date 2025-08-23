@@ -172,22 +172,22 @@ class CartController extends Controller
                 $orders[] = $order;
 
                 foreach ($cartItems as $cartItem) {
-                    $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_rate_type'], $clientCountryCode);
+                    $calc = $vatRateService->calculate($cartItem['price'], $cartItem['vat_type'] ?? 'standard', $clientCountryCode);
 
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $cartItem['product_id'],
                         'quantity' => $cartItem['quantity'],
                         'net_price' => $cartItem['price'],
-                        'vat_rate' => $calc['rate'],
-                        'vat_amount' => $calc['vat'],
-                        'gross_price' => $calc['gross'],
+                        'vat_rate' => $calc['vat_rate'],
+                        'vat_amount' => $calc['vat_amount'],
+                        'gross_price' => $calc['price_gross'],
                         'variation_type_option_ids' => $cartItem['option_ids'],
                     ]);
 
                     $orderNet += $cartItem['price'] * $cartItem['quantity'];
-                    $orderGross += $calc['gross'] * $cartItem['quantity'];
-                    $orderVat += $calc['vat'] * $cartItem['quantity'];
+                    $orderGross += $calc['price_gross'] * $cartItem['quantity'];
+                    $orderVat += $calc['vat_amount'] * $cartItem['quantity'];
 
                     $description = collect($cartItem['options'])->map(function ($item) {
                         return "{$item['type']['name']}: {$item['name']}";
@@ -200,7 +200,7 @@ class CartController extends Controller
                                 'name' => $cartItem['title'],
                                 'images' => [$cartItem['image']],
                             ],
-                            'unit_amount' => (int) round($calc['gross'] * 100),
+                              'unit_amount' => (int) round($calc['price_gross'] * 100),
                         ],
                         'quantity' => $cartItem['quantity'],
                     ];

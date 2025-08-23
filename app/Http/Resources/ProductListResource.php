@@ -21,23 +21,22 @@ class ProductListResource extends JsonResource
         $country = strtoupper(CountryCode::toIso2($country) ?? 'RO');
 
         /** @var VatRateService $vat */
-        $vat = app(VatRateService::class);
-
-        $net   = (float) $this->getPriceForFirstOptions();
-        $rate  = $vat->rateForProduct($this->resource, $country);
-        $vatAm = (float) round($net * $rate / 100, 2);
-        $gross = (float) round($net + $vatAm, 2);
+        $vatCalc = app(VatRateService::class)->calculate(
+            (float) $this->getPriceForFirstOptions(),
+            $this->vat_type_normalized,
+            $country
+        );
 
         return [
             'id'          => $this->id,
             'title'       => $this->title,
             'slug'        => $this->slug,
-            'vat_type'    => (string) $this->vat_type,
-            'vat_rate'    => (float) $rate,
-            'vat_amount'  => (float) $vatAm,
-            'price_net'   => (float) $net,
-            'price_gross' => (float) $gross,
-            'price'       => (float) $gross,
+            'vat_type'    => (string) $this->vat_type_normalized,
+            'vat_rate'    => (float) $vatCalc['vat_rate'],
+            'vat_amount'  => (float) $vatCalc['vat_amount'],
+            'price_net'   => (float) $vatCalc['price_net'],
+            'price_gross' => (float) $vatCalc['price_gross'],
+            'price'       => (float) $vatCalc['price_gross'],
             'country_code'=> $country,
             'quantity'    => $this->quantity,
             'image'       => $this->getFirstImageUrl(),

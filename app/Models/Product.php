@@ -31,27 +31,29 @@ class Product extends Model implements HasMedia
     public const VAT_TYPES = ['standard','reduced','reduced_alt','super_reduced','zero'];
 
     /**
+     * Append normalized VAT type for resources/services.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = ['vat_type_normalized'];
+
+    /**
+     * Internal normalizer for various VAT type spellings.
+     */
+    protected function normalizeVatType(?string $raw): string
+    {
+        $raw = strtolower(trim($raw ?? 'standard'));
+        $raw = str_replace([' ', '-'], '_', $raw);
+        $allowed = self::VAT_TYPES;
+        return in_array($raw, $allowed, true) ? $raw : 'standard';
+    }
+
+    /**
      * Normalize VAT type accessor.
      */
-    public function getVatTypeAttribute($value)
+    public function getVatTypeAttribute($value): string
     {
-        $v = strtolower(trim((string) $value));
-        $map = [
-            'reduced alt'    => 'reduced_alt',
-            'reduced_alt'    => 'reduced_alt',
-            'reduced-alt'    => 'reduced_alt',
-            'super reduced'  => 'super_reduced',
-            'super-reduced'  => 'super_reduced',
-            'super_reduced'  => 'super_reduced',
-            'std'            => 'standard',
-            'standard'       => 'standard',
-            'reduced'        => 'reduced',
-            '0'              => 'zero',
-            'none'           => 'zero',
-            'zero'           => 'zero',
-        ];
-
-        return $map[$v] ?? 'standard';
+        return $this->normalizeVatType($value);
     }
 
     /**
@@ -59,7 +61,16 @@ class Product extends Model implements HasMedia
      */
     public function setVatTypeAttribute($value): void
     {
-        $this->attributes['vat_type'] = $this->getVatTypeAttribute($value);
+        $this->attributes['vat_type'] = $this->normalizeVatType($value);
+    }
+
+    /**
+     * Exposed normalized VAT type attribute.
+     */
+    public function getVatTypeNormalizedAttribute(): string
+    {
+        $value = $this->attributes['vat_type'] ?? 'standard';
+        return $this->normalizeVatType($value);
     }
 
     public function registerMediaConversions(?Media $media = null): void
