@@ -24,9 +24,9 @@ return [
     ],
     // Fallback default rates when nothing else is available
     'default_rates' => [
-        'standard'       => 21.0,
-        'reduced'        => 9.0,
-        'reduced_alt'   => 9.0,
+        'standard'       => 19.0,
+        'reduced'        => 10.0,
+        'reduced_alt'    => 5.0,
         'super_reduced'  => 5.0,
         'zero'           => 0.0,
     ],

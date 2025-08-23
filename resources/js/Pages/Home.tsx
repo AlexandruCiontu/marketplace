@@ -25,8 +25,8 @@ function CustomHits() {
     ids.forEach((id: any) => params.append('ids[]', String(id)));
     fetch(`/api/vat/price-batch?${params.toString()}`, { credentials: 'same-origin' })
       .then(res => res.json())
-      .then((data: Record<string, VatCalc>) => {
-        setPriceMap(data);
+      .then((res) => {
+        setPriceMap(res.data || {});
       });
   }, [hits]);
 
