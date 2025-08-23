@@ -23,6 +23,43 @@ class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
 
+    /**
+     * Supported VAT types.
+     */
+    public const VAT_TYPES = ['standard','reduced','reduced_alt','super_reduced','zero'];
+
+    /**
+     * Normalize VAT type accessor.
+     */
+    public function getVatTypeAttribute($value)
+    {
+        $v = strtolower(trim((string) $value));
+        $map = [
+            'reduced alt'    => 'reduced_alt',
+            'reduced_alt'    => 'reduced_alt',
+            'reduced-alt'    => 'reduced_alt',
+            'super reduced'  => 'super_reduced',
+            'super-reduced'  => 'super_reduced',
+            'super_reduced'  => 'super_reduced',
+            'std'            => 'standard',
+            'standard'       => 'standard',
+            'reduced'        => 'reduced',
+            '0'              => 'zero',
+            'none'           => 'zero',
+            'zero'           => 'zero',
+        ];
+
+        return $map[$v] ?? 'standard';
+    }
+
+    /**
+     * Mutator to store normalized VAT type.
+     */
+    public function setVatTypeAttribute($value): void
+    {
+        $this->attributes['vat_type'] = $this->getVatTypeAttribute($value);
+    }
+
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')->width(100)->nonQueued();

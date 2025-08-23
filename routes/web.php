@@ -53,6 +53,17 @@ Route::get('/_vat/debug', function (Request $r, \App\Services\VatRateService $va
     ];
 });
 
+Route::get('/_vat/debug-type', function (Request $r, \App\Services\VatRateService $vat) {
+    $p = App\Models\Product::query()->first();
+    $country = App\Support\CountryCode::toIso2(session('country_code','RO')) ?? 'RO';
+    return [
+        'product_id'    => $p?->id,
+        'vat_type'      => $p?->vat_type,
+        'country'       => strtoupper($country),
+        'resolved_rate' => $vat->rateForProduct($p, $country),
+    ];
+});
+
 // Guest Routes
 Route::get('/', [ProductController::class, 'home'])->name('dashboard');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');

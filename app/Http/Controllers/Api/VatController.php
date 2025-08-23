@@ -16,7 +16,7 @@ class VatController extends Controller
         $country = session('country_code', config('vat.fallback_country', 'RO'));
         $country = strtoupper(CountryCode::toIso2($country) ?? 'RO');
 
-        $products = Product::whereIn('id', $ids)->get(['id', 'price', 'vat_rate_type']);
+        $products = Product::whereIn('id', $ids)->get(['id', 'price', 'vat_type']);
 
         $items = $products->map(function ($p) use ($vat, $country) {
             $percent = $vat->rateForProduct($p, $country);

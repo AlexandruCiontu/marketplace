@@ -11,6 +11,11 @@ return [
         'reduced' => [
             'RO' => 9.0,
         ],
+        // Second reduced rate
+        'reduced_alt' => [
+            // RO frequently uses 5% as the second reduced rate
+            'RO' => 5.0,
+        ],
         'super_reduced' => [
             'RO' => 5.0,
         ],
@@ -20,9 +25,10 @@ return [
     ],
     // Fallback default rates when nothing else is available
     'default_rates' => [
-        'standard' => 21.0,
-        'reduced' => 9.0,
-        'super_reduced' => 5.0,
-        'zero' => 0.0,
+        'standard'       => 21.0,
+        'reduced'        => 10.0,
+        'reduced_alt'    => 5.0,
+        'super_reduced'  => 5.0,
+        'zero'           => 0.0,
     ],
 ];

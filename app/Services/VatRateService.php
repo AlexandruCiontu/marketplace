@@ -11,12 +11,14 @@ class VatRateService
     public function rateForProduct($product, string $country): float
     {
         // 1) Normalize country to ISO-2 uppercase
-        $cc = CountryCode::toIso2($country) ?? config('vat.fallback_country', 'RO');
-        $cc = strtoupper($cc);
+        $cc = strtoupper(CountryCode::toIso2($country) ?? config('vat.fallback_country', 'RO'));
 
         // 2) Normalize VAT type
         $type = strtolower((string) ($product->vat_type ?? $product->vat_rate_type ?? 'standard'));
-        $type = in_array($type, ['reduced', 'super_reduced', 'zero']) ? $type : 'standard';
+        $type = match ($type) {
+            'reduced', 'reduced_alt', 'super_reduced', 'zero' => $type,
+            default => 'standard',
+        };
 
         // 3) Prefer config map
         $cfg = config("vat.rates.$type", []);
@@ -28,14 +30,28 @@ class VatRateService
         $json = $this->ratesFromJson();
         if (isset($json[$cc])) {
             $key = match ($type) {
-                'reduced' => 'reduced_rate',
+                'standard'      => 'standard_rate',
+                'reduced'       => 'reduced_rate',
+                'reduced_alt'   => 'reduced_rate_alt',
                 'super_reduced' => 'super_reduced_rate',
-                'zero' => 'parking_rate',
-                default => 'standard_rate',
+                'zero'          => null,
             };
-            $v = $json[$cc][$key] ?? null;
-            if (is_numeric($v)) {
-                return (float) $v;
+
+            if ($key === null) {
+                return 0.0;
+            }
+
+            $val = $json[$cc][$key] ?? null;
+            if (is_numeric($val)) {
+                return (float) $val;
+            }
+
+            // If reduced_alt missing, fall back to reduced_rate
+            if ($type === 'reduced_alt') {
+                $alt = $json[$cc]['reduced_rate'] ?? null;
+                if (is_numeric($alt)) {
+                    return (float) $alt;
+                }
             }
         }
 
