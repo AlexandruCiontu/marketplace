@@ -3,6 +3,7 @@
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\ShippingAddressController;
@@ -65,7 +66,7 @@ Route::get('/_vat/debug-type', function (Request $r, \App\Services\VatRateServic
 });
 
 // Guest Routes
-Route::get('/', [ProductController::class, 'home'])->name('dashboard');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
 Route::get('/d/{department:slug}', [ProductController::class, 'byDepartment'])->name('product.byDepartment');
 Route::get('/s/{vendor:store_name}', [VendorController::class, 'profile'])->name('vendor.profile');

@@ -37,6 +37,7 @@ class ProductListResource extends JsonResource
             'vat_amount'  => (float) $vatAm,
             'price_net'   => (float) $net,
             'price_gross' => (float) $gross,
+            'price'       => (float) $gross,
             'country_code'=> $country,
             'quantity'    => $this->quantity,
             'image'       => $this->getFirstImageUrl(),
