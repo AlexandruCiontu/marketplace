@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import { ProductListItem } from "@/types";
 import { Link, useForm } from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
@@ -8,15 +9,15 @@ type Props = {
   price?: PriceBreakdown;
 };
 
-export default function ProductItem({ product, price }: Props) {
-  const form = useForm<{
-    option_ids: Record<string, number>;
-    quantity: number;
-  }>({
-    option_ids: {},
-    quantity: 1,
-  });
+const fmt = (v?: number) => (typeof v === "number" ? v : undefined);
 
+export default function ProductItem({ product, price }: Props) {
+  const form = useForm<{ option_ids: Record<string, number>; quantity: number }>(
+    {
+      option_ids: {},
+      quantity: 1,
+    }
+  );
 
   const addToCart = () => {
     form.post(route("cart.store", product.id), {
@@ -27,6 +28,29 @@ export default function ProductItem({ product, price }: Props) {
       },
     });
   };
+
+  const key: string = String(
+    product?.objectID ?? product?.id ?? product?.slug ?? ""
+  );
+  const [localPrice, setLocalPrice] = useState<PriceBreakdown | undefined>();
+
+  useEffect(() => {
+    if (price || !key) return;
+    const params = new URLSearchParams();
+    params.append("ids[]", key);
+    fetch(`/api/vat/price-batch?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+      .then((json) => setLocalPrice(json?.[key]))
+      .catch((e) => console.error("single price fetch failed", e));
+  }, [key, !!price]);
+
+  const shown = price ?? localPrice;
+
+  const amount = fmt(
+    shown?.gross ?? product.price_gross ?? (product as any).price ?? 0
+  );
 
   return (
     <div className="card bg-base-100 shadow">
@@ -67,33 +91,18 @@ export default function ProductItem({ product, price }: Props) {
           <button onClick={addToCart} className="btn btn-primary">
             Add to Cart
           </button>
-          {(() => {
-            const amount = Number(
-              typeof price?.gross === "number"
-                ? price.gross
-                : product.price_gross ?? product.price ?? 0
-            );
-            return (
-              <span className="text-2xl">
-                {Number.isFinite(amount) ? (
-                  <CurrencyFormatter amount={amount} />
-                ) : (
-                  "—"
-                )}
-                {price ? (
-                  <span className="block text-xs text-muted-foreground">
-                    Includes VAT {price.rate}% ({price.vat.toFixed(2)})
-                  </span>
-                ) : (
-                  typeof product.vat_rate === "number" && (
-                    <span className="block text-xs text-muted-foreground">
-                      VAT {product.vat_rate}%
-                    </span>
-                  )
-                )}
+          <span className="text-2xl">
+            {typeof amount === "number" ? (
+              <CurrencyFormatter amount={amount} />
+            ) : (
+              "—"
+            )}
+            {shown && (
+              <span className="block text-xs text-muted-foreground">
+                Includes VAT {shown.rate}% ({shown.vat.toFixed(2)})
               </span>
-            );
-          })()}
+            )}
+          </span>
         </div>
       </div>
     </div>
