@@ -1,4 +1,3 @@
-import {Config} from 'ziggy-js';
 
 export type VatRateType =
   | 'standard_rate'
@@ -176,7 +175,7 @@ export type PageProps<
   auth: {
     user: User;
   };
-  ziggy: Config & { location: string };
+  ziggy: { location: string } & Record<string, any>;
   totalQuantity: number;
   totalPrice: number;
   miniCartItems: CartItem[];

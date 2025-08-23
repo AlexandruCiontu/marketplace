@@ -8,7 +8,6 @@ import {arraysAreEqual} from "@/helpers";
 import RatingSummary from "@/Components/RatingSummary";
 import ReviewList from "@/Components/ReviewList";
 import ReviewForm from "@/Components/ReviewForm";
-import route from 'ziggy-js';
 
 function Show({
                 appName, product, variationOptions, can_review, already_reviewed, all_reviews
@@ -269,8 +268,8 @@ function Show({
           </div>
           <section className="mt-6">
             <RatingSummary
-              average={product.rating_average ?? 0}
-              count={product.reviews_count ?? 0}
+              average={product?.rating_average ?? 0}
+              count={product?.reviews_count ?? 0}
               onClick={openAllReviews}
             />
           </section>
@@ -288,14 +287,18 @@ function Show({
             </div>
 
             <ReviewList
-              reviews={showAllReviews ? (all_reviews ?? product.reviews ?? []) : (product.reviews ?? [])}
+              reviews={
+                showAllReviews
+                  ? (all_reviews ?? product?.reviews ?? [])
+                  : (product?.reviews ?? [])
+              }
               limit={showAllReviews ? undefined : 5}
             />
 
             {can_review && !already_reviewed && (
               <div className="mt-6">
                 <h3 className="font-medium mb-2">Leave a review</h3>
-                <ReviewForm postUrl={route('products.reviews.store', product.id)} />
+                <ReviewForm postUrl={`/products/${product.id}/reviews`} />
               </div>
             )}
           </section>

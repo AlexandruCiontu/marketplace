@@ -32,7 +32,6 @@
         "swiper": "^11.2.6",
         "daisyui": "^4.12.14",
         "react-instantsearch": "^7.15.7",
-        "typesense-instantsearch-adapter": "^2.9.0",
-        "ziggy-js": "^1.8.2"
+        "typesense-instantsearch-adapter": "^2.9.0"
     }
 }
