@@ -12,29 +12,29 @@ import FilterPanel from "@/Components/App/FilterPanel";
 import NumberFormatter from "@/Components/Core/NumberFormatter";
 import ProductListing from "@/Components/App/ProductListing";
 import BannerSlider from "@/Components/App/BannerSlider";
-import usePriceBatch, { pickHitKey } from "@/hooks/usePriceBatch";
+// prices for hits are fetched in batch from the backend
 
 function CustomHits() {
   const { hits, results } = useHits<any>();
 
-  // 1) cerem prețurile din backend pentru cheile detectate
-  const priceMap = usePriceBatch(hits);
+  const hitKey = (h: any) =>
+    String(h.objectID ?? h.document?.id ?? h.id ?? h.slug ?? h.document?.slug);
 
-  // 2) decorăm hit-urile cu rezultatele din batch (cheie = id sau slug)
-  const decorated = React.useMemo(
-    () =>
-      hits.map((h: any) => {
-        const key = pickHitKey(h);
-        const fromMap =
-          priceMap[key] ??
-          (h?.slug ? priceMap[h.slug] : undefined) ??
-          (h?.id ? priceMap[String(h.id)] : undefined);
-        return fromMap ? { ...h, ...fromMap } : h;
-      }),
-    [hits, priceMap]
-  );
+  const [priceMap, setPriceMap] = React.useState<Record<string, any>>({});
 
-  if (!decorated?.length || !results || results.nbHits === 0) {
+  React.useEffect(() => {
+    const ids = hits.map(hitKey).filter(Boolean);
+    if (!ids.length) {
+      setPriceMap({});
+      return;
+    }
+    const qs = new URLSearchParams(ids.map((id) => ["ids[]", id])).toString();
+    fetch(`/api/vat/price-batch?${qs}`, { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((data) => setPriceMap(data || {}));
+  }, [JSON.stringify(hits.map(hitKey))]);
+
+  if (!hits?.length || !results || results.nbHits === 0) {
     return (
       <div className="w-full py-8 text-center">
         <div className="card bg-base-100 shadow-xl">
@@ -74,9 +74,12 @@ function CustomHits() {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-        {decorated.map((product: any) => (
-          <ProductItem key={product.id ?? product.slug} product={product} />
-        ))}
+        {hits.map((hit: any) => {
+          const key = hitKey(hit);
+          const calc = priceMap[key];
+          const product = calc ? { ...hit, ...calc } : hit;
+          return <ProductItem product={product} key={key} />;
+        })}
       </div>
     </>
   );
