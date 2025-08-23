@@ -50,23 +50,19 @@ class VatRateService
         ];
     }
 
-    public function rateForProduct(mixed $productOrType, string $country): float
+    public function rateForProduct(Product|string|null $productOrType, string $country): float
     {
-        $country = Str::upper($country);
+        $type = 'standard';
 
-        $type = is_string($productOrType)
-            ? $productOrType
-            : ($productOrType->vat_type ?? 'standard');
+        if ($productOrType instanceof Product) {
+            $type = $productOrType->vat_type_normalized ?? 'standard';
+        } elseif (is_string($productOrType) && $productOrType !== '') {
+            $type = str_replace([' ', '-'], '_', strtolower(trim($productOrType)));
+        }
 
-        $type = $this->normalizeType($type);
+        $rates = config("vat.rates.$country") ?? config('vat.rates.RO');
 
-        $rates = $this->rates;
-
-        $rate = $rates[$type][$country]
-            ?? ($type === 'reduced_alt' ? ($rates['reduced'][$country] ?? null) : null)
-            ?? ($this->defaults[$type] ?? $this->defaults['standard'] ?? 19);
-
-        return (float) $rate;
+        return (float) ($rates[$type] ?? $rates['reduced_alt'] ?? $rates['standard']);
     }
 }
 

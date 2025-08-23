@@ -15,7 +15,7 @@ import BannerSlider from "@/Components/App/BannerSlider";
 
 function CustomHits() {
   const { hits, results } = useHits();
-  type VatCalc = { price_net: number; vat_rate: number; vat_amount: number; price_gross: number };
+  type VatCalc = { net: number; vat: number; rate: number; gross: number };
   const [priceMap, setPriceMap] = React.useState<Record<string, VatCalc>>({});
 
   React.useEffect(() => {
@@ -75,8 +75,8 @@ function CustomHits() {
           return (
             <ProductItem
               product={hit}
-              priceGross={calc?.price_gross}
-              vatRate={calc?.vat_rate}
+              priceGross={calc?.gross}
+              vatRate={calc?.rate}
               key={hit.id}
             />
           );

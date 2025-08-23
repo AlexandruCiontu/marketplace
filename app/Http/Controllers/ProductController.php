@@ -9,6 +9,8 @@ use App\Models\Department;
 use App\Models\Order;
 use App\Models\Product;
 use App\Support\CountryCode;
+use App\Services\VatCountryResolver;
+use App\Services\VatRateService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -33,7 +35,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function show(Product $product)
+    public function show(Product $product, VatCountryResolver $countryResolver, VatRateService $vat)
     {
         $product->load(['reviews.user']);
 
@@ -51,11 +53,21 @@ class ProductController extends Controller
             ->take(10)
             ->get();
 
+        $country = $countryResolver->resolve();
+        $rate = $vat->rateForProduct($product, $country);
+        $net = round((float) $product->price, 2);
+        $vatA = round($net * $rate / 100, 2);
+        $gross = round($net + $vatA, 2);
+
         return Inertia::render('Product/Show', [
-            'product' => new ProductResource($product),
+            'product' => array_merge(
+                (new ProductResource($product))->toArray(request()),
+                ['vat' => ['rate' => $rate, 'amount' => $vatA, 'gross' => $gross]]
+            ),
             'variationOptions' => request('options', []),
             'hasPurchased' => $hasPurchased,
             'relatedProducts' => ProductListResource::collection($relatedProducts),
+            'vatCountry' => $country,
         ]);
     }
 

@@ -31,25 +31,22 @@ class VatController extends Controller
 
         $country = $countryResolver->resolve($request);
 
-        // IMPORTANT: do not select vat_type from DB
         $products = Product::query()
             ->whereIn('id', $ids)
             ->where('status', 'published')
-            ->select(['id', 'price'])
+            ->select(['id', 'price', 'vat_type'])
             ->get();
 
         $out = [];
         foreach ($products as $product) {
             $rate = $vatService->rateForProduct($product, $country);
-            $calc = $vatService->calculate($product->price, $rate);
-
+            $net  = round((float)$product->price, 2);
+            $vatA = round($net * $rate / 100, 2);
             $out[$product->id] = [
-                'price_net'   => $calc['price_net'],
-                'vat_rate'    => $rate,
-                'vat_amount'  => $calc['vat_amount'],
-                'price_gross' => $calc['price_gross'],
-                // compat old field
-                'unit_gross'  => $calc['price_gross'],
+                'net'   => $net,
+                'vat'   => $vatA,
+                'rate'  => $rate,
+                'gross' => $net + $vatA,
             ];
         }
 

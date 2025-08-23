@@ -24,37 +24,27 @@ class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
 
-    protected function vatType(): Attribute
-    {
-        return Attribute::make(
-            get: function ($value, $attributes) {
-                $raw = $value ?? ($attributes['vat_type'] ?? null);
-                $norm = Str::of((string) $raw)
-                    ->lower()
-                    ->replace([' ', '-', '.', '/'], '_')
-                    ->replace('__', '_')
-                    ->trim('_')
-                    ->value();
+    protected $fillable = [
+        'vat_type',
+    ];
 
-                return match ($norm) {
-                    'super_reduced', 'superreduced'    => 'super_reduced',
-                    'reduced_alt', 'reducedalt'        => 'reduced_alt',
-                    'reduced'                          => 'reduced',
-                    'zero', 'no_vat', 'none', '0'      => 'zero',
-                    default                            => 'standard',
-                };
-            }
-        );
+    protected $casts = [
+        'vat_type' => 'string',
+    ];
+
+    // normalizează valori de tip TVA
+    public function getVatTypeNormalizedAttribute(): string
+    {
+        $raw = $this->attributes['vat_type'] ?? 'standard';
+        $t = str_replace([' ', '-'], '_', strtolower(trim($raw)));
+        return in_array($t, ['standard', 'reduced', 'reduced_alt', 'super_reduced'], true)
+            ? $t
+            : 'standard';
     }
 
     public function setVatTypeAttribute($value): void
     {
-        $this->attributes['vat_type'] = Str::of((string) $value)
-            ->lower()
-            ->replace([' ', '-', '.', '/'], '_')
-            ->replace('__', '_')
-            ->trim('_')
-            ->value();
+        $this->attributes['vat_type'] = str_replace([' ', '-'], '_', strtolower(trim((string) $value)));
     }
 
     public function registerMediaConversions(?Media $media = null): void
@@ -159,7 +149,7 @@ class Product extends Model implements HasMedia
         return $this->price;
     }
 
-    public function getImageForOptions(array $optionIds = null)
+    public function getImageForOptions(?array $optionIds = null): ?string
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -175,7 +165,7 @@ class Product extends Model implements HasMedia
         return $this->getFirstMediaUrl('images', 'small');
     }
 
-    public function getImagesForOptions(array $optionIds = null)
+    public function getImagesForOptions(?array $optionIds = null): array
     {
         if ($optionIds) {
             $optionIds = array_values($optionIds);
@@ -187,7 +177,7 @@ class Product extends Model implements HasMedia
                 }
             }
         }
-        return $this->getMedia('images');
+        return $this->getMedia('images')->toArray();
     }
 
     public function getPriceForFirstOptions(): float
