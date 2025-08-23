@@ -26,7 +26,7 @@ function CustomHits() {
     fetch(`/api/vat/price-batch?${params.toString()}`, { credentials: 'same-origin' })
       .then(res => res.json())
       .then((res) => {
-        setPriceMap(res.data || {});
+        setPriceMap(res || {});
       });
   }, [hits]);
 

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Product;
-use Illuminate\Support\Facades\Storage;
 
 class VatRateService
 {
@@ -15,12 +14,23 @@ class VatRateService
         $config = config('vat');
         $this->rates    = $config['rates'] ?? [];
         $this->defaults = $config['default_rates'] ?? [];
+    }
 
-        if (empty($this->rates) && Storage::disk('local')->exists('vat/rates.json')) {
-            $json = json_decode(Storage::disk('local')->get('vat/rates.json'), true) ?: [];
-            $this->rates = $json['rates'] ?? [];
-            $this->defaults = $json['default_rates'] ?? $this->defaults;
-        }
+    private function normalizeType(string $type): string
+    {
+        $t = \Illuminate\Support\Str::of($type)
+            ->lower()
+            ->replace([' ', '-', '.', '/'], '_')
+            ->trim('_')
+            ->value();
+
+        return match ($t) {
+            'super_reduced', 'superreduced' => 'super_reduced',
+            'reduced_alt', 'reducedalt'     => 'reduced_alt',
+            'reduced'                       => 'reduced',
+            'zero', 'no_vat', 'none', '0'   => 'zero',
+            default                         => 'standard',
+        };
     }
 
     public function calculate(float $net, mixed $productOrType, string $country): array
@@ -39,22 +49,23 @@ class VatRateService
 
     public function rateForProduct(mixed $productOrType, string $country): float
     {
-        $type = $productOrType instanceof Product
-            ? $productOrType->vat_type
-            : (string) $productOrType;
+        $country = \Illuminate\Support\Str::upper($country);
 
-        $type = strtolower(preg_replace('/[^a-z]+/i', '_', $type));
-        $type = trim($type, '_');
-        $country = strtoupper($country);
+        $type = is_string($productOrType)
+            ? $productOrType
+            : ($productOrType->vat_type ?? 'standard');
 
-        $rate = $this->rates[$type][$country] ?? null;
+        $type = $this->normalizeType($type);
 
-        if ($rate === null && $type === 'reduced_alt') {
-            $rate = $this->rates['reduced'][$country] ?? null;
-        }
+        $rates = $this->rates;
+        $rate = $rates[$type][$country] ?? (
+            $type === 'reduced_alt'
+                ? ($rates['reduced'][$country] ?? null)
+                : null
+        );
 
         if ($rate === null) {
-            $rate = $this->defaults[$type] ?? $this->defaults['standard'] ?? 19.0;
+            $rate = $this->defaults[$type] ?? $this->defaults['standard'] ?? 19;
         }
 
         return (float) $rate;

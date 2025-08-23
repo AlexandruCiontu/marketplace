@@ -17,30 +17,33 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Ibericode\Vat\Facades\Vat;
-use App\Helpers\VatHelper;
-use App\Support\CountryCode;
+use Illuminate\Support\Str;
 
 class Product extends Model implements HasMedia
 {
     use InteractsWithMedia, Searchable;
 
     /**
-     * Supported VAT types.
-     */
-    protected const SUPPORTED_TAX_TYPES = [
-        'standard', 'reduced', 'reduced_alt', 'super_reduced', 'zero',
-    ];
-
-    /**
      * Normalize VAT type accessor.
      */
     public function getVatTypeAttribute($value): string
     {
-        $t = strtolower(trim((string) $value));
-        $t = str_replace([' ', '-'], '_', $t);
+        $raw = $value ?? ($this->attributes['vat_type'] ?? null);
 
-        return in_array($t, self::SUPPORTED_TAX_TYPES, true) ? $t : 'standard';
+        $norm = Str::of((string) $raw)
+            ->lower()
+            ->replace([' ', '-', '.', '/'], '_')
+            ->replace('__', '_')
+            ->trim('_')
+            ->value();
+
+        return match ($norm) {
+            'super_reduced', 'superreduced'    => 'super_reduced',
+            'reduced_alt', 'reducedalt'        => 'reduced_alt',
+            'reduced'                          => 'reduced',
+            'zero', 'no_vat', 'none', '0'      => 'zero',
+            default                            => 'standard',
+        };
     }
 
     /**
@@ -282,23 +285,6 @@ class Product extends Model implements HasMedia
     public function reviews()
     {
         return $this->hasMany(Review::class);
-    }
-
-    // ✅ TVA calculat dinamic pe baza codului de țară
-    public function getVatAmountAttribute(): float
-    {
-        $country = CountryCode::toIso2(session('country_code', 'RO')) ?? 'RO'; // fallback dacă nu e setată
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
-
-        return round($this->price * ($rate / 100), 2);
-    }
-
-    public function getGrossPriceAttribute(): float
-    {
-        $country = CountryCode::toIso2(session('country_code', 'RO')) ?? 'RO'; // fallback
-        $rate = \App\Helpers\VatHelper::getRate($country, $this->vat_rate_type);
-
-        return round($this->price * (1 + $rate / 100), 2);
     }
 
 }

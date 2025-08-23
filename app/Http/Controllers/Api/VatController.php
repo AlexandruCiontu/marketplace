@@ -19,13 +19,13 @@ class VatController extends Controller
         VatCountryResolver $country,
         VatRateService $vat
     ) {
-        $ids = $request->input('ids', []);
-        if (is_string($ids)) {
-            $ids = array_filter(array_map('trim', explode(',', $ids)));
-        }
-        $ids = array_values(array_unique(array_map('intval', (array) $ids)));
-        if (empty($ids)) {
-            return response()->json(['prices' => []]);
+        $ids = collect($request->input('ids', []))
+            ->map(fn($id) => (int) $id)
+            ->filter()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return response()->json([]);
         }
 
         $countryCode = $country->resolve($request);
@@ -35,12 +35,11 @@ class VatController extends Controller
             ->where('status', 'published')
             ->get(['id', 'price', 'vat_type']);
 
-        $prices = [];
-        foreach ($products as $p) {
-            $prices[(string) $p->id] = $vat->calculate((float) $p->price, $p, $countryCode);
-        }
+        $result = $products->mapWithKeys(function (Product $p) use ($vat, $countryCode) {
+            return [$p->id => $vat->calculate((float) $p->price, $p, $countryCode)];
+        });
 
-        return response()->json(['prices' => $prices]);
+        return response()->json($result);
     }
 }
 
