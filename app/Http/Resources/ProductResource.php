@@ -14,7 +14,16 @@ class ProductResource extends JsonResource
         $options = $request->input('options') ?: [];
         $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
 
-        $calc = app(\App\Services\VatRateService::class)->calculate($this->price, $this->vat_rate_type);
+        $country = session('country_code', config('vat.fallback_country','RO'));
+        $country = strtoupper(\App\Support\CountryCode::toIso2($country) ?? 'RO');
+
+        /** @var \App\Services\VatRateService $vat */
+        $vat = app(\App\Services\VatRateService::class);
+        $rate = $vat->rateForProduct($this->resource, $country);
+
+        $net   = (float) $this->price;
+        $vatAm = round($net * $rate / 100, 2);
+        $gross = round($net + $vatAm, 2);
 
         return [
             'id' => $this->id,
@@ -78,14 +87,13 @@ class ProductResource extends JsonResource
                 ];
             }),
 
-            // ✅ TVA fields
-            // ✅ TVA fields
-            'net_price' => round((float) $this->price, 2),
-            'vat_rate_type' => $this->vat_rate_type ?? 'standard_rate',
-            'vat_rate' => $calc['rate'],
-            'country_code' => $calc['country'],
-            'vat_amount' => $calc['vat'],
-            'gross_price' => $calc['gross'],
+            // ✅ VAT fields computed server-side
+            'vat_type'    => $this->vat_type,
+            'vat_rate'    => $rate,
+            'vat_amount'  => $vatAm,
+            'price_net'   => $net,
+            'price_gross' => $gross,
+            'country_code'=> $country,
         ];
     }
 }

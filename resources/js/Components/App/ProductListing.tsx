@@ -13,7 +13,7 @@ function ProductListing({products}: { products: PaginationProps<ProductListItem>
       )}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {products.data.map(product => (
-          <ProductItem product={product} key={product.id} priceGross={product.gross_price}/>
+          <ProductItem product={product} key={product.id} priceGross={product.price_gross}/>
         ))}
       </div>
       {/*<pre>{JSON.stringify(products, undefined, 2)}</pre>*/}

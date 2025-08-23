@@ -58,10 +58,11 @@ export type Product = {
   width: number | null;
   height: number | null;
   quantity: number;
-  vat_rate_type?: string;
-  net_price?: number;
-  gross_price?: number;
+  vat_type?: string;
+  price_net?: number;
+  price_gross?: number;
   vat_amount?: number;
+  vat_rate?: number;
   image: string;
   images: Image[];
   short_description: string;
@@ -92,9 +93,10 @@ export type ProductListItem = {
   title: string;
   slug: string;
   price: number;
-  net_price: number;
-  gross_price?: number;
-  vat_rate_type: string;
+  price_net: number;
+  price_gross?: number;
+  vat_type?: string;
+  vat_rate?: number;
   quantity: number;
   image: string;
   user_id: number;

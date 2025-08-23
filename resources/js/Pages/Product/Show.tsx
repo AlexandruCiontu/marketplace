@@ -35,12 +35,12 @@ function Show({
   }, [product, selectedOptions]);
 
 
-  const [computedProduct, setComputedProduct] = useState<{ price: number; price_gross: number; vat_amount: number; vat_rate: number; vat_rate_type: string; quantity: number }>({
+  const [computedProduct, setComputedProduct] = useState<{ price: number; price_gross: number; vat_amount: number; vat_rate: number; vat_type: string; quantity: number }>({
     price: product.price,
-    price_gross: product.gross_price,
+    price_gross: product.price_gross,
     vat_amount: product.vat_amount,
     vat_rate: product.vat_rate,
-    vat_rate_type: product.vat_rate_type,
+    vat_type: product.vat_type,
     quantity: product.quantity ?? Number.MAX_VALUE,
   });
 
@@ -68,7 +68,7 @@ function Show({
         price_gross: data.price_gross,
         vat_amount: data.vat_amount,
         vat_rate: data.vat_rate,
-        vat_rate_type: product.vat_rate_type,
+        vat_type: product.vat_type,
         quantity,
       }));
   }, [selectedOptions]);

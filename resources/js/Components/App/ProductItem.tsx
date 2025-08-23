@@ -22,7 +22,7 @@ export default function ProductItem({ product, priceGross }: { product: ProductL
     });
   };
 
-  const displayPrice = priceGross ?? product.gross_price ?? product.net_price ?? product.price;
+  const displayPrice = priceGross ?? product.price_gross ?? product.price_net ?? product.price;
 
   return (
     <div className="card bg-base-100 shadow">

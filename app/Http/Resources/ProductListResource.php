@@ -4,8 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Services\VatRateService;
 use App\Support\CountryCode;
+use App\Services\VatRateService;
 
 class ProductListResource extends JsonResource
 {
@@ -17,48 +17,34 @@ class ProductListResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // 1. Calculăm prețul net de bază pentru produs
-        $net = $this->getPriceForFirstOptions();
+        $country = session('country_code', config('vat.fallback_country','RO'));
+        $country = strtoupper(CountryCode::toIso2($country) ?? 'RO');
 
-        // 2. Calculăm TVA și prețul brut (gross)
-        $vatResult = app(VatRateService::class)->calculate($net, $this->vat_rate_type);
+        /** @var VatRateService $vat */
+        $vat = app(VatRateService::class);
 
-        // 3. Formatare pentru frontend
-        $netFormatted   = number_format($net, 2, '.', '');
-        $vatFormatted   = number_format($vatResult['vat'], 2, '.', '');
-        $grossFormatted = number_format($vatResult['gross'], 2, '.', '');
+        $net   = (float) $this->getPriceForFirstOptions();
+        $rate  = $vat->rateForProduct($this->resource, $country);
+        $vatAm = round($net * $rate / 100, 2);
+        $gross = round($net + $vatAm, 2);
 
         return [
-            // Identificator și date de bază
-            'id'                 => $this->id,
-            'title'              => $this->title,
-            'slug'               => $this->slug,
-
-            // Prețuri (brut + net + TVA)
-            'net_raw'            => $net,
-            'vat_raw'            => $vatResult['vat'],
-            'gross_raw'          => $vatResult['gross'],
-            'net'                => $netFormatted,
-            'vat'                => $vatFormatted,
-            'gross'              => $grossFormatted,
-            'gross_price'        => $vatResult['gross'], // ✅ important pentru React
-            'net_price'          => round($net, 2),
-            'vat_rate_type'      => $this->vat_rate_type ?? 'standard_rate',
-            'country_code'       => CountryCode::toIso2(session('country_code', 'RO')) ?? 'RO',
-
-            // Stoc și imagine
-            'quantity'           => $this->quantity,
-            'image'              => $this->getFirstImageUrl(),
-
-            // Informații despre vânzător
-            'user_id'            => $this->user->id,
-            'user_name'          => $this->user->name,
-            'user_store_name'    => optional($this->user->vendor)->store_name,
-
-            // Informații despre departament
-            'department_id'      => optional($this->department)->id,
-            'department_name'    => optional($this->department)->name,
-            'department_slug'    => optional($this->department)->slug,
+            'id'          => $this->id,
+            'title'       => $this->title,
+            'slug'        => $this->slug,
+            'vat_type'    => $this->vat_type,
+            'vat_rate'    => $rate,
+            'price_net'   => $net,
+            'price_gross' => $gross,
+            'country_code'=> $country,
+            'quantity'    => $this->quantity,
+            'image'       => $this->getFirstImageUrl(),
+            'user_id'     => $this->user->id,
+            'user_name'   => $this->user->name,
+            'user_store_name' => optional($this->user->vendor)->store_name,
+            'department_id'   => optional($this->department)->id,
+            'department_name' => optional($this->department)->name,
+            'department_slug' => optional($this->department)->slug,
         ];
     }
 }
