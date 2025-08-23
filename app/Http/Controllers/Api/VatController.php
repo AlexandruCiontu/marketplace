@@ -12,41 +12,61 @@ class VatController extends Controller
 {
     /**
      * Return pricing breakdown for multiple products.
-     * Response: { id: { price_net, vat_rate, vat_amount, price_gross, unit_gross } }
+     * Accepts ids[]=... where each value can be a numeric ID or a slug.
+     * The response is keyed by the exact identifier provided in the query.
      */
     public function priceBatch(Request $request, VatCountryResolver $countryResolver, VatRateService $vatService)
     {
-        // Accept both ids[]=1&ids[]=2 and ids=1,2,3
-        $ids = $request->input('ids', []);
-        if (is_string($ids)) {
-            $ids = preg_split('/[,\s;]+/', $ids, -1, PREG_SPLIT_NO_EMPTY);
-        }
-        if (!is_array($ids)) {
-            $ids = [];
-        }
-        $ids = array_values(array_unique(array_map('intval', $ids)));
-        if (empty($ids)) {
+        $rawIds = (array) $request->query('ids', []);
+        $rawIds = array_values(array_filter($rawIds, fn ($v) => $v !== null && $v !== ''));
+
+        if (empty($rawIds)) {
             return response()->json([]);
         }
 
-        $country = $countryResolver->resolve($request);
+        $numericIds = [];
+        $slugIds = [];
+        foreach ($rawIds as $id) {
+            if (ctype_digit((string) $id)) {
+                $numericIds[] = (int) $id;
+            } else {
+                $slugIds[] = (string) $id;
+            }
+        }
 
         $products = Product::query()
-            ->whereIn('id', $ids)
+            ->select(['id', 'slug', 'price', 'vat_type', 'status'])
             ->where('status', 'published')
-            ->select(['id', 'price', 'vat_type'])
+            ->when($numericIds, fn ($q) => $q->whereIn('id', $numericIds))
+            ->when($slugIds, fn ($q) => $q->orWhereIn('slug', $slugIds))
             ->get();
 
+        $country = $countryResolver->resolve($request);
+        $currency = config('app.currency', 'EUR');
+
+        $incomingSet = array_flip(array_map('strval', $rawIds));
         $out = [];
         foreach ($products as $product) {
-            $rate = $vatService->rateForProduct($product, $country);
-            $net  = round((float)$product->price, 2);
+            $rate = (float) $vatService->rateForProduct($product, $country);
+            $net = (float) $product->price;
             $vatA = round($net * $rate / 100, 2);
-            $out[$product->id] = [
-                'net'   => $net,
-                'vat'   => $vatA,
-                'rate'  => $rate,
-                'gross' => $net + $vatA,
+            $gross = round($net + $vatA, 2);
+
+            $possibleKeys = [(string) $product->id, (string) $product->slug];
+            $key = (string) $product->id;
+            foreach ($possibleKeys as $k) {
+                if (isset($incomingSet[(string) $k])) {
+                    $key = (string) $k;
+                    break;
+                }
+            }
+
+            $out[$key] = [
+                'net' => $net,
+                'vat' => $vatA,
+                'gross' => $gross,
+                'rate' => $rate,
+                'currency' => $currency,
             ];
         }
 
