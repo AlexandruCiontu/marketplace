@@ -238,7 +238,7 @@ function Show({
               </p>
               {computedProduct.vat_amount && computedProduct.vat_amount > 0 && (
                 <p className="text-sm text-gray-500">
-                Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount ?? 0} />
+                  Includes VAT: <CurrencyFormatter amount={computedProduct.vat_amount ?? 0} /> ({computedProduct.vat_rate ?? 0}%)
                 </p>
               )}
               <ProductDetails />

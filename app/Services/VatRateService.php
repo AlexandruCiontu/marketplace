@@ -3,78 +3,91 @@
 namespace App\Services;
 
 use App\Support\CountryCode;
+
 class VatRateService
 {
-    /**
-     * Return the VAT percent for a product and country.
-     */
-    public function rateForProduct($product, string $country): float
+    /** @var array<string, array<string, mixed>> */
+    protected array $rates = [];
+
+    public function __construct()
     {
-        // 1) Normalize country to ISO-2 uppercase
-        $cc = strtoupper(CountryCode::toIso2($country) ?? config('vat.fallback_country', 'RO'));
-
-        // 2) Normalize VAT type
-        $type = strtolower((string) ($product->vat_type ?? $product->vat_rate_type ?? 'standard'));
-        $type = match ($type) {
-            'reduced', 'reduced_alt', 'super_reduced', 'zero' => $type,
-            default => 'standard',
-        };
-
-        // 3) Prefer config map
-        $cfg = config("vat.rates.$type", []);
-        if (is_array($cfg) && array_key_exists($cc, $cfg)) {
-            return (float) $cfg[$cc];
-        }
-
-        // 4) Fallback: bundled JSON
-        $json = $this->ratesFromJson();
-        if (isset($json[$cc])) {
-            $key = match ($type) {
-                'standard'      => 'standard_rate',
-                'reduced'       => 'reduced_rate',
-                'reduced_alt'   => 'reduced_rate_alt',
-                'super_reduced' => 'super_reduced_rate',
-                'zero'          => null,
-            };
-
-            if ($key === null) {
-                return 0.0;
-            }
-
-            $val = $json[$cc][$key] ?? null;
-            if (is_numeric($val)) {
-                return (float) $val;
-            }
-
-            // If reduced_alt missing, fall back to reduced_rate
-            if ($type === 'reduced_alt') {
-                $alt = $json[$cc]['reduced_rate'] ?? null;
-                if (is_numeric($alt)) {
-                    return (float) $alt;
-                }
-            }
-        }
-
-        // 5) Last resort: default_rates
-        return (float) config("vat.default_rates.$type", 21.0);
-    }
-
-    protected function ratesFromJson(): array
-    {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-
         $path = storage_path('app/vat/rates.json');
         if (is_file($path)) {
             $raw = json_decode(file_get_contents($path), true);
-            $cache = $raw['rates'] ?? [];
-        } else {
-            $cache = [];
+            $rows = $raw['rates'] ?? [];
+            foreach ($rows as $code => $row) {
+                $iso2 = strtoupper(CountryCode::toIso2($code, $code));
+                $this->rates[$iso2] = $row;
+            }
+        }
+    }
+
+    /**
+     * Return the VAT percent for a product and country.
+     */
+    public function rateForProduct(\App\Models\Product $product, string $country): float
+    {
+        $iso2 = strtoupper(CountryCode::toIso2($country) ?? $country);
+        $type = strtolower(trim($product->vat_type ?? 'standard'));
+
+        $cfg = config('vat.rates');
+        $pick = function (string $bucket) use ($cfg, $iso2): ?float {
+            return isset($cfg[$bucket][$iso2]) ? (float) $cfg[$bucket][$iso2] : null;
+        };
+
+        $fromJson = function (string $field) use ($iso2): ?float {
+            $row = $this->rates[$iso2] ?? null;
+            if (!$row || !array_key_exists($field, $row)) {
+                return null;
+            }
+            if ($row[$field] === false) {
+                return null;
+            }
+            return (float) $row[$field];
+        };
+
+        $rate = null;
+        switch ($type) {
+            case 'zero':
+                $rate = 0.0;
+                break;
+            case 'reduced':
+                $rate = $pick('reduced') ?? $fromJson('reduced_rate');
+                break;
+            case 'reduced_alt':
+                $rate = $pick('reduced_alt') ?? $fromJson('reduced_rate_alt');
+                if ($rate === null) {
+                    $rate = $pick('reduced') ?? $fromJson('reduced_rate');
+                }
+                break;
+            case 'super_reduced':
+                $rate = $pick('super_reduced') ?? $fromJson('super_reduced_rate');
+                if ($rate === null) {
+                    $rate = $pick('reduced_alt') ?? $fromJson('reduced_rate_alt');
+                }
+                if ($rate === null) {
+                    $rate = $pick('reduced') ?? $fromJson('reduced_rate');
+                }
+                break;
+            case 'standard':
+            default:
+                $rate = $pick('standard') ?? $fromJson('standard_rate');
+                break;
         }
 
-        return $cache;
+        if ($rate === null) {
+            $defaults = config('vat.default_rates');
+            $map = [
+                'standard' => 'standard',
+                'reduced' => 'reduced',
+                'reduced_alt' => 'reduced',
+                'super_reduced' => 'super_reduced',
+                'zero' => 'zero',
+            ];
+            $rate = (float) ($defaults[$map[$type] ?? 'standard'] ?? 21.0);
+        }
+
+        return (float) round($rate, 2);
     }
 
     /**
@@ -89,14 +102,15 @@ class VatRateService
 
         $type = strtolower($rateType);
         $rate = $this->rateForProduct((object) ['vat_type' => $type], $code);
-        $vat   = round($netAmount * ($rate / 100), 2);
+        $vat = round($netAmount * ($rate / 100), 2);
         $gross = round($netAmount + $vat, 2);
 
         return [
-            'vat'     => $vat,
-            'gross'   => $gross,
-            'rate'    => $rate,
+            'vat' => $vat,
+            'gross' => $gross,
+            'rate' => $rate,
             'country' => $code,
         ];
     }
 }
+

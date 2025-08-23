@@ -61,9 +61,21 @@ export default function ProductItem({ product }: { product: ProductListItem }) {
           <button onClick={addToCart} className="btn btn-primary">
             Add to Cart
           </button>
-          <span className="text-2xl">
-            <CurrencyFormatter amount={product.price_gross} />
-          </span>
+          {(() => {
+            const gross =
+              typeof product.price_gross === "number"
+                ? product.price_gross
+                : Number(product.price_gross);
+            return (
+              <span className="text-2xl">
+                {Number.isFinite(gross) ? (
+                  <CurrencyFormatter amount={gross} />
+                ) : (
+                  "—"
+                )}
+              </span>
+            );
+          })()}
         </div>
       </div>
     </div>

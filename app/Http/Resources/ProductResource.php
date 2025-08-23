@@ -22,8 +22,8 @@ class ProductResource extends JsonResource
         $rate = $vat->rateForProduct($this->resource, $country);
 
         $net   = (float) $this->price;
-        $vatAm = round($net * $rate / 100, 2);
-        $gross = round($net + $vatAm, 2);
+        $vatAm = (float) round($net * $rate / 100, 2);
+        $gross = (float) round($net + $vatAm, 2);
 
         return [
             'id' => $this->id,
@@ -88,11 +88,11 @@ class ProductResource extends JsonResource
             }),
 
             // ✅ VAT fields computed server-side
-            'vat_type'    => $this->vat_type,
-            'vat_rate'    => $rate,
-            'vat_amount'  => $vatAm,
-            'price_net'   => $net,
-            'price_gross' => $gross,
+            'vat_type'    => (string) $this->vat_type,
+            'vat_rate'    => (float) $rate,
+            'vat_amount'  => (float) $vatAm,
+            'price_net'   => (float) $net,
+            'price_gross' => (float) $gross,
             'country_code'=> $country,
         ];
     }
