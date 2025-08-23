@@ -89,9 +89,9 @@ function Index(
                              onChange={onAddressChange}
                              buttonLabel="Change Address"/>
 
-                <div className="mt-6">
-                  <CountryBadge />
-                </div>
+              <div className="mt-6">
+                <CountryBadge />
+              </div>
             </div>
           </div>
 
