@@ -165,19 +165,87 @@ class Product extends Model implements HasMedia
         return $this->getFirstMediaUrl('images', 'small');
     }
 
-    public function getImagesForOptions(?array $optionIds = null): array
+    /**
+     * Returnează URL-urile imaginilor pentru opțiunile selectate (sau fallback la imaginile produsului).
+     *
+     * @param  array<int,int|string>  $optionIds
+     * @return array<int,string>      ex: ['https://.../media/1/image.jpg', ...]
+     */
+    public function getImagesForOptions(array $optionIds = []): array
     {
-        if ($optionIds) {
-            $optionIds = array_values($optionIds);
-            $options = VariationTypeOption::whereIn('id', $optionIds)->get();
-            foreach ($options as $option) {
-                $images = $option->getMedia('images');
-                if ($images) {
-                    return $images;
+        // Dacă vin IDs de opțiuni, încercăm să folosim prima opțiune care are media.
+        if (!empty($optionIds)) {
+            $options = VariationTypeOption::query()
+                ->whereIn('id', array_values($optionIds))
+                ->get();
+
+            foreach ($options as $opt) {
+                $media = $opt->getMedia('images');
+                if ($media->isNotEmpty()) {
+                    return $media->map(fn (Media $m) => $m->getUrl())->toArray();
                 }
             }
         }
-        return $this->getMedia('images')->toArray();
+
+        // Fallback: imaginile produsului
+        return $this->getMedia('images')
+            ->map(fn (Media $m) => $m->getUrl())
+            ->toArray();
+    }
+
+    /**
+     * Traduce query-ul din request în IDs de VariationTypeOption pentru acest produs.
+     * Acceptă:
+     *  - ?options[]=12&options[]=34
+     *  - ?color=red&size=medium
+     *  - ?color=12&size=34
+     */
+    public function resolveOptionIdsFromQuery(array $query): array
+    {
+        // 1) Varianta directă: options[] = IDs
+        if (isset($query['options']) && is_array($query['options']) && !empty($query['options'])) {
+            return array_values(array_filter($query['options'], fn ($v) => is_numeric($v)));
+        }
+
+        // 2) Varianta cheilor: color=red, size=medium etc.
+        // Căutăm VariationType-urile produsului și mapăm fiecare cheie la ID-ul opțiunii.
+        $types = $this->variationTypes()
+            ->with('options')
+            ->get();
+
+        $found = [];
+
+        foreach ($types as $type) {
+            // cheie în query = slug/cheie a tipului (ex: color, size)
+            // dacă nu aveți "key/slug" pe modelul VariationType, folosiți name normalizat (strtolower fără spații).
+            $typeKey = $type->key ?? \Str::slug($type->name, '_');
+
+            if (!array_key_exists($typeKey, $query)) {
+                continue;
+            }
+
+            $wanted = (string) $query[$typeKey];
+
+            // Acceptăm fie ID (numeric) fie slug/name (string)
+            $match = $type->options->first(function (VariationTypeOption $opt) use ($wanted) {
+                if (is_numeric($wanted)) {
+                    return (int) $wanted === (int) $opt->id;
+                }
+
+                // comparații tolerante
+                $w = \Str::lower(trim($wanted));
+                $byName = \Str::lower(trim($opt->name));
+                $bySlug = isset($opt->slug) ? \Str::lower(trim($opt->slug)) : null;
+
+                return $w === $byName || ($bySlug && $w === $bySlug);
+            });
+
+            if ($match) {
+                $found[] = $match->id;
+            }
+        }
+
+        return $found;
     }
 
     public function getPriceForFirstOptions(): float

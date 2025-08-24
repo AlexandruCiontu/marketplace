@@ -64,7 +64,7 @@ export type Product = {
   vat_amount?: number;
   vat_rate?: number;
   image: string;
-  images: Image[];
+  images: string[];
   short_description: string;
   description: string;
   meta_title: string;

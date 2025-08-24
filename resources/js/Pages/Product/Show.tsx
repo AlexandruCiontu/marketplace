@@ -1,17 +1,36 @@
-import {PageProps, Product, VariationTypeOption, Image} from "@/types";
-import {Head, router, useForm, usePage} from "@inertiajs/react";
-import {useEffect, useMemo, useState} from "react";
+import {PageProps, Product, VariationTypeOption} from "@/types";
+import {Head, useForm} from "@inertiajs/react";
+import {useEffect, useState} from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import ProductGallery from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helpers";
 
-function Show({
-                appName, product, variationOptions
-              }: PageProps<{
-  product: Product,
-  variationOptions: number[]
-}>) {
+const setQueryParam = (key: string, value: string | number) => {
+  const url = new URL(window.location.href);
+  url.searchParams.set(key, String(value));
+  window.history.replaceState({}, '', url.toString());
+};
+
+const getQueryObject = (): Record<string, string> => {
+  const params = new URLSearchParams(window.location.search);
+  const obj: Record<string, string> = {};
+  params.forEach((v, k) => (obj[k] = v));
+  return obj;
+};
+
+const fetchProduct = async (productIdOrSlug: string) => {
+  const qs = window.location.search;
+  const res = await fetch(`/api/products/${productIdOrSlug}${qs}`, {
+    headers: { 'Accept': 'application/json' },
+  });
+  const json = await res.json();
+  return json.data;
+};
+
+function Show({ appName, product: initialProductFromServer }: PageProps<{ product: Product }>) {
+  const [product, setProduct] = useState<any>(initialProductFromServer);
+  const productIdOrSlug = product.slug ?? product.id;
+
   const form = useForm<{
     option_ids: Record<string, number>;
     quantity: number;
@@ -22,17 +41,8 @@ function Show({
     price: null
   })
 
-  const {url} = usePage();
   const [selectedOptions, setSelectedOptions] =
     useState<Record<number, VariationTypeOption>>([]);
-
-  const images = useMemo<Image[]>(() => {
-    for (let typeId in selectedOptions) {
-      const option = selectedOptions[typeId];
-      if (option.images.length > 0) return [...option.images];
-    }
-    return [...product.images];
-  }, [product, selectedOptions]);
 
 
   const [computedProduct, setComputedProduct] = useState<{ price: number; price_gross: number; vat_amount: number; vat_rate: number; vat_type: string; quantity: number }>({
@@ -45,6 +55,11 @@ function Show({
   });
 
   useEffect(() => {
+    fetchProduct(productIdOrSlug).then(setProduct);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
       .sort();
@@ -53,7 +68,7 @@ function Show({
     let quantity = product.quantity === null ? Number.MAX_VALUE : product.quantity;
 
     for (let variation of product.variations) {
-      const optionIds = variation.variation_type_option_ids.sort();
+      const optionIds = [...variation.variation_type_option_ids].sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         price = variation.price;
         quantity = variation.quantity === null ? Number.MAX_VALUE : variation.quantity;
@@ -71,48 +86,14 @@ function Show({
         vat_type: product.vat_type,
         quantity,
       }));
-  }, [selectedOptions]);
+  }, [selectedOptions, product]);
 
-  useEffect(() => {
-    for (let type of product.variationTypes) {
-      const selectedOptionId: number = variationOptions[type.id];
-      chooseOption(
-        type.id,
-        type.options.find(op => op.id == selectedOptionId) || type.options[0],
-        false
-      )
-    }
-  }, []);
-
-  const getOptionIdsMap = (newOptions: object) => {
-    return Object.fromEntries(
-      Object.entries(newOptions).map(([a, b]) => [a, b.id])
-    )
-  }
-
-  const chooseOption = (
-    typeId: number,
-    option: VariationTypeOption,
-    updateRouter: boolean = true
-  ) => {
-    setSelectedOptions((prevSelectedOptions) => {
-      const newOptions = {
-        ...prevSelectedOptions,
-        [typeId]: option
-      }
-
-      if (updateRouter) {
-        router.get(url, {
-          options: getOptionIdsMap(newOptions)
-        }, {
-          preserveScroll: true,
-          preserveState: true
-        })
-      }
-
-      return newOptions
-    })
-  }
+  const chooseOption = (type: any, option: VariationTypeOption) => {
+    setSelectedOptions(prev => ({ ...prev, [type.id]: option }));
+    const typeKey = (type.key ?? type.name.toLowerCase().replace(/\s+/g, '_'));
+    setQueryParam(typeKey, option.id);
+    fetchProduct(productIdOrSlug).then(setProduct);
+  };
 
   const onQuantityChange = (ev: React.ChangeEvent<HTMLSelectElement>) => {
     form.setData('quantity', parseInt(ev.target.value))
@@ -129,13 +110,13 @@ function Show({
   }
 
   const renderProductVariationTypes = () => {
-    return product.variationTypes.map((type, i) => (
+    return product.variationTypes.map((type: any, i: number) => (
       <div key={type.id}>
         <b>{type.name}</b>
         {type.type === 'Image' &&
           <div className="flex gap-2 mb-4">
-            {type.options.map(option => (
-              <div onClick={() => chooseOption(type.id, option)} key={option.id}>
+            {type.options.map((option: VariationTypeOption) => (
+              <div onClick={() => chooseOption(type, option)} key={option.id}>
                 {option.images.length > 0 &&
                   <img src={option.images[0].thumb} alt="" className={'w-[64px] h-[64px] object-contain ' + (
                     selectedOptions[type.id]?.id === option.id ? 'outline outline-4 outline-primary' : ''
@@ -146,8 +127,8 @@ function Show({
           </div>}
         {type.type === 'Radio' &&
           <div className="flex join mb-4">
-            {type.options.map(option => (
-              <input onChange={() => chooseOption(type.id, option)}
+            {type.options.map((option: VariationTypeOption) => (
+              <input onChange={() => chooseOption(type, option)}
                      key={option.id}
                      className="join-item btn"
                      type="radio"
@@ -218,7 +199,7 @@ function Show({
         <link rel="canonical" href={route('product.show', product.slug)}/>
         <meta property="og:title" content={product.title}/>
         <meta property="og:description" content={product.meta_description}/>
-        <meta property="og:image" content={images[0]?.small}/>
+        <meta property="og:image" content={product.images?.[0]}/>
         <meta property="og:url" content={route('product.show', product.slug)}/>
         <meta property="og:type" content="product"/>
         <meta property="og:site_name" content={appName}/>
@@ -227,7 +208,11 @@ function Show({
       <div className="container mx-auto p-8">
         <div className="space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <ProductGallery images={images} />
+            <div className="grid grid-cols-1 gap-2">
+              {Array.isArray(product.images) && product.images.map((url: string, idx: number) => (
+                <img key={idx} src={url} alt={product.title} className="rounded-xl" />
+              ))}
+            </div>
             <div>
               <h1 className="text-2xl font-bold">{product.title}</h1>
               <p className="text-gray-600">

@@ -11,8 +11,11 @@ class ProductResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $options = $request->input('options') ?: [];
-        $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
+        /** @var \App\Models\Product $product */
+        $product = $this->resource;
+
+        // traducem query-ul în IDs de opțiuni
+        $optionIds = $product->resolveOptionIdsFromQuery($request->query());
 
         $country = session('country_code', config('vat.fallback_country','RO'));
         $country = strtoupper(\App\Support\CountryCode::toIso2($country) ?? 'RO');
@@ -23,27 +26,20 @@ class ProductResource extends JsonResource
         $vat = $service->calculate((float) $this->price, $rate);
 
         return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'slug' => $this->slug,
-            'description' => $this->description,
-            'meta_title' => $this->meta_title,
-            'meta_description' => $this->meta_description,
-            'price' => (float) $this->price,
-            'weight' => $this->weight,
-            'length' => $this->length,
-            'width' => $this->width,
-            'height' => $this->height,
-            'quantity' => $this->quantity,
-            'image' => $this->getFirstImageUrl(),
-            'images' => $images->map(function ($image) {
-                return [
-                    'id' => $image->id,
-                    'thumb' => $image->getUrl('thumb'),
-                    'small' => $image->getUrl('small'),
-                    'large' => $image->getUrl('large'),
-                ];
-            }),
+            'id' => $product->id,
+            'title' => $product->title,
+            'slug' => $product->slug,
+            'description' => $product->description,
+            'meta_title' => $product->meta_title,
+            'meta_description' => $product->meta_description,
+            'price' => (float) $product->price,
+            'weight' => $product->weight,
+            'length' => $product->length,
+            'width' => $product->width,
+            'height' => $product->height,
+            'quantity' => $product->quantity,
+            'image' => $product->getFirstImageUrl(),
+            'images' => $product->getImagesForOptions($optionIds),
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
