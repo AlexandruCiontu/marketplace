@@ -60,10 +60,8 @@ class ProductController extends Controller
         $gross = round($net + $vatA, 2);
 
         return Inertia::render('Product/Show', [
-            'product' => array_merge(
-                (new ProductResource($product))->toArray(request()),
-                ['vat' => ['rate' => $rate, 'amount' => $vatA, 'gross' => $gross]]
-            ),
+            'product' => (new ProductResource($product))->resolve(request()),
+            'vat' => ['rate' => $rate, 'amount' => $vatA, 'gross' => $gross],
             'variationOptions' => request('options', []),
             'hasPurchased' => $hasPurchased,
             'relatedProducts' => ProductListResource::collection($relatedProducts),
