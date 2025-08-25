@@ -2,80 +2,82 @@
 
 namespace App\Services;
 
-use Ibericode\Vat\Rates;
+use App\Models\Product;
+use Illuminate\Support\Str;
 
 class VatRateService
 {
-    protected Rates $rates;
+    protected array $rates;
+    protected array $defaults;
 
     public function __construct()
     {
-        // Poți schimba path-ul dacă preferi altă locație pentru cache
-        $this->rates = new Rates(storage_path('framework/cache/vat_rates.cache'));
+        $config = config('vat');
+        $this->rates    = $config['rates'] ?? [];
+        $this->defaults = $config['default_rates'] ?? [];
+    }
+
+    private function normalizeType(string $type): string
+    {
+        $t = Str::of($type)
+            ->lower()
+            ->replace([' ', '-', '.', '/'], '_')
+            ->trim('_')
+            ->value();
+
+        return match ($t) {
+            'super_reduced', 'superreduced'      => 'super_reduced',
+            'reduced_alt', 'reducedalt'          => 'reduced_alt',
+            'reduced'                            => 'reduced',
+            'zero', 'no_vat', 'none', '0'        => 'zero',
+            default                              => 'standard',
+        };
     }
 
     /**
-     * Calculează TVA-ul și totalul brut pentru un preț net.
-     *
-     * @param  float       $netAmount     Prețul fără TVA
-     * @param  string      $rateType      Tipul TVA ('standard', 'reduced', etc.)
-     * @param  string|null $countryCode   Codul țării (ex: 'RO', 'DE')
-     * @return array<string, float>       ['rate' => TVA%, 'vat' => valoare TVA, 'gross' => total cu TVA]
+     * Calculate VAT breakdown for a net amount and percentage rate.
      */
-    public function calculate(float $netAmount, string $rateType, ?string $countryCode = null): array
+    public function calculate(float $net, float $rate): array
     {
-        $countryCode = $countryCode ?: session('country_code');
-
-        if (! $countryCode) {
-            return [
-                'rate'  => 0.0,
-                'vat'   => 0.0,
-                'gross' => $netAmount,
-            ];
-        }
-
-        try {
-            $rateKeyMap = [
-                'standard_rate' => ['standard'],
-                'reduced_rate' => ['reduced', 'reduced2'],
-                'reduced_rate_alt' => ['reduced1', 'reduced2', 'reduced'],
-                'super_reduced_rate' => ['super_reduced'],
-            ];
-
-            $rateKeys = $rateKeyMap[$rateType] ?? [$rateType];
-            $rate = 0.0;
-
-            foreach ($rateKeys as $key) {
-                try {
-                    $rate = $this->rates->getRateForCountry($countryCode, $key);
-                } catch (\Throwable $e) {
-                    $rate = 0.0;
-                }
-
-                if (is_numeric($rate) && $rate > 0) {
-                    break;
-                }
-            }
-
-            // ✅ Fallback la 'standard' dacă rata e invalidă (false, null, 0 etc.)
-            if (!is_numeric($rate) || $rate <= 0) {
-                try {
-                    $rate = $this->rates->getRateForCountry($countryCode, 'standard');
-                } catch (\Throwable $e) {
-                    $rate = 0.0;
-                }
-            }
-        } catch (\Throwable $e) {
-            $rate = 0.0;
-        }
-
-        $vat   = round($netAmount * $rate / 100, 2);
-        $gross = round($netAmount + $vat, 2);
+        $vat  = round($net * $rate / 100, 2);
+        $gross = round($net + $vat, 2);
 
         return [
-            'rate'  => $rate,
-            'vat'   => $vat,
-            'gross' => $gross,
+            'price_net'   => (float) $net,
+            'vat_rate'    => (float) $rate,
+            'vat_amount'  => (float) $vat,
+            'price_gross' => (float) $gross,
+        ];
+    }
+
+    public function rateForProduct(Product|string|null $productOrType, string $country): float
+    {
+        $type = 'standard';
+
+        if ($productOrType instanceof Product) {
+            $type = $productOrType->vat_type_normalized ?? 'standard';
+        } elseif (is_string($productOrType) && $productOrType !== '') {
+            $type = str_replace([' ', '-'], '_', strtolower(trim($productOrType)));
+        }
+
+        $rates = config("vat.rates.$country") ?? config('vat.rates.RO');
+
+        return (float) ($rates[$type] ?? $rates['reduced_alt'] ?? $rates['standard']);
+    }
+
+    public function priceForProduct(Product $product, string $country, string $currency = 'EUR'): array
+    {
+        $rate = $this->rateForProduct($product, $country);
+        $calc = $this->calculate((float) $product->price, $rate);
+
+        return [
+            'net'      => $calc['price_net'],
+            'vat'      => $calc['vat_amount'],
+            'gross'    => $calc['price_gross'],
+            'rate'     => $calc['vat_rate'],
+            'type'     => $product->vat_type_normalized,
+            'currency' => $currency,
         ];
     }
 }
+

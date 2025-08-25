@@ -3,10 +3,12 @@
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\ShippingAddressController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Stevebauman\Location\Facades\Location;
@@ -29,8 +31,38 @@ Route::get('/test-location', function () {
     ]);
 });
 
+Route::get('/dashboard', fn () => to_route('home'))->name('dashboard');
+
+
+Route::get('/_vat/debug', function (Request $r, \App\Services\VatRateService $vat) {
+    $country = session('country_code', config('vat.fallback_country','RO'));
+    $country = \App\Support\CountryCode::toIso2($country) ?? 'RO';
+
+    $p = \App\Models\Product::query()->first();
+    $type = strtolower((string) ($p->vat_type ?? 'standard'));
+    $rate = $vat->rateForProduct($p, $country);
+
+    return [
+        'session_country' => session('country_code'),
+        'normalized' => strtoupper($country),
+        'product_vat_type' => $type,
+        'resolved_rate' => $rate,
+    ];
+});
+
+Route::get('/_vat/debug-type', function (Request $r, \App\Services\VatRateService $vat) {
+    $p = App\Models\Product::query()->first();
+    $country = App\Support\CountryCode::toIso2(session('country_code','RO')) ?? 'RO';
+    return [
+        'product_id'    => $p?->id,
+        'vat_type'      => $p?->vat_type,
+        'country'       => strtoupper($country),
+        'resolved_rate' => $vat->rateForProduct($p, $country),
+    ];
+});
+
 // Guest Routes
-Route::get('/', [ProductController::class, 'home'])->name('dashboard');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
 Route::get('/d/{department:slug}', [ProductController::class, 'byDepartment'])->name('product.byDepartment');
 Route::get('/s/{vendor:store_name}', [VendorController::class, 'profile'])->name('vendor.profile');
@@ -58,7 +90,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/shipping-address/{address}', [ShippingAddressController::class, 'destroy'])->name('shippingAddress.destroy');
 
     // ✅ VAT Country selector (manual override)
-    Route::post('/set-vat-country', [CartController::class, 'setVatCountry'])->name('set.vat.country');
 
     // Orders routes for buyers
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -79,6 +110,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/vendor/details', [VendorController::class, 'details'])
             ->name('vendor.details')
             ->middleware(['role:' . \App\Enums\RolesEnum::Vendor->value]);
+
+        Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])
+            ->name('products.reviews.store')
+            ->middleware('throttle:20,1');
     });
 });
 

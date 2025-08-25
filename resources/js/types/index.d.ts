@@ -1,4 +1,3 @@
-import {Config} from 'ziggy-js';
 
 export type VatRateType =
   | 'standard_rate'
@@ -48,6 +47,14 @@ export type VariationType = {
   options: VariationTypeOption[]
 }
 
+export type Review = {
+  id: number;
+  rating: number;
+  body?: string;
+  created_at: string;
+  user: { id: number; name: string };
+};
+
 export type Product = {
   id: number;
   title: string;
@@ -58,10 +65,11 @@ export type Product = {
   width: number | null;
   height: number | null;
   quantity: number;
-  vat_rate_type?: string;
-  net_price?: number;
-  gross_price?: number;
+  vat_type?: string;
+  price_net?: number;
+  price_gross?: number;
   vat_amount?: number;
+  vat_rate?: number;
   image: string;
   images: Image[];
   short_description: string;
@@ -85,15 +93,19 @@ export type Product = {
     quantity: number;
     price: number;
   }>
+  reviews_count: number;
+  rating_average: number;
+  reviews: Review[];
 }
 
 export type ProductListItem = {
   id: number;
   title: string;
   slug: string;
-  price: number;
-  net_price: number;
-  vat_rate_type: string;
+  price_net: number;
+  price_gross: number;
+  vat_type: 'standard' | 'reduced' | 'reduced_alt' | 'super_reduced' | 'zero';
+  vat_rate: number;
   quantity: number;
   image: string;
   user_id: number;
@@ -111,6 +123,9 @@ export type CartItem = {
   slug: string;
   price: number;
   vat_rate_type: string;
+  vat_rate: number;
+  vat_amount: number;
+  price_gross: number;
   quantity: number;
   image: string;
   option_ids: Record<string, number>;
@@ -160,7 +175,7 @@ export type PageProps<
   auth: {
     user: User;
   };
-  ziggy: Config & { location: string };
+  ziggy: { location: string } & Record<string, any>;
   totalQuantity: number;
   totalPrice: number;
   miniCartItems: CartItem[];

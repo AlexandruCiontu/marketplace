@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\Image\Enums\Fit;
 
 class VariationTypeOption extends Model implements HasMedia
 {
@@ -14,18 +15,26 @@ class VariationTypeOption extends Model implements HasMedia
 
     public $timestamps = false;
 
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('images');
+    }
+
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')
-            ->width(100)
+        $this
+            ->addMediaConversion('thumb')
+            ->fit(Fit::Crop, 64, 64)
             ->nonQueued();
 
-        $this->addMediaConversion('small')
-            ->width(480)
+        $this
+            ->addMediaConversion('small')
+            ->fit(Fit::Contain, 300, 300)
             ->nonQueued();
 
-        $this->addMediaConversion('large')
-            ->width(1200)
+        $this
+            ->addMediaConversion('medium')
+            ->fit(Fit::Contain, 600, 600)
             ->nonQueued();
     }
 
