@@ -11,31 +11,35 @@ class ProductResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $options = $request->input('options') ?: [];
-        $images = $options ? $this->getImagesForOptions($options) : $this->getImages();
+        /** @var \App\Models\Product $product */
+        $product = $this->resource;
+
+        // traducem query-ul în IDs de opțiuni
+        $optionIds = $product->resolveOptionIdsFromQuery($request->query());
+
+        $country = session('country_code', config('vat.fallback_country','RO'));
+        $country = strtoupper(\App\Support\CountryCode::toIso2($country) ?? 'RO');
+
+        /** @var \App\Services\VatRateService $service */
+        $service = app(\App\Services\VatRateService::class);
+        $rate = $service->rateForProduct($this->resource, $country);
+        $vat = $service->calculate((float) $this->price, $rate);
 
         return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'slug' => $this->slug,
-            'description' => $this->description,
-            'meta_title' => $this->meta_title,
-            'meta_description' => $this->meta_description,
-            'price' => $this->price,
-            'weight' => $this->weight,
-            'length' => $this->length,
-            'width' => $this->width,
-            'height' => $this->height,
-            'quantity' => $this->quantity,
-            'image' => $this->getFirstImageUrl(),
-            'images' => $images->map(function ($image) {
-                return [
-                    'id' => $image->id,
-                    'thumb' => $image->getUrl('thumb'),
-                    'small' => $image->getUrl('small'),
-                    'large' => $image->getUrl('large'),
-                ];
-            }),
+            'id' => $product->id,
+            'title' => $product->title,
+            'slug' => $product->slug,
+            'description' => $product->description,
+            'meta_title' => $product->meta_title,
+            'meta_description' => $product->meta_description,
+            'price' => (float) $product->price,
+            'weight' => $product->weight,
+            'length' => $product->length,
+            'width' => $product->width,
+            'height' => $product->height,
+            'quantity' => $product->quantity,
+            'image' => $product->getFirstImageUrl(),
+            'images' => $product->getImagesForOptions($optionIds),
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
@@ -76,14 +80,13 @@ class ProductResource extends JsonResource
                 ];
             }),
 
-            // ✅ TVA fields
-            // ✅ TVA fields
-            'net_price' => round((float) $this->price, 2),
-            'vat_rate_type' => $this->vat_rate_type ?? 'standard_rate',
-            'country_code' => session('country_code') ?? 'RO',
-            'price_with_vat' => round((float) $this->price_with_vat, 2),
-            'vat_amount' => round((float) $this->vat_amount, 2),
-            'gross_price' => round((float) $this->gross_price, 2),
+            // ✅ VAT fields computed server-side
+            'vat_type'    => (string) $this->vat_type,
+            'vat_rate'    => (float) $rate,
+            'vat_amount'  => (float) $vat['vat_amount'],
+            'price_net'   => (float) $vat['price_net'],
+            'price_gross' => (float) $vat['price_gross'],
+            'country_code'=> $country,
         ];
     }
 }

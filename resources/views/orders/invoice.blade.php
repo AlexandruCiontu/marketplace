@@ -150,7 +150,7 @@
         <div class="invoice-header">
             <div>
                 <h1>INVOICE</h1>
-                <p>{{ config('app.name') }}</p>
+                <p>{{ $order->sellerDisplayName() }}</p>
             </div>
             <div>
                 @if(isset($logo))
@@ -232,21 +232,12 @@
                 <td>{{ number_format($order->net_total, 2) }} {{ config('app.currency') }}</td>
             </tr>
             <tr>
-                <th>VAT:</th>
+                @php
+                    $rate = $order->vat_rate ?? ($order->net_total > 0 ? round(($order->vat_total / $order->net_total) * 100, 2) : 0);
+                @endphp
+                <th>VAT ({{ $rate }}% {{ $order->vat_country_code }}):</th>
                 <td>{{ number_format($order->vat_total, 2) }} {{ config('app.currency') }}</td>
             </tr>
-            @if($order->shipping_amount > 0)
-            <tr>
-                <th>Shipping:</th>
-                <td>{{ number_format($order->shipping_amount, 2) }} {{ config('app.currency') }}</td>
-            </tr>
-            @endif
-            @if($order->discount_amount > 0)
-            <tr>
-                <th>Discount:</th>
-                <td>-{{ number_format($order->discount_amount, 2) }} {{ config('app.currency') }}</td>
-            </tr>
-            @endif
             <tr class="grand-total">
                 <th>Total:</th>
                 <td>{{ number_format($order->total_price, 2) }} {{ config('app.currency') }}</td>

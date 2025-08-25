@@ -77,6 +77,42 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             ->where('default', true);
     }
 
+    public function defaultShippingAddress(): MorphOne
+    {
+        return $this->shippingAddress();
+    }
+
+    /**
+     * All addresses for the user.
+     */
+    public function addresses(): MorphMany
+    {
+        return $this->morphMany(Address::class, 'addressable');
+    }
+
+    /**
+     * Shortcut: the default (or latest) address for the user.
+     */
+    public function defaultAddress(): ?Address
+    {
+        return $this->addresses()->where('default', true)->first()
+            ?? $this->addresses()->latest()->first();
+    }
+
+    /**
+     * Helper: country code for VAT in uppercase.
+     */
+    public function vatCountryCode(): ?string
+    {
+        $addr = $this->relationLoaded('defaultShippingAddress')
+            ? $this->getRelation('defaultShippingAddress')
+            : $this->defaultShippingAddress()->first();
+
+        return $addr && $addr->country_code
+            ? strtoupper($addr->country_code)
+            : null;
+    }
+
     public function isAdmin(): bool
     {
         return $this->hasRole(RolesEnum::Admin);

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use App\Support\CountryCodes;
 
 class Order extends Model
 {
@@ -58,6 +59,16 @@ class Order extends Model
         return $this->belongsTo(User::class, 'vendor_user_id');
     }
 
+    public function sellerDisplayName(): string
+    {
+        return $this->vendorUser?->vendor?->store_name ?: config('app.name');
+    }
+
+    public function sellerVatCountry(): ?string
+    {
+        return $this->vat_country_code;
+    }
+
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'vendor_user_id', 'user_id');
@@ -66,5 +77,18 @@ class Order extends Model
     public function shippingAddress(): MorphOne
     {
         return $this->morphOne(Address::class, 'addressable');
+    }
+
+    /**
+     * Always store vat_country_code as ISO-2 (uppercase).
+     * Accepts ISO-2 or ISO-3 inputs.
+     */
+    public function setVatCountryCodeAttribute($value): void
+    {
+        $value = strtoupper((string) $value);
+        if (strlen($value) === 3) {
+            $value = CountryCodes::alpha3To2($value);
+        }
+        $this->attributes['vat_country_code'] = $value;
     }
 }

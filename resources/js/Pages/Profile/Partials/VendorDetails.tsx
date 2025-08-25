@@ -30,7 +30,7 @@ export default function VendorDetails(
   } = useForm({
     store_name: user.vendor?.store_name || user.name.toLowerCase().replace(/\s+/g, '-'),
     store_address: user.vendor?.store_address,
-    country_code: user.vendor?.country_code || 'RO',
+    country_code: user.vendor?.country_code ?? '',
     phone: user.vendor?.phone || user.phone,
     cif: user.vendor?.cif || '',
     anaf_pfx: null,
